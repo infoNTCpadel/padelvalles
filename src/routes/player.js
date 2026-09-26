@@ -2,10 +2,18 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { requireLogin } from '../middleware.js';
-import { MODALITATS } from '../brand.js';
+import { MODALITATS, NIVELLS, nomNivell } from '../brand.js';
 
 const r = Router();
-const NIVELLS = ['Iniciació', 'Intermig', 'Avançat', 'Competició'];
+
+function nivellValid(id) {
+  return NIVELLS.some(n => n.id === id) ? id : '';
+}
+
+function netejaTelefon(v) {
+  const t = String(v || '').trim().slice(0, 20);
+  return /^[+0-9][0-9 .\-()]*$/.test(t) ? t : '';
+}
 
 // El meu compte (jugador)
 r.get('/elmeucompte', requireLogin, (req, res) => {
@@ -60,9 +68,9 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
 });
 
 r.post('/elmeucompte', requireLogin, (req, res) => {
-  const { nom = '', nivell = '' } = req.body;
-  db.prepare('UPDATE users SET name = ?, level = ? WHERE id = ?')
-    .run(nom.trim().slice(0, 80), nivell, req.session.user.id);
+  const { nom = '', nivell = '', telefon = '' } = req.body;
+  db.prepare('UPDATE users SET name = ?, level = ?, phone = ? WHERE id = ?')
+    .run(nom.trim().slice(0, 80), nivellValid(nivell), netejaTelefon(telefon), req.session.user.id);
   req.session.user.name = nom.trim().slice(0, 80);
   res.redirect('/elmeucompte?guardat=1');
 });

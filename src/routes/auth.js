@@ -3,9 +3,18 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import db from '../db.js';
 import { sendVerificationEmail } from '../mail.js';
+import { NIVELLS } from '../brand.js';
 
 const r = Router();
-const NIVELLS = ['Iniciació', 'Intermig', 'Avançat', 'Competició'];
+
+function nivellValid(id) {
+  return NIVELLS.some(n => n.id === id) ? id : '';
+}
+
+function netejaTelefon(v) {
+  const t = String(v || '').trim().slice(0, 20);
+  return /^[+0-9][0-9 .\-()]*$/.test(t) ? t : '';
+}
 
 function sessio(user) {
   return { id: user.id, email: user.email, name: user.name, role: user.role, email_verified: !!user.email_verified };
@@ -18,7 +27,7 @@ r.get('/registre', (req, res) => {
 });
 
 r.post('/registre', (req, res) => {
-  const { nom = '', email = '', contrasenya = '', nivell = '', next = '' } = req.body;
+  const { nom = '', email = '', contrasenya = '', nivell = '', telefon = '', next = '' } = req.body;
   const em = email.trim().toLowerCase();
   if (!nom.trim() || !em || contrasenya.length < 6) {
     return res.render('registre', { titol: "Registre't", error: 'Omple tots els camps (la contrasenya, mínim 6 caràcters).', NIVELLS, next });
@@ -27,8 +36,8 @@ r.post('/registre', (req, res) => {
     return res.render('registre', { titol: "Registre't", error: 'Aquest email ja està registrat. Entra amb la teva contrasenya.', NIVELLS, next });
   }
   const hash = bcrypt.hashSync(contrasenya, 10);
-  const info = db.prepare('INSERT INTO users (email, password_hash, name, level) VALUES (?, ?, ?, ?)')
-    .run(em, hash, nom.trim(), nivell);
+  const info = db.prepare('INSERT INTO users (email, password_hash, name, level, phone) VALUES (?, ?, ?, ?, ?)')
+    .run(em, hash, nom.trim(), nivellValid(nivell), netejaTelefon(telefon));
   const token = crypto.randomBytes(24).toString('hex');
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(info.lastInsertRowid, token);
   sendVerificationEmail(em, nom.trim(), token);

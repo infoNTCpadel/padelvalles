@@ -10,8 +10,10 @@
   <h2>Les meves dades</h2>
   <div class="camp"><label>Nom i cognoms</label><input name="nom" value="<%= user.name %>" maxlength="80"></div>
   <div class="camp"><label>Email</label><input value="<%= user.email %>" disabled></div>
+  <div class="camp"><label>Mòbil</label><input name="telefon" type="tel" maxlength="20" value="<%= user.phone || '' %>" placeholder="600 123 456">
+    <p class="meta">Només el veurà el club organitzador dels tornejos on t'inscriguis.</p></div>
   <div class="camp"><label>El teu nivell</label>
-    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option <%= user.level === n ? 'selected' : '' %>><%= n %></option><% } %></select>
+    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option value="<%= n.id %>" <%= user.level === n.id ? 'selected' : '' %> title="<%= n.descripcio %>"><%= n.nom %> (<%= n.rang %>)</option><% } %></select>
   </div>
   <button class="boto" type="submit">Desa els canvis</button>
 </form>

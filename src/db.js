@@ -213,4 +213,50 @@ for (const [taula, columna, def] of [
   }
 }
 
+// --- Correccions i millores 2026-09-26 (2a tongada) ---
+// Telèfon del jugador (visible per al club organitzador)
+{
+  const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+  if (!cols.includes('phone')) {
+    db.exec(`ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''`);
+  }
+}
+// «Busco parella» amb categoria real del torneig
+{
+  const cols = db.prepare('PRAGMA table_info(partner_search)').all().map(c => c.name);
+  if (!cols.includes('category_id')) {
+    db.exec(`ALTER TABLE partner_search ADD COLUMN category_id INTEGER REFERENCES tournament_categories(id) ON DELETE CASCADE`);
+  }
+}
+// Tipus de torneig: només Federat / Open (els 'circuit' passen a 'open')
+db.exec(`UPDATE tournaments SET tipus = 'open' WHERE tipus = 'circuit'`);
+// Nivells antics (text lliure) -> nous identificadors de l'escala de 7 nivells
+db.exec(`UPDATE users SET level = CASE level
+  WHEN 'Iniciació' THEN 'iniciacio'
+  WHEN 'Intermig' THEN 'intermedi'
+  WHEN 'Avançat' THEN 'intermedi-avancat'
+  WHEN 'Competició' THEN 'competicio'
+  ELSE '' END
+  WHERE level NOT IN ('iniciacio','principiant','intermedi-iniciacio','intermedi','intermedi-alt','intermedi-avancat','competicio')`);
+
+// Índexs essencials: cerques per jugador en inscripcions, anuncis i sol·licituds
+db.exec(`CREATE INDEX IF NOT EXISTS idx_reg_p1 ON registrations(tournament_id, player1_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_reg_p2 ON registrations(tournament_id, player2_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_ps_torneig ON partner_search(tournament_id, status)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_claims_club ON club_claims(club_id, status)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_interests_t ON interests(tournament_id)`);
+
+// Transacció: tot o res. Si alguna ordre falla, es desfà tot el bloc.
+export function transaccio(fn) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const r = fn();
+    db.exec('COMMIT');
+    return r;
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch { /* ja s'ha desfet */ }
+    throw e;
+  }
+}
+
 export default db;

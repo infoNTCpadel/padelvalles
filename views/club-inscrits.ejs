@@ -47,11 +47,11 @@
 
   <% if (c.registered.length) { %>
   <table class="llista">
-    <tr><th>Parella</th><th>Emails</th><th>Pagat</th><th></th></tr>
+    <tr><th>Parella</th><th>Contacte</th><th>Pagat</th><th></th></tr>
     <% for (const i of c.registered) { %>
       <tr>
         <td><%= i.nom1 %> / <%= i.nom2 %></td>
-        <td class="meta"><%= i.email1 %><br><%= i.email2 %></td>
+        <td class="meta"><%= i.email1 %><% if (i.tel1) { %> · 📞 <%= i.tel1 %><% } %><br><%= i.email2 %><% if (i.tel2) { %> · 📞 <%= i.tel2 %><% } %></td>
         <td>
           <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/pagat" method="post">
             <button class="boto <%= i.paid ? '' : 'secundari' %> menut"><%= i.paid ? '✓ Pagat' : 'Marca pagat' %></button>

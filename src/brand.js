@@ -33,10 +33,24 @@ export const MODALITATS = {
   X: 'Mixte'
 };
 
-// Tipus de torneig: els clubs organitzen tornejos de diversos dies i poden
-// ser federats, opens o pertànyer a un circuit no federat.
+// Tipus de torneig: només Federat o Open.
 export const TIPUS_TORNEIG = {
   federat: 'Federat',
   open: 'Open',
-  circuit: 'Circuit no federat',
 };
+
+// Nivells de jugador (escala 0 – 5,6)
+export const NIVELLS = [
+  { id: 'iniciacio', nom: 'Iniciació', rang: '0 – 0,999', descripcio: 'Sense experiència o molt poca en esports de raqueta.' },
+  { id: 'principiant', nom: 'Principiant', rang: '1 – 1,499', descripcio: 'Encara aprenent les bases.' },
+  { id: 'intermedi-iniciacio', nom: "Intermedi d'iniciació", rang: '1,5 – 2,4', descripcio: 'Familiaritzant-se amb el joc.' },
+  { id: 'intermedi', nom: 'Intermedi', rang: '2,5 – 3,4', descripcio: 'Habilitats desenvolupades i tàctica bàsica.' },
+  { id: 'intermedi-alt', nom: 'Intermedi alt', rang: '3,5 – 4,4', descripcio: 'Més seguretat i millors estratègies.' },
+  { id: 'intermedi-avancat', nom: 'Intermedi avançat', rang: '4,5 – 5,4', descripcio: 'Alterna atac i defensa amb criteri.' },
+  { id: 'competicio', nom: 'Competició', rang: '5,4 – 5,6', descripcio: 'Nivell professional.' },
+];
+
+export function nomNivell(id) {
+  const n = NIVELLS.find(n => n.id === id);
+  return n ? `${n.nom} (${n.rang})` : '';
+}

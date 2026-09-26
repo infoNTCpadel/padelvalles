@@ -31,6 +31,30 @@ export function inscripcioDe(torneigId, userId) {
     ORDER BY r.id DESC LIMIT 1`).get(torneigId, userId, userId);
 }
 
+// Totes les inscripcions actives d'un usuari en un torneig (màxim MAX_INSCRIPCIONS categories)
+export const MAX_INSCRIPCIONS = 2;
+
+export function inscripcionsDe(torneigId, userId) {
+  return db.prepare(`
+    SELECT r.*, tc.modality, tc.level
+    FROM registrations r JOIN tournament_categories tc ON tc.id = r.category_id
+    WHERE r.tournament_id = ? AND (r.player1_id = ? OR r.player2_id = ?)
+      AND r.status IN ('pending','registered','waitlist')
+    ORDER BY r.id ASC`).all(torneigId, userId, userId);
+}
+
+// Pot l'usuari inscriure's en aquesta categoria? null = sí; altrament, el motiu.
+export function potInscriure(torneigId, userId, categoriaId, excepteId = null) {
+  const meves = inscripcionsDe(torneigId, userId).filter(r => r.id !== excepteId);
+  if (meves.some(r => r.category_id === categoriaId)) {
+    return 'Ja està inscrit en aquesta categoria.';
+  }
+  if (meves.length >= MAX_INSCRIPCIONS) {
+    return `Ja té ${MAX_INSCRIPCIONS} inscripcions en aquest torneig (màxim).`;
+  }
+  return null;
+}
+
 // Pot l'usuari donar-se de baixa ell mateix? (dins el termini del club)
 export function potDesapuntar(t) {
   const hores = Number(t.unregister_hours ?? 48);

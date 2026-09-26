@@ -2,7 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import { cartellSVG } from '../poster.js';
 import { COMARQUES, MODALITATS, TIPUS_TORNEIG } from '../brand.js';
-import { inscripcioOberta, placesCategoria, inscripcioDe, potDesapuntar } from '../lib/inscripcions.js';
+import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
 
 const r = Router();
 
@@ -66,15 +66,19 @@ r.get('/torneig/:id', (req, res) => {
   // Dades d'inscripció (fase 2)
   const modePV = (t.registration_mode || 'externa') === 'padelvalles';
   const oberta = modePV && inscripcioOberta(t);
-  let laMeva = null, pucDesapuntar = false, elMeuAnunci = null;
+  let lesMeves = [], elMeuAnunci = null;
   const places = {};
   const cercadors = [];
   if (modePV) {
     for (const c of t.categories) places[c.id] = placesCategoria(c.id);
     const rows = db.prepare(`
-      SELECT ps.*, u.name AS nom FROM partner_search ps JOIN users u ON u.id = ps.user_id
+      SELECT ps.*, u.name AS nom, tc.modality AS cat_modality, tc.level AS cat_level
+      FROM partner_search ps JOIN users u ON u.id = ps.user_id
+      LEFT JOIN tournament_categories tc ON tc.id = ps.category_id
       WHERE ps.tournament_id = ? AND ps.status = 'open' ORDER BY ps.created_at`).all(t.id);
     for (const ps of rows) {
+      ps.etiqueta = (MODALITATS[ps.cat_modality || ps.modality] || (ps.cat_modality || ps.modality)) +
+        ((ps.cat_level || ps.level) ? ' · ' + (ps.cat_level || ps.level) : '');
       if (req.session.user && ps.user_id === req.session.user.id) elMeuAnunci = ps;
       else cercadors.push(ps);
     }
@@ -82,18 +86,18 @@ r.get('/torneig/:id', (req, res) => {
   if (req.session.user) {
     interessat = !!db.prepare('SELECT 1 FROM interests WHERE user_id = ? AND tournament_id = ?')
       .get(req.session.user.id, t.id);
-    laMeva = inscripcioDe(t.id, req.session.user.id);
-    if (laMeva) {
-      laMeva.jug1 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(laMeva.player1_id);
-      laMeva.jug2 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(laMeva.player2_id);
-      laMeva.socJo1 = laMeva.player1_id === req.session.user.id;
-      pucDesapuntar = ['registered', 'waitlist'].includes(laMeva.status) && potDesapuntar(t);
-      if (laMeva.status === 'waitlist') {
-        laMeva.posicio = db.prepare(`
+    lesMeves = inscripcionsDe(t.id, req.session.user.id);
+    for (const m of lesMeves) {
+      m.jug1 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(m.player1_id);
+      m.jug2 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(m.player2_id);
+      m.socJo1 = m.player1_id === req.session.user.id;
+      m.pucDesapuntar = ['registered', 'waitlist'].includes(m.status) && potDesapuntar(t);
+      if (m.status === 'waitlist') {
+        m.posicio = db.prepare(`
           SELECT COUNT(*) n FROM registrations
           WHERE tournament_id = ? AND category_id = ? AND status = 'waitlist'
             AND (decided_at < ? OR (decided_at = ? AND id <= ?))`)
-          .get(t.id, laMeva.category_id, laMeva.decided_at, laMeva.decided_at, laMeva.id).n;
+          .get(t.id, m.category_id, m.decided_at, m.decided_at, m.id).n;
       }
     }
   }
@@ -110,7 +114,7 @@ r.get('/torneig/:id', (req, res) => {
   };
   res.render('torneig', { titol: t.name, t, interessat, MODALITATS, TIPUS_TORNEIG, avis: req.query.avis,
     missatge: MISS[req.query.avis] || null, errorMsg: req.query.error || null,
-    modePV, oberta, laMeva, pucDesapuntar, places, cercadors, elMeuAnunci,
+    modePV, oberta, lesMeves, places, cercadors, elMeuAnunci,
     metaDescription, canonical, ogImage, shareText, shareUrl: canonical });
 });
 

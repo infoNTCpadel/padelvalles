@@ -87,7 +87,7 @@ export function cartellSVG(torneig, club) {
   const modePropi = torneig.registration_mode === 'padelvalles';
   const ctaText = modePropi ? "INSCRIU-T'HI A PADELVALLÈS" : 'INSCRIPCIONS AL WEB DEL CLUB';
 
-  // Distintiu del tipus de torneig (federat / open / circuit no federat)
+  // Distintiu del tipus de torneig (federat / open)
   const tipusText = (TIPUS_TORNEIG[torneig.tipus] || TIPUS_TORNEIG.open).toUpperCase();
   const pillW = Math.round(tipusText.length * 15 + 48);
 

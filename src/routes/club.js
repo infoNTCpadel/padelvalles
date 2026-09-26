@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
-import db from '../db.js';
+import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
-import { comptaAmbInscripcio, promouLlistaEspera, inscripcioDe, placesCategoria } from '../lib/inscripcions.js';
+import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { sendPromocioEspera, sendParellaAfegidaClub } from '../mail.js';
 
 const r = Router();
@@ -262,8 +262,8 @@ function inscritsDe(torneigId) {
     for (const estat of ['registered', 'waitlist', 'pending']) {
       c[estat] = db.prepare(`
         SELECT r.*,
-          COALESCE(u1.name, r.player1_name, '') AS nom1, u1.email AS email1,
-          COALESCE(u2.name, r.player2_name, '') AS nom2, u2.email AS email2
+          COALESCE(u1.name, r.player1_name, '') AS nom1, u1.email AS email1, u1.phone AS tel1,
+          COALESCE(u2.name, r.player2_name, '') AS nom2, u2.email AS email2, u2.phone AS tel2
         FROM registrations r
         LEFT JOIN users u1 ON u1.id = r.player1_id
         LEFT JOIN users u2 ON u2.id = r.player2_id
@@ -291,6 +291,27 @@ r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
   if (!t) return;
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
     alta: req.query.alta || null, errorMsg: req.query.error || null });
+});
+
+// Duplicar un torneig (mateixes dades i categories, sense dates ni inscrits)
+r.post('/club/torneig/:id/duplica', nomesClub, (req, res) => {
+  const t = agafaTorneigClub(req, res);
+  if (!t) return;
+  const nou = transaccio(() => {
+    const r = db.prepare(`INSERT INTO tournaments
+      (club_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
+       registration_mode, registration_deadline, unregister_hours, status, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 'pending', ?, datetime('now'))`).run(
+      t.club_id, (t.name || 'Torneig') + ' (còpia)', t.description || '', t.tipus || 'open',
+      t.starts_at, t.ends_at, t.price_text || '', t.registration_info || '', t.registration_url || '',
+      t.registration_mode || 'externa', t.unregister_hours ?? 48, req.session.user.id);
+    const nouId = r.lastInsertRowid;
+    const cats = db.prepare('SELECT modality, level, max_pairs FROM tournament_categories WHERE tournament_id = ?').all(t.id);
+    const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
+    for (const c of cats) ins.run(nouId, c.modality, c.level, c.max_pairs);
+    return nouId;
+  });
+  res.redirect(`/club/torneig/${nou}/edita?duplicat=1`);
 });
 
 // Alta manual d'una parella pel club (les que arriben per telèfon, WhatsApp o recepció)
@@ -322,7 +343,9 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
     const j2 = resol(email2, nom2);
     if (j1.id && j1.id === j2.id) throw new Error('Els dos jugadors no poden ser la mateixa persona.');
     for (const j of [j1, j2]) {
-      if (j.id && inscripcioDe(t.id, j.id)) throw new Error(`${j.nom} ja està inscrit en aquest torneig.`);
+      if (!j.id) continue;
+      const motiu = potInscriure(t.id, j.id, cat.id);
+      if (motiu) throw new Error(`${j.nom} ${motiu.charAt(0).toLowerCase()}${motiu.slice(1)}`);
     }
     const lliures = placesCategoria(cat.id);
     const nouEstat = (lliures === null || lliures > 0) ? 'registered' : 'waitlist';
@@ -354,8 +377,11 @@ r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
   if (!t) return;
   const insc = db.prepare('SELECT * FROM registrations WHERE id = ? AND tournament_id = ?').get(req.params.rid, t.id);
   if (!insc) return res.status(404).render('404', { titol: 'No trobat' });
-  db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
-  const promoguda = promouLlistaEspera(t.id, insc.category_id);
+  let promoguda = null;
+  transaccio(() => {
+    db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
+    promoguda = promouLlistaEspera(t.id, insc.category_id);
+  });
   if (promoguda) {
     const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(promoguda.category_id);
     const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');
@@ -371,13 +397,13 @@ r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
 r.get('/club/torneig/:id/inscrits.csv', nomesClub, (req, res) => {
   const t = agafaTorneigClub(req, res);
   if (!t) return;
-  const files = ['categoria;estat;parella;jugador1;email1;jugador2;email2;pagat'];
+  const files = ['categoria;estat;parella;jugador1;email1;telefon1;jugador2;email2;telefon2;pagat'];
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   for (const c of inscritsDe(t.id)) {
     for (const estat of ['registered', 'waitlist', 'pending']) {
       for (const insc of c[estat]) {
         files.push([q(c.etiqueta), q(estat), q(`${insc.nom1} / ${insc.nom2}`),
-          q(insc.nom1), q(insc.email1), q(insc.nom2), q(insc.email2),
+          q(insc.nom1), q(insc.email1), q(insc.tel1), q(insc.nom2), q(insc.email2), q(insc.tel2),
           q(insc.paid ? 'sí' : 'no')].join(';'));
       }
     }
@@ -428,7 +454,8 @@ r.post('/reclama/:token', requireLogin, requireVerified, (req, res) => {
   const club = db.prepare('SELECT * FROM clubs WHERE claim_token = ?').get(req.params.token);
   if (!club) return res.status(404).render('404', { titol: 'Enllaç no vàlid' });
   db.prepare('INSERT OR IGNORE INTO club_users (user_id, club_id) VALUES (?, ?)').run(req.session.user.id, club.id);
-  db.prepare('UPDATE clubs SET claimed = 1 WHERE id = ?').run(club.id);
+  // L'enllaç és d'un sol ús: s'invalida en reclamar el club
+  db.prepare('UPDATE clubs SET claimed = 1, claim_token = NULL WHERE id = ?').run(club.id);
   res.redirect('/club/panel?reclamat=1');
 });
 

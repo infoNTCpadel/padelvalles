@@ -6,8 +6,11 @@
   <div class="camp"><label>Nom i cognoms</label><input name="nom" required maxlength="80"></div>
   <div class="camp"><label>Email</label><input type="email" name="email" required></div>
   <div class="camp"><label>Contrasenya (mínim 6 caràcters)</label><input type="password" name="contrasenya" required minlength="6"></div>
+  <div class="camp"><label>Mòbil (opcional)</label><input name="telefon" type="tel" maxlength="20" placeholder="600 123 456">
+    <p class="meta">Només el veurà el club organitzador dels tornejos on t'inscriguis.</p></div>
   <div class="camp"><label>El teu nivell</label>
-    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option><%= n %></option><% } %></select>
+    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option value="<%= n.id %>" title="<%= n.descripcio %>"><%= n.nom %> (<%= n.rang %>)</option><% } %></select>
+    <p class="meta">Passa el cursor per cada nivell per veure la descripció.</p>
   </div>
   <button class="boto" type="submit">Crea el compte</button>
 </form>

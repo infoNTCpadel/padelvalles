@@ -1,58 +1,59 @@
 <h2>Inscripció</h2>
-<p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès, <strong>per parelles</strong>.</p>
+<p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès, <strong>per parelles</strong>. Pots jugar fins a 2 categories.</p>
 <% if (t.registration_deadline) { %><p class="meta">📅 Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
 
-<% if (laMeva) { %>
-  <% const company = laMeva.socJo1 ? laMeva.jug2 : laMeva.jug1; %>
-  <% if (laMeva.status === 'pending' && laMeva.socJo1) { %>
+<% for (const m of lesMeves) { %>
+  <% const company = m.socJo1 ? m.jug2 : m.jug1; %>
+  <% if (m.status === 'pending' && m.socJo1) { %>
     <div class="avis">
       Has convidat <strong><%= company.name %></strong> a fer parella
-      (<%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>).
+      (<%= MODALITATS[m.modality] %><%= m.level ? ' · ' + m.level : '' %>).
       La plaça es confirmarà quan accepti la invitació.
-      <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/cancella" method="post" style="margin-top:.5rem">
+      <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= m.id %>/cancella" method="post" style="margin-top:.5rem">
         <button class="boto secundari menut">Cancel·la la invitació</button>
       </form>
     </div>
-  <% } else if (laMeva.status === 'pending') { %>
+  <% } else if (m.status === 'pending') { %>
     <div class="avis">
-      <strong><%= laMeva.jug1.name %></strong> et convida a fer parella
-      (<%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>).
+      <strong><%= m.jug1.name %></strong> et convida a fer parella
+      (<%= MODALITATS[m.modality] %><%= m.level ? ' · ' + m.level : '' %>).
       <div class="fila" style="margin-top:.5rem">
-        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/accepta" method="post">
+        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= m.id %>/accepta" method="post">
           <button class="boto menut">Accepta</button>
         </form>
-        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/rebutja" method="post">
+        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= m.id %>/rebutja" method="post">
           <button class="boto secundari menut">Rebutja</button>
         </form>
       </div>
     </div>
-  <% } else if (laMeva.status === 'registered') { %>
+  <% } else if (m.status === 'registered') { %>
     <div class="exit">
-      ✅ La vostra parella (<strong><%= laMeva.jug1.name %></strong> i <strong><%= laMeva.jug2.name %></strong>)
-      està inscrita a <%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>.
-      <% if (!laMeva.paid) { %><br><span class="meta">Pagament pendent: es fa directament al club.</span><% } %>
+      ✅ La vostra parella (<strong><%= m.jug1.name %></strong> i <strong><%= m.jug2.name %></strong>)
+      està inscrita a <%= MODALITATS[m.modality] %><%= m.level ? ' · ' + m.level : '' %>.
+      <% if (!m.paid) { %><br><span class="meta">Pagament pendent: es fa directament al club.</span><% } %>
     </div>
-    <% if (pucDesapuntar) { %>
-      <form action="/torneig/<%= t.id %>/baixa/<%= laMeva.id %>" method="post" style="margin-top:.5rem"
+    <% if (m.pucDesapuntar) { %>
+      <form action="/torneig/<%= t.id %>/baixa/<%= m.id %>" method="post" style="margin-top:.5rem"
         onsubmit="return confirm('Segur que vols donar de baixa la parella?')">
         <button class="boto secundari menut">Dona'ns de baixa</button>
       </form>
     <% } else { %>
       <p class="meta">El termini per donar-se de baixa ha passat. Per qualsevol canvi, contacta directament amb el club.</p>
     <% } %>
-  <% } else if (laMeva.status === 'waitlist') { %>
+  <% } else if (m.status === 'waitlist') { %>
     <div class="avis">
-      ⏳ Esteu en <strong>llista d'espera</strong> (posició <%= laMeva.posicio %>)
-      a <%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>.
+      ⏳ Esteu en <strong>llista d'espera</strong> (posició <%= m.posicio %>)
+      a <%= MODALITATS[m.modality] %><%= m.level ? ' · ' + m.level : '' %>.
       T'avisarem si s'allibera alguna plaça.
     </div>
-    <% if (pucDesapuntar) { %>
-      <form action="/torneig/<%= t.id %>/baixa/<%= laMeva.id %>" method="post" style="margin-top:.5rem">
+    <% if (m.pucDesapuntar) { %>
+      <form action="/torneig/<%= t.id %>/baixa/<%= m.id %>" method="post" style="margin-top:.5rem">
         <button class="boto secundari menut">Surt de la llista d'espera</button>
       </form>
     <% } %>
   <% } %>
-<% } else if (oberta) { %>
+<% } %>
+<% if (oberta && lesMeves.length < 2) { %>
   <form class="formulari" action="/torneig/<%= t.id %>/inscriu" method="post">
     <div class="camp"><label>Categoria</label>
       <select name="categoria" required>
@@ -70,29 +71,28 @@
     <button class="boto" type="submit">Envia la invitació</button>
   </form>
 <%- include('cerca-usuari-script') %>
-<% } else { %>
+<% } else if (!lesMeves.length) { %>
   <p class="meta">Les inscripcions estan tancades.</p>
 <% } %>
 
 <h3 style="margin-top:1.5rem">Busques parella?</h3>
 <% if (elMeuAnunci) { %>
   <div class="avis">El teu anunci està publicat:
-    <strong><%= MODALITATS[elMeuAnunci.modality] %><%= elMeuAnunci.level ? ' · ' + elMeuAnunci.level : '' %></strong><%= elMeuAnunci.note ? ' — ' + elMeuAnunci.note : '' %>
+    <strong><%= elMeuAnunci.etiqueta %></strong><%= elMeuAnunci.note ? ' — ' + elMeuAnunci.note : '' %>
     <form class="enlinia" action="/torneig/<%= t.id %>/busco-parella/treu" method="post" style="margin-top:.5rem">
       <button class="boto secundari menut">Treu l'anunci</button>
     </form>
   </div>
-<% } else if (oberta && !laMeva) { %>
+<% } else if (oberta && lesMeves.length < 2) { %>
   <details>
     <summary>Publica que busques parella</summary>
     <form class="formulari" action="/torneig/<%= t.id %>/busco-parella" method="post">
-      <div class="fila">
-        <div class="camp"><label>Modalitat</label>
-          <select name="modalitat" required>
-            <% for (const [k, v] of Object.entries(MODALITATS)) { %><option value="<%= k %>"><%= v %></option><% } %>
-          </select>
-        </div>
-        <div class="camp"><label>Nivell (opcional)</label><input name="nivell" maxlength="60" placeholder="P. ex.: 3a categoria"></div>
+      <div class="camp"><label>Categoria</label>
+        <select name="categoria" required>
+          <% for (const c of t.categories) { %>
+            <option value="<%= c.id %>"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></option>
+          <% } %>
+        </select>
       </div>
       <div class="camp"><label>Nota (opcional)</label><input name="nota" maxlength="140" placeholder="P. ex.: disponible tardes entre setmana"></div>
       <button class="boto menut" type="submit">Publica l'anunci</button>
@@ -104,8 +104,8 @@
     <% for (const c of cercadors) { %>
       <li>
         <strong><%= c.nom %></strong> busca parella a
-        <%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %><%= c.note ? ' — ' + c.note : '' %>
-        <% if (oberta && !laMeva) { %>
+        <%= c.etiqueta %><%= c.note ? ' — ' + c.note : '' %>
+        <% if (oberta && lesMeves.length < 2) { %>
           <form class="enlinia" action="/torneig/<%= t.id %>/busco-parella/<%= c.id %>/proposa" method="post">
             <button class="boto menut">Proposa fer parella</button>
           </form>
