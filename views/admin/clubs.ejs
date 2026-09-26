@@ -1,9 +1,56 @@
 <h1>Clubs</h1>
 <p><a href="/admin">← Administració</a></p>
+
+<div class="crm-resum">
+  <div class="crm-dada"><strong><%= total %></strong><span>clubs totals</span></div>
+  <div class="crm-dada alerta"><strong><%= nPendents %></strong><span>pendents de verificació</span></div>
+</div>
+
+<% if (reclamat) { const c = clubs.find(x => String(x.id) === String(reclamat)); %>
+  <% if (c && c.claim_token) { %>
+    <div class="avis">
+      <strong>Enllaç de reclamació per a «<%= c.name %>»:</strong><br>
+      <input id="claimLink" readonly value="<%= appUrl %>/reclama/<%= c.claim_token %>" style="width:100%;margin:.5rem 0" onclick="this.select()">
+      <button class="boto petit" onclick="navigator.clipboard.writeText(document.getElementById('claimLink').value);this.textContent='Copiat!'">Copia l'enllaç</button>
+      <p class="meta">Envia'l al contacte del club (WhatsApp, email...). Qui obri l'enllaç amb un compte verificat quedarà com a gestor del club.</p>
+    </div>
+  <% } %>
+<% } %>
+
+<div class="crm-filtres">
+  <div class="crm-pestanyes">
+    <a href="/admin/clubs?estat=tots<%= q ? '&q=' + encodeURIComponent(q) : '' %>" class="<%= estat === 'tots' ? 'actiu' : '' %>">Tots (<%= total %>)</a>
+    <a href="/admin/clubs?estat=pendents<%= q ? '&q=' + encodeURIComponent(q) : '' %>" class="<%= estat === 'pendents' ? 'actiu' : '' %>">Pendents (<%= nPendents %>)</a>
+    <a href="/admin/clubs?estat=verificats<%= q ? '&q=' + encodeURIComponent(q) : '' %>" class="<%= estat === 'verificats' ? 'actiu' : '' %>">Verificats (<%= total - nPendents %>)</a>
+  </div>
+  <form class="crm-cerca" action="/admin/clubs" method="get">
+    <input type="hidden" name="estat" value="<%= estat %>">
+    <input type="search" name="q" placeholder="Cerca per nom, municipi o email..." value="<%= q %>">
+    <button class="boto petit" type="submit">Cerca</button>
+  </form>
+</div>
+
 <table class="llista">
-  <tr><th>Nom</th><th>Municipi</th><th>Comarca</th><th>Verificat</th></tr>
+  <tr><th>Club</th><th>Contacte</th><th>Gestor</th><th>Tornejos</th><th>Estat</th><th>Accions</th></tr>
   <% for (const c of clubs) { %>
-    <tr><td><%= c.name %></td><td><%= c.town %></td><td><%= c.comarca %></td>
-    <td><%= c.verified ? 'Sí' : 'Pendent' %></td></tr>
+    <tr>
+      <td><strong><%= c.name %></strong><br><span class="meta"><%= c.town %> · <%= c.comarca %></span></td>
+      <td><span class="meta"><%= c.email || '—' %><br><%= c.phone || '' %></span></td>
+      <td><span class="meta"><%= c.gestors || '—' %></span></td>
+      <td style="text-align:center"><%= c.n_tornejos %></td>
+      <td><%- c.verified ? '<span class="etiqueta ok">Verificat</span>' : '<span class="etiqueta pendent">Pendent</span>' %></td>
+      <td class="accions">
+        <a href="/club/<%= c.id %>" target="_blank">Veure</a>
+        <form action="/admin/clubs/<%= c.id %>/enllac" method="post" style="display:inline">
+          <button class="boto petit secundari" type="submit" title="Genera un enllaç perquè el club reclami la gestió">Enllaç reclamació</button>
+        </form>
+        <% if (!c.verified) { %>
+          <form action="/admin/clubs/<%= c.id %>/aprova" method="post" style="display:inline">
+            <button class="boto petit" type="submit">Aprova</button>
+          </form>
+        <% } %>
+      </td>
+    </tr>
   <% } %>
 </table>
+<% if (!clubs.length) { %><p>No hi ha clubs amb aquests filtres.</p><% } %>

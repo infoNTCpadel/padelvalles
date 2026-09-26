@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
 
@@ -95,8 +96,32 @@ r.get('/tornejos', (req, res) => {
 });
 
 r.get('/clubs', (req, res) => {
-  const clubs = db.prepare('SELECT * FROM clubs ORDER BY verified, name').all();
-  res.render('admin/clubs', { titol: 'Clubs', clubs });
+  const estat = ['pendents', 'verificats', 'tots'].includes(req.query.estat) ? req.query.estat : 'tots';
+  const q = String(req.query.q || '').trim();
+  const conds = [], params = [];
+  if (estat === 'pendents') conds.push('c.verified = 0');
+  if (estat === 'verificats') conds.push('c.verified = 1');
+  if (q) { conds.push('(c.name LIKE ? OR c.town LIKE ? OR c.email LIKE ?)'); params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+  const clubs = db.prepare(`
+    SELECT c.*,
+      (SELECT COUNT(*) FROM tournaments t WHERE t.club_id = c.id) AS n_tornejos,
+      (SELECT GROUP_CONCAT(u.name || ' <' || u.email || '>', ', ')
+         FROM club_users cu JOIN users u ON u.id = cu.user_id WHERE cu.club_id = c.id) AS gestors
+    FROM clubs c ${where} ORDER BY c.verified, c.name`).all(...params);
+  const total = db.prepare('SELECT COUNT(*) n FROM clubs').get().n;
+  const nPendents = db.prepare('SELECT COUNT(*) n FROM clubs WHERE verified = 0').get().n;
+  res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents,
+    reclamat: req.query.reclamat || null,
+    appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
+});
+
+// Generar enllaç de reclamació per a un club (per enviar al contacte del club)
+r.post('/clubs/:id/enllac', (req, res) => {
+  const token = crypto.randomBytes(20).toString('hex');
+  db.prepare('UPDATE clubs SET claim_token = ? WHERE id = ?').run(token, req.params.id);
+  log(req.session.user.id, 'club_enllac_reclamacio', 'club', req.params.id);
+  res.redirect('/admin/clubs?reclamat=' + req.params.id);
 });
 
 r.get('/usuaris', (req, res) => {

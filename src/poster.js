@@ -50,6 +50,10 @@ export function cartellSVG(torneig, club) {
   const logoClubPath = club?.logo_path ? path.join(process.cwd(), 'data', club.logo_path) : null;
   const logoClub = logoClubPath && fs.existsSync(logoClubPath) ? imatgeB64(logoClubPath, 830, 70, 170) : '';
 
+  // Crida a l'acció segons on es fan les inscripcions (fase 1: web del club)
+  const modePropi = torneig.registration_mode === 'padelvalles';
+  const ctaText = modePropi ? "INSCRIU-T'HI A PADELVALLÈS" : 'INSCRIPCIONS AL WEB DEL CLUB';
+
   const detalls = [
     ['DATES', dataText],
     ['CLUB', `${club?.name || ''}${club?.town ? ' · ' + club.town : ''}`],
@@ -82,7 +86,7 @@ export function cartellSVG(torneig, club) {
   ${detallsSVG}
 
   <rect x="90" y="1140" width="900" height="104" rx="16" fill="${c.accent}"/>
-  <text x="540" y="1206" text-anchor="middle" font-family="Verdana, sans-serif" font-size="40" font-weight="bold" fill="#ffffff">INSCRIU-T'HI A PADELVALLÈS</text>
+  <text x="540" y="1206" text-anchor="middle" font-family="Verdana, sans-serif" font-size="40" font-weight="bold" fill="#ffffff">${ctaText}</text>
 
   <text x="90" y="1300" font-family="Verdana, sans-serif" font-size="28" font-weight="bold" fill="${c.bg}" letter-spacing="2">padelvalles.com</text>
 </svg>`;

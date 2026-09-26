@@ -91,11 +91,12 @@ r.get('/club/torneig/nou', nomesClub, (req, res) => {
 
 function desaTorneig(req, id) {
   const esAdmin = req.session.user.role === 'admin';
-  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '' } = req.body;
+  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', mode_inscripcio = 'externa' } = req.body;
   const clubId = Number(club_id);
   if (!potGestionar(req.session.user.id, clubId, esAdmin)) throw new Error('No pots gestionar aquest club.');
   const modalitats = [].concat(req.body.modalitat || []).filter(m => MODALITATS[m]);
   const nivells = [].concat(req.body.nivell || []);
+  const registration_mode = mode_inscripcio === 'padelvalles' ? 'padelvalles' : 'externa';
 
   const dades = {
     club_id: clubId,
@@ -105,6 +106,7 @@ function desaTorneig(req, id) {
     price_text: String(preu).trim().slice(0, 80),
     registration_info: String(via).trim().slice(0, 300),
     registration_url: String(url).trim().slice(0, 300),
+    registration_mode,
     description: String(descripcio).trim().slice(0, 2000)
   };
   if (!dades.name || !dades.starts_at) throw new Error('Falten el nom o la data del torneig.');
@@ -117,16 +119,16 @@ function desaTorneig(req, id) {
     // el club torna a moderació.
     const nouEstat = esAdmin ? actual.status : 'pending';
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
-      registration_info=?, registration_url=?, description=?, status=?, reject_reason='' WHERE id=?`)
+      registration_info=?, registration_url=?, registration_mode=?, description=?, status=?, reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.description, nouEstat, id);
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.description, nouEstat, id);
     db.prepare('DELETE FROM tournament_categories WHERE tournament_id = ?').run(id);
   } else {
     const info = db.prepare(`INSERT INTO tournaments
-      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
+      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, description, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.description, req.session.user.id);
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.description, req.session.user.id);
     tid = info.lastInsertRowid;
   }
   const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level) VALUES (?, ?, ?)');
@@ -185,6 +187,25 @@ r.post('/club/perfil/:id', nomesClub, pujada.single('logo'), (req, res) => {
       email.trim().slice(0, 120), descripcio.trim().slice(0, 1000),
       pistes ? Number(pistes) : null, logoPath, club.id);
   res.redirect(`/club/perfil/${club.id}?ok=1`);
+});
+
+// Reclamació d'un club amb enllaç d'invitació (l'admin l'envia al contacte del club)
+r.get('/reclama/:token', requireLogin, requireVerified, (req, res) => {
+  const club = db.prepare('SELECT * FROM clubs WHERE claim_token = ?').get(req.params.token);
+  if (!club) return res.status(404).render('404', { titol: 'Enllaç no vàlid' });
+  const jaGestor = db.prepare('SELECT 1 FROM club_users WHERE user_id = ? AND club_id = ?')
+    .get(req.session.user.id, club.id);
+  const gestors = db.prepare(`SELECT u.name FROM club_users cu JOIN users u ON u.id = cu.user_id WHERE cu.club_id = ?`)
+    .all(club.id).map(g => g.name);
+  res.render('reclama', { titol: 'Reclama el teu club', club, jaGestor: !!jaGestor, gestors });
+});
+
+r.post('/reclama/:token', requireLogin, requireVerified, (req, res) => {
+  const club = db.prepare('SELECT * FROM clubs WHERE claim_token = ?').get(req.params.token);
+  if (!club) return res.status(404).render('404', { titol: 'Enllaç no vàlid' });
+  db.prepare('INSERT OR IGNORE INTO club_users (user_id, club_id) VALUES (?, ?)').run(req.session.user.id, club.id);
+  db.prepare('UPDATE clubs SET claimed = 1 WHERE id = ?').run(club.id);
+  res.redirect('/club/panel?reclamat=1');
 });
 
 export default r;

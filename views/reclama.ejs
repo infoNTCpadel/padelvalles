@@ -1,0 +1,18 @@
+<h1>Reclama el teu club</h1>
+
+<div class="dades">
+  <p><strong><%= club.name %></strong> · <%= club.town %></p>
+  <% if (gestors.length) { %>
+    <p class="meta">Gestors actuals: <%= gestors.join(', ') %></p>
+  <% } %>
+</div>
+
+<% if (jaGestor) { %>
+  <p>Ja ets gestor d'aquest club.</p>
+  <p><a class="boto" href="/club/panel">Ves al panell del club</a></p>
+<% } else { %>
+  <p>En reclamar-lo, quedaràs com a gestor del club i podràs publicar-ne els tornejos a PadelVallès.</p>
+  <form action="/reclama/<%= club.claim_token %>" method="post">
+    <button class="boto" type="submit">Sí, sóc del club i el vull gestionar</button>
+  </form>
+<% } %>

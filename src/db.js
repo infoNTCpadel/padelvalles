@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS clubs (
   courts INTEGER,
   verified INTEGER NOT NULL DEFAULT 0,
   claimed INTEGER NOT NULL DEFAULT 0,
+  claim_token TEXT DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   price_text TEXT DEFAULT '',
   registration_info TEXT DEFAULT '',
   registration_url TEXT DEFAULT '',
+  registration_mode TEXT NOT NULL DEFAULT 'externa',
   description TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'draft',
   reject_reason TEXT DEFAULT '',
@@ -112,5 +114,14 @@ CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status, starts_
 CREATE INDEX IF NOT EXISTS idx_tournaments_club ON tournaments(club_id);
 CREATE INDEX IF NOT EXISTS idx_clubs_comarca ON clubs(comarca);
 `);
+
+// Migracions idempotents per a BDs ja creades
+for (const [taula, columna, def] of [
+  ['tournaments', 'registration_mode', `TEXT NOT NULL DEFAULT 'externa'`],
+  ['clubs', 'claim_token', `TEXT DEFAULT ''`],
+]) {
+  const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
+  if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
+}
 
 export default db;

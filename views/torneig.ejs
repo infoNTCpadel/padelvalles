@@ -20,11 +20,16 @@
 
     <% if (user) { %>
       <h2>Com m'hi inscriva?</h2>
-      <% if (t.registration_url) { %>
-        <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>
+      <% if ((t.registration_mode || 'externa') === 'padelvalles') { %>
+        <p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès.</p>
+        <p class="meta">La inscripció en línia estarà disponible properament. De moment, contacta amb el club.</p>
+      <% } else { %>
+        <% if (t.registration_url) { %>
+          <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>
+        <% } %>
+        <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
+        <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
       <% } %>
-      <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
-      <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
 
       <div class="fila" style="margin-top:1rem">
         <% if (interessat) { %>

@@ -29,12 +29,11 @@
 <div class="graella">
   <% for (const t of tornejos) { %>
     <article class="targeta">
-      <a href="/torneig/<%= t.id %>"><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell: <%= t.name %>" loading="lazy"></a>
+      <a class="targeta-cap" href="/torneig/<%= t.id %>"><img src="/logo.png" alt="PadelVallès"><span>PADELVALLÈS</span></a>
       <div class="cos">
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
         <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
         <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</div>
-        <% if (t.price_text) { %><div class="meta">🎟️ <%= t.price_text %></div><% } %>
       </div>
     </article>
   <% } %>
