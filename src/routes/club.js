@@ -113,10 +113,13 @@ function desaTorneig(req, id) {
   if (id) {
     const actual = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
     if (!actual || !potGestionar(req.session.user.id, actual.club_id, esAdmin)) throw new Error('Torneig no trobat.');
+    // L'admin conserva l'estat en editar (p. ex. només canvia l'enllaç d'inscripció);
+    // el club torna a moderació.
+    const nouEstat = esAdmin ? actual.status : 'pending';
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
-      registration_info=?, registration_url=?, description=?, status='pending', reject_reason='' WHERE id=?`)
+      registration_info=?, registration_url=?, description=?, status=?, reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.description, id);
+        dades.registration_info, dades.registration_url, dades.description, nouEstat, id);
     db.prepare('DELETE FROM tournament_categories WHERE tournament_id = ?').run(id);
   } else {
     const info = db.prepare(`INSERT INTO tournaments

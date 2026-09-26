@@ -13,17 +13,17 @@ function sessio(user) {
 // Registre de jugador
 r.get('/registre', (req, res) => {
   if (req.session.user) return res.redirect('/');
-  res.render('registre', { titol: "Registre't", error: null, NIVELLS });
+  res.render('registre', { titol: "Registre't", error: null, NIVELLS, next: req.query.next || '' });
 });
 
 r.post('/registre', (req, res) => {
-  const { nom = '', email = '', contrasenya = '', nivell = '' } = req.body;
+  const { nom = '', email = '', contrasenya = '', nivell = '', next = '' } = req.body;
   const em = email.trim().toLowerCase();
   if (!nom.trim() || !em || contrasenya.length < 6) {
-    return res.render('registre', { titol: "Registre't", error: 'Omple tots els camps (la contrasenya, mínim 6 caràcters).', NIVELLS });
+    return res.render('registre', { titol: "Registre't", error: 'Omple tots els camps (la contrasenya, mínim 6 caràcters).', NIVELLS, next });
   }
   if (db.prepare('SELECT id FROM users WHERE email = ?').get(em)) {
-    return res.render('registre', { titol: "Registre't", error: 'Aquest email ja està registrat. Entra amb la teva contrasenya.', NIVELLS });
+    return res.render('registre', { titol: "Registre't", error: 'Aquest email ja està registrat. Entra amb la teva contrasenya.', NIVELLS, next });
   }
   const hash = bcrypt.hashSync(contrasenya, 10);
   const info = db.prepare('INSERT INTO users (email, password_hash, name, level) VALUES (?, ?, ?, ?)')
@@ -33,7 +33,8 @@ r.post('/registre', (req, res) => {
   console.log(`[verificació] ${em}: http://localhost:${process.env.PORT || 3000}/verifica/${token}`);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.user = sessio(user);
-  res.redirect('/elmeucompte?benvingut=1');
+  const desti = next.startsWith('/') ? next : '/elmeucompte?benvingut=1';
+  res.redirect(desti);
 });
 
 // Entrada

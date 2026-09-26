@@ -10,11 +10,16 @@
         <% if (t.status === 'pending') { %>
           <form class="enlinia" action="/admin/tornejos/<%= t.id %>/aprova" method="post"><button class="boto menut">Aprova</button></form>
         <% } %>
+        <% if (t.status === 'rejected') { %>
+          <form class="enlinia" action="/admin/tornejos/<%= t.id %>/publica" method="post"><button class="boto menut">Torna a publicar</button></form>
+        <% } %>
         <% if (t.status === 'published') { %>
           <form class="enlinia" action="/admin/tornejos/<%= t.id %>/despublica" method="post" onsubmit="return confirm('Despublicar aquest torneig?')">
             <button class="boto perill menut">Despublica</button>
           </form>
         <% } %>
+        <a class="boto menut secundari" href="/club/torneig/<%= t.id %>/edita">Edita</a>
+        <a class="boto menut secundari" href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a>
       </td>
     </tr>
   <% } %>

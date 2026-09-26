@@ -27,54 +27,64 @@ function fmtRang(inici, fi) {
   return a === b ? a : `Del ${a} al ${b}`;
 }
 
+// Logo oficial de PadelVallès incrustat (es carrega un cop)
+let marcaB64 = '';
+try {
+  marcaB64 = fs.readFileSync(path.join(process.cwd(), 'public', 'logo-400.png')).toString('base64');
+} catch { /* sense logo de marca */ }
+
+function imatgeB64(rutaAbsoluta, x, y, mida) {
+  try {
+    const buf = fs.readFileSync(rutaAbsoluta);
+    const ext = path.extname(rutaAbsoluta).toLowerCase();
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    return `<image href="data:${mime};base64,${buf.toString('base64')}" x="${x}" y="${y}" width="${mida}" height="${mida}" preserveAspectRatio="xMidYMid meet"/>`;
+  } catch { return ''; }
+}
+
 export function cartellSVG(torneig, club) {
   const c = BRAND.colors;
   const modalitats = [...new Set((torneig.categories || []).map(k => MODALITATS[k.modality] || k.modality))];
   const dataText = fmtRang(torneig.starts_at, torneig.ends_at);
 
-  // Logo del club incrustat (si el club n'ha pujat un)
-  let logoImg = '';
-  const logoPath = club?.logo_path ? path.join(process.cwd(), 'data', club.logo_path) : null;
-  if (logoPath && fs.existsSync(logoPath)) {
-    try {
-      const buf = fs.readFileSync(logoPath);
-      const ext = path.extname(logoPath).toLowerCase();
-      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-      const b64 = buf.toString('base64');
-      logoImg = `<image href="data:${mime};base64,${b64}" x="840" y="80" width="160" height="160" preserveAspectRatio="xMidYMid meet"/>`;
-    } catch { /* sense logo */ }
-  }
+  const logoClubPath = club?.logo_path ? path.join(process.cwd(), 'data', club.logo_path) : null;
+  const logoClub = logoClubPath && fs.existsSync(logoClubPath) ? imatgeB64(logoClubPath, 830, 70, 170) : '';
+
+  const detalls = [
+    ['DATES', dataText],
+    ['CLUB', `${club?.name || ''}${club?.town ? ' · ' + club.town : ''}`],
+    modalitats.length ? ['MODALITATS', modalitats.join(' · ')] : null,
+    torneig.price_text ? ['PREU', torneig.price_text] : null,
+  ].filter(Boolean).map(([e, v]) => [e, v.length > 52 ? v.slice(0, 50) + '…' : v]);
+
+  const detallsSVG = detalls.map(([etiqueta, valor], i) => {
+    const y = 800 + i * 92;
+    return `<text x="90" y="${y}" font-family="Verdana, sans-serif" font-size="26" font-weight="bold" fill="${c.accent}" letter-spacing="4">${esc(etiqueta)}</text>
+  <text x="90" y="${y + 42}" font-family="Verdana, sans-serif" font-size="38" fill="${c.ink}">${esc(valor)}</text>`;
+  }).join('\n  ');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs>
-    <linearGradient id="fons" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${c.bg2}"/>
-      <stop offset="1" stop-color="${c.bg}"/>
-    </linearGradient>
-  </defs>
-  <rect width="${W}" height="${H}" fill="url(#fons)"/>
-  <circle cx="960" cy="200" r="420" fill="${c.accent}" opacity="0.07"/>
-  <circle cx="120" cy="1150" r="360" fill="${c.accent}" opacity="0.06"/>
+  <rect width="${W}" height="${H}" fill="${c.paper}"/>
+  <circle cx="980" cy="120" r="380" fill="${c.bg}" opacity="0.05"/>
+  <circle cx="80" cy="1240" r="340" fill="${c.accent}" opacity="0.08"/>
 
-  <text x="80" y="150" font-family="Verdana, sans-serif" font-size="44" font-weight="bold" fill="${c.accent}" letter-spacing="6">PADELVALLÈS</text>
-  <text x="80" y="195" font-family="Verdana, sans-serif" font-size="26" fill="${c.muted}">Torneig oficial del Vallès</text>
-  ${logoImg}
+  ${marcaB64 ? `<image href="data:image/png;base64,${marcaB64}" x="70" y="60" width="180" height="180" preserveAspectRatio="xMidYMid meet"/>` : ''}
+  <text x="270" y="145" font-family="Verdana, sans-serif" font-size="52" font-weight="bold" fill="${c.bg}" letter-spacing="2">PadelVallès</text>
+  <text x="270" y="190" font-family="Verdana, sans-serif" font-size="26" fill="${c.ink}" opacity="0.7">Torneig oficial del Vallès</text>
+  ${logoClub}
 
-  <text x="80" y="420" font-family="Verdana, sans-serif" font-size="84" font-weight="bold" fill="${c.text}">
+  <text x="90" y="470" font-family="Verdana, sans-serif" font-size="80" font-weight="bold" fill="${c.bg}">
     ${wrapTitle(esc(torneig.name))}
   </text>
 
-  <rect x="80" y="700" width="920" height="3" fill="${c.accent}" opacity="0.6"/>
+  <rect x="90" y="700" width="900" height="5" fill="${c.accent}"/>
 
-  <text x="80" y="790" font-family="Verdana, sans-serif" font-size="44" font-weight="bold" fill="${c.accent}">📅 ${esc(dataText)}</text>
-  <text x="80" y="870" font-family="Verdana, sans-serif" font-size="40" fill="${c.text}">📍 ${esc(club?.name || '')} · ${esc(club?.town || '')}</text>
-  ${modalitats.length ? `<text x="80" y="950" font-family="Verdana, sans-serif" font-size="40" fill="${c.text}">🏆 ${esc(modalitats.join(' · '))}</text>` : ''}
-  ${torneig.price_text ? `<text x="80" y="1030" font-family="Verdana, sans-serif" font-size="40" fill="${c.text}">🎟️ ${esc(torneig.price_text)}</text>` : ''}
+  ${detallsSVG}
 
-  <rect x="80" y="1100" width="920" height="110" rx="16" fill="${c.accent}"/>
-  <text x="540" y="1172" text-anchor="middle" font-family="Verdana, sans-serif" font-size="42" font-weight="bold" fill="${c.bg}">INSCRIU-T'HI A PADELVALLÈS</text>
+  <rect x="90" y="1140" width="900" height="104" rx="16" fill="${c.accent}"/>
+  <text x="540" y="1206" text-anchor="middle" font-family="Verdana, sans-serif" font-size="40" font-weight="bold" fill="#ffffff">INSCRIU-T'HI A PADELVALLÈS</text>
 
-  <text x="80" y="1280" font-family="Verdana, sans-serif" font-size="28" fill="${c.muted}">padelvalles.com</text>
+  <text x="90" y="1300" font-family="Verdana, sans-serif" font-size="28" font-weight="bold" fill="${c.bg}" letter-spacing="2">padelvalles.com</text>
 </svg>`;
 }
 
@@ -89,5 +99,5 @@ function wrapTitle(title) {
   }
   if (line.trim()) lines.push(line.trim());
   return lines.slice(0, 3).map((l, i) =>
-    `<tspan x="80" dy="${i === 0 ? 0 : 100}">${l}</tspan>`).join('');
+    `<tspan x="90" dy="${i === 0 ? 0 : 96}">${l}</tspan>`).join('');
 }

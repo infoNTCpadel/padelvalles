@@ -1,20 +1,22 @@
 :root {
-  --bg: #0B3B2A; --bg2: #0E4A34; --accent: #D7F94B;
-  --text: #fff; --muted: #A9CDBD; --ink: #10241B; --paper: #F6F8F6;
-  --card: #fff; --vora: #E2E8E4;
+  --bg: #7A2036; --bg2: #5E1728; --accent: #E8703A;
+  --text: #fff; --muted: #F7EFE3; --ink: #2B2B29; --paper: #F7EFE3;
+  --card: #fff; --vora: #E7DCC8;
 }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--paper); color: var(--ink); }
+body { margin: 0; font-family: "Work Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--paper); color: var(--ink); }
+h1, h2, h3, .marca-logo { font-family: "Poppins", "Work Sans", system-ui, sans-serif; }
 .contenidor { max-width: 1080px; margin: 0 auto; padding: 0 1rem; }
-.cap { background: var(--bg); color: var(--text); padding: .8rem 0; }
+.cap { background: var(--bg); color: var(--text); padding: .6rem 0; }
 .cap-flex { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; }
-.marca { color: var(--text); text-decoration: none; }
-.marca-logo { font-weight: 800; letter-spacing: 3px; color: var(--accent); font-size: 1.2rem; }
+.marca { color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; }
+.marca img { height: 44px; width: 44px; border-radius: 50%; background: var(--paper); }
+.marca-logo { font-weight: 800; letter-spacing: 1px; color: var(--text); font-size: 1.25rem; }
 .nav { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; }
 .nav a { color: var(--text); text-decoration: none; }
 .nav a:hover { color: var(--accent); }
 .enlinia { display: inline; margin: 0; }
-.boto { display: inline-block; background: var(--accent); color: var(--bg); font-weight: 700; border: 0; border-radius: 8px; padding: .6rem 1.1rem; cursor: pointer; text-decoration: none; }
+.boto { display: inline-block; background: var(--accent); color: #fff; font-weight: 700; border: 0; border-radius: 8px; padding: .6rem 1.1rem; cursor: pointer; text-decoration: none; }
 .boto.menut { padding: .35rem .8rem; font-size: .9rem; }
 .boto.secundari { background: var(--bg); color: #fff; }
 .boto.perill { background: #C0392B; color: #fff; }
@@ -30,8 +32,8 @@ body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, san
 .targeta .cos { padding: .9rem; display: flex; flex-direction: column; gap: .35rem; flex: 1; }
 .targeta h3 { margin: 0; font-size: 1.05rem; }
 .targeta h3 a { color: var(--ink); text-decoration: none; }
-.meta { color: #5A6E63; font-size: .9rem; }
-.etiqueta { display: inline-block; background: #EAF3ED; color: var(--bg); border-radius: 20px; padding: .15rem .6rem; font-size: .8rem; margin-right: .3rem; }
+.meta { color: #6B6257; font-size: .9rem; }
+.etiqueta { display: inline-block; background: #FBEFE6; color: var(--bg); border-radius: 20px; padding: .15rem .6rem; font-size: .8rem; margin-right: .3rem; font-weight: 600; }
 h2.seccio { margin: 2rem 0 .5rem; }
 .fitxa { display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; margin: 1.4rem 0; }
 .fitxa img.cartell { width: 100%; border-radius: 12px; border: 1px solid var(--vora); }
@@ -39,11 +41,13 @@ h2.seccio { margin: 2rem 0 .5rem; }
 .dades { background: var(--card); border: 1px solid var(--vora); border-radius: 12px; padding: 1.2rem; }
 .dades dt { font-weight: 700; margin-top: .7rem; }
 .dades dd { margin: .2rem 0 0; }
+.registre-cta { background: var(--card); border: 2px solid var(--accent); border-radius: 12px; padding: 1.4rem; margin: 1.4rem 0; text-align: center; }
+.registre-cta h2 { margin-top: 0; color: var(--bg); }
 .formulari { max-width: 640px; background: var(--card); border: 1px solid var(--vora); border-radius: 12px; padding: 1.4rem; margin: 1.4rem 0; }
 .camp { margin-bottom: .9rem; }
 .camp label { display: block; font-weight: 600; margin-bottom: .3rem; }
 .camp input, .camp select, .camp textarea { width: 100%; padding: .6rem .7rem; border: 1px solid var(--vora); border-radius: 8px; font-size: 1rem; }
-.camp .ajuda { font-size: .85rem; color: #5A6E63; }
+.camp .ajuda { font-size: .85rem; color: #6B6257; }
 .fila { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
 .error { background: #FDECEA; color: #9B2C2C; border: 1px solid #F5C6C2; padding: .7rem 1rem; border-radius: 8px; margin: 1rem 0; }
 .exit { background: #EAF7EE; color: #1E6B34; border: 1px solid #BFE6C9; padding: .7rem 1rem; border-radius: 8px; margin: 1rem 0; }

@@ -72,6 +72,14 @@ r.post('/tornejos/:id/despublica', (req, res) => {
   res.redirect('/admin/tornejos');
 });
 
+// Tornar a publicar un torneig rebutjat o despublicat
+r.post('/tornejos/:id/publica', (req, res) => {
+  db.prepare(`UPDATE tournaments SET status = 'published', published_at = datetime('now'), reject_reason = '' WHERE id = ?`)
+    .run(req.params.id);
+  log(req.session.user.id, 'torneig_republicat', 'tournament', req.params.id);
+  res.redirect('/admin/tornejos');
+});
+
 // Tancar un avís
 r.post('/avisos/:id/tanca', (req, res) => {
   db.prepare(`UPDATE reports SET status = 'closed' WHERE id = ?`).run(req.params.id);

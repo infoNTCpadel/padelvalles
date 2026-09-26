@@ -2,7 +2,7 @@
 <% if (typeof avis !== 'undefined' && avis === 'enviat') { %><div class="exit">Gràcies, hem rebut el teu avís i el revisarem.</div><% } %>
 
 <div class="fitxa">
-  <div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div>
+  <% if (user) { %><div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div><% } %>
   <div>
     <h1><%= t.name %></h1>
     <dl class="dades">
@@ -12,28 +12,35 @@
         <dt>Categories</dt>
         <dd><% for (const c of t.categories) { %><span class="etiqueta"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></span><% } %></dd>
       <% } %>
-      <% if (t.price_text) { %><dt>Preu</dt><dd>🎟️ <%= t.price_text %></dd><% } %>
-      <% if (t.description) { %><dt>Informació</dt><dd><%= t.description %></dd><% } %>
+      <% if (user) { %>
+        <% if (t.price_text) { %><dt>Preu</dt><dd>🎟️ <%= t.price_text %></dd><% } %>
+        <% if (t.description) { %><dt>Informació</dt><dd><%= t.description %></dd><% } %>
+      <% } %>
     </dl>
 
-    <h2>Com m'hi inscriva?</h2>
-    <% if (t.registration_url) { %>
-      <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>
-    <% } %>
-    <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
-    <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
+    <% if (user) { %>
+      <h2>Com m'hi inscriva?</h2>
+      <% if (t.registration_url) { %>
+        <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>
+      <% } %>
+      <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
+      <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
 
-    <div class="fila" style="margin-top:1rem">
-      <% if (user) { %>
+      <div class="fila" style="margin-top:1rem">
         <% if (interessat) { %>
           <form class="enlinia" action="/torneig/<%= t.id %>/no-interessa" method="post"><button class="boto secundari menut">★ Ja no m'interessa</button></form>
         <% } else { %>
           <form class="enlinia" action="/torneig/<%= t.id %>/interessa" method="post"><button class="boto menut">☆ M'interessa</button></form>
         <% } %>
-      <% } else { %>
-        <a href="/entra?next=/torneig/<%= t.id %>">Entra per desar-lo a "M'interessa"</a>
-      <% } %>
-    </div>
+      </div>
+    <% } else { %>
+      <div class="registre-cta">
+        <h2>Vols veure'n tots els detalls?</h2>
+        <p>El cartell oficial, el preu, la informació completa i l'enllaç d'inscripció són només per a usuaris registrats.</p>
+        <p><a class="boto" href="/registre?next=/torneig/<%= t.id %>">Registra't gratis</a>
+        <a class="boto secundari" href="/entra?next=/torneig/<%= t.id %>">Ja tinc compte</a></p>
+      </div>
+    <% } %>
 
     <details style="margin-top:1.5rem">
       <summary>Veus alguna cosa estranya en aquest torneig? Avisa'ns</summary>
