@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import { cartellSVG } from '../poster.js';
 import { COMARQUES, MODALITATS } from '../brand.js';
+import { inscripcioOberta, placesCategoria, inscripcioDe, potDesapuntar } from '../lib/inscripcions.js';
 
 const r = Router();
 
@@ -56,16 +57,60 @@ r.get('/torneig/:id', (req, res) => {
   const t = getTorneig(req.params.id);
   if (!t || t.status !== 'published') return res.status(404).render('404', { titol: 'Torneig no trobat' });
   let interessat = false;
-  if (req.session.user) {
-    interessat = !!db.prepare('SELECT 1 FROM interests WHERE user_id = ? AND tournament_id = ?')
-      .get(req.session.user.id, t.id);
-  }
   const base = process.env.APP_URL || 'https://padelvalles.com';
   const canonical = `${base}/torneig/${t.id}`;
   const metaDescription = `${t.name}: torneig de pàdel al ${t.club_nom} (${t.club_poble}), del ${t.starts_at} al ${t.ends_at}. Registra't gratis a PadelVallès per veure el cartell, el preu i com inscriure-t'hi.`;
   const ogImage = `${base}/torneig/${t.id}/cartell.svg`;
   const shareText = `Mira aquest torneig de pàdel: ${t.name} (${t.starts_at} – ${t.ends_at}) al ${t.club_nom} de ${t.club_poble}`;
+
+  // Dades d'inscripció (fase 2)
+  const modePV = (t.registration_mode || 'externa') === 'padelvalles';
+  const oberta = modePV && inscripcioOberta(t);
+  let laMeva = null, pucDesapuntar = false, elMeuAnunci = null;
+  const places = {};
+  const cercadors = [];
+  if (modePV) {
+    for (const c of t.categories) places[c.id] = placesCategoria(c.id);
+    const rows = db.prepare(`
+      SELECT ps.*, u.name AS nom FROM partner_search ps JOIN users u ON u.id = ps.user_id
+      WHERE ps.tournament_id = ? AND ps.status = 'open' ORDER BY ps.created_at`).all(t.id);
+    for (const ps of rows) {
+      if (req.session.user && ps.user_id === req.session.user.id) elMeuAnunci = ps;
+      else cercadors.push(ps);
+    }
+  }
+  if (req.session.user) {
+    interessat = !!db.prepare('SELECT 1 FROM interests WHERE user_id = ? AND tournament_id = ?')
+      .get(req.session.user.id, t.id);
+    laMeva = inscripcioDe(t.id, req.session.user.id);
+    if (laMeva) {
+      laMeva.jug1 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(laMeva.player1_id);
+      laMeva.jug2 = db.prepare('SELECT id, name FROM users WHERE id = ?').get(laMeva.player2_id);
+      laMeva.socJo1 = laMeva.player1_id === req.session.user.id;
+      pucDesapuntar = ['registered', 'waitlist'].includes(laMeva.status) && potDesapuntar(t);
+      if (laMeva.status === 'waitlist') {
+        laMeva.posicio = db.prepare(`
+          SELECT COUNT(*) n FROM registrations
+          WHERE tournament_id = ? AND category_id = ? AND status = 'waitlist'
+            AND (decided_at < ? OR (decided_at = ? AND id <= ?))`)
+          .get(t.id, laMeva.category_id, laMeva.decided_at, laMeva.decided_at, laMeva.id).n;
+      }
+    }
+  }
+  const MISS = {
+    'invitacio-enviada': 'Invitació enviada. La plaça es confirmarà quan la teva parella accepti la invitació.',
+    'invitacio-acceptada': 'Invitació acceptada. La vostra parella ja està inscrita al torneig!',
+    'en-espera': 'Categoria plena: esteu en llista d\u2019espera. T\u2019avisarem si s\u2019allibera alguna plaça.',
+    'invitacio-rebutjada': 'Has rebutjat la invitació.',
+    'invitacio-cancelada': 'Invitació cancel·lada.',
+    'baixa-feta': 'Us heu donat de baixa de la inscripció.',
+    'anunci-publicat': 'Anunci publicat. Quan algú et proposi fer parella, rebràs la invitació aquí i per email.',
+    'anunci-tret': 'Anunci retirat.',
+    'proposta-enviada': 'Proposta enviada. Si l\u2019accepta, quedareu inscrits com a parella.',
+  };
   res.render('torneig', { titol: t.name, t, interessat, MODALITATS, avis: req.query.avis,
+    missatge: MISS[req.query.avis] || null, errorMsg: req.query.error || null,
+    modePV, oberta, laMeva, pucDesapuntar, places, cercadors, elMeuAnunci,
     metaDescription, canonical, ogImage, shareText, shareUrl: canonical });
 });
 

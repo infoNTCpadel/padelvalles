@@ -1,0 +1,66 @@
+<h1>Inscrits: <%= t.name %></h1>
+<p><a href="/club/panel">← Panell del club</a> · <a href="/club/torneig/<%= t.id %>/inscrits.csv">⬇ Descarrega CSV</a></p>
+<% if (t.registration_deadline) { %><p class="meta">Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
+<p class="meta">Els jugadors es poden donar de baixa ells mateixos fins a <%= t.unregister_hours ?? 48 %> hores abans de l'inici. El pagament es fa fora de la plataforma: marca aquí qui ha pagat.</p>
+
+<% for (const c of categories) { %>
+  <h2><%= c.etiqueta %><% if (c.max_pairs) { %> <small class="meta">(<%= c.nInscrits %>/<%= c.max_pairs %> places)</small><% } else { %> <small class="meta">(<%= c.nInscrits %> inscrits)</small><% } %></h2>
+
+  <% if (!c.registered.length && !c.waitlist.length && !c.pending.length) { %>
+    <p class="meta">Encara no hi ha inscripcions en aquesta categoria.</p>
+  <% } %>
+
+  <% if (c.registered.length) { %>
+  <table class="llista">
+    <tr><th>Parella</th><th>Emails</th><th>Pagat</th><th></th></tr>
+    <% for (const i of c.registered) { %>
+      <tr>
+        <td><%= i.nom1 %> / <%= i.nom2 %></td>
+        <td class="meta"><%= i.email1 %><br><%= i.email2 %></td>
+        <td>
+          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/pagat" method="post">
+            <button class="boto <%= i.paid ? '' : 'secundari' %> menut"><%= i.paid ? '✓ Pagat' : 'Marca pagat' %></button>
+          </form>
+        </td>
+        <td>
+          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post"
+            onsubmit="return confirm('Vols donar de baixa aquesta parella? Si hi ha llista d\u2019espera, la primera parella pujarà automàticament.')">
+            <button class="boto secundari menut">Treu</button>
+          </form>
+        </td>
+      </tr>
+    <% } %>
+  </table>
+  <% } %>
+
+  <% if (c.waitlist.length) { %>
+    <h3>Llista d'espera</h3>
+    <table class="llista">
+      <tr><th>#</th><th>Parella</th><th></th></tr>
+      <% c.waitlist.forEach((i, idx) => { %>
+        <tr>
+          <td><%= idx + 1 %></td>
+          <td><%= i.nom1 %> / <%= i.nom2 %></td>
+          <td>
+            <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
+              <button class="boto secundari menut">Treu</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </table>
+  <% } %>
+
+  <% if (c.pending.length) { %>
+    <h3>Invitacions pendents</h3>
+    <ul>
+      <% for (const i of c.pending) { %>
+        <li><%= i.nom1 %> ha convidat <%= i.nom2 %> <span class="meta">(esperant resposta)</span>
+          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
+            <button class="boto secundari menut">Cancel·la</button>
+          </form>
+        </li>
+      <% } %>
+    </ul>
+  <% } %>
+<% } %>

@@ -47,10 +47,12 @@ import authRoutes from './routes/auth.js';
 import playerRoutes from './routes/player.js';
 import clubRoutes from './routes/club.js';
 import adminRoutes from './routes/admin.js';
+import inscripcioRoutes from './routes/inscripcions.js';
 
 app.use('/', authRoutes);
 app.use('/', playerRoutes);
 app.use('/', clubRoutes);
+app.use('/', inscripcioRoutes);
 app.use('/admin', adminRoutes);
 // public l'últim: té rutes genèriques com /club/:id que no han de
 // capturar /club/panel, /club/torneig/nou, etc.

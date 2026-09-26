@@ -1,0 +1,115 @@
+<h2>Inscripció</h2>
+<p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès, <strong>per parelles</strong>.</p>
+<% if (t.registration_deadline) { %><p class="meta">📅 Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
+
+<% if (laMeva) { %>
+  <% const company = laMeva.socJo1 ? laMeva.jug2 : laMeva.jug1; %>
+  <% if (laMeva.status === 'pending' && laMeva.socJo1) { %>
+    <div class="avis">
+      Has convidat <strong><%= company.name %></strong> a fer parella
+      (<%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>).
+      La plaça es confirmarà quan accepti la invitació.
+      <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/cancella" method="post" style="margin-top:.5rem">
+        <button class="boto secundari menut">Cancel·la la invitació</button>
+      </form>
+    </div>
+  <% } else if (laMeva.status === 'pending') { %>
+    <div class="avis">
+      <strong><%= laMeva.jug1.name %></strong> et convida a fer parella
+      (<%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>).
+      <div class="fila" style="margin-top:.5rem">
+        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/accepta" method="post">
+          <button class="boto menut">Accepta</button>
+        </form>
+        <form class="enlinia" action="/torneig/<%= t.id %>/invitacio/<%= laMeva.id %>/rebutja" method="post">
+          <button class="boto secundari menut">Rebutja</button>
+        </form>
+      </div>
+    </div>
+  <% } else if (laMeva.status === 'registered') { %>
+    <div class="exit">
+      ✅ La vostra parella (<strong><%= laMeva.jug1.name %></strong> i <strong><%= laMeva.jug2.name %></strong>)
+      està inscrita a <%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>.
+      <% if (!laMeva.paid) { %><br><span class="meta">Pagament pendent: es fa directament al club.</span><% } %>
+    </div>
+    <% if (pucDesapuntar) { %>
+      <form action="/torneig/<%= t.id %>/baixa/<%= laMeva.id %>" method="post" style="margin-top:.5rem"
+        onsubmit="return confirm('Segur que vols donar de baixa la parella?')">
+        <button class="boto secundari menut">Dona'ns de baixa</button>
+      </form>
+    <% } else { %>
+      <p class="meta">El termini per donar-se de baixa ha passat. Per qualsevol canvi, contacta directament amb el club.</p>
+    <% } %>
+  <% } else if (laMeva.status === 'waitlist') { %>
+    <div class="avis">
+      ⏳ Esteu en <strong>llista d'espera</strong> (posició <%= laMeva.posicio %>)
+      a <%= MODALITATS[laMeva.modality] %><%= laMeva.level ? ' · ' + laMeva.level : '' %>.
+      T'avisarem si s'allibera alguna plaça.
+    </div>
+    <% if (pucDesapuntar) { %>
+      <form action="/torneig/<%= t.id %>/baixa/<%= laMeva.id %>" method="post" style="margin-top:.5rem">
+        <button class="boto secundari menut">Surt de la llista d'espera</button>
+      </form>
+    <% } %>
+  <% } %>
+<% } else if (oberta) { %>
+  <form class="formulari" action="/torneig/<%= t.id %>/inscriu" method="post">
+    <div class="camp"><label>Categoria</label>
+      <select name="categoria" required>
+        <% for (const c of t.categories) { %>
+          <option value="<%= c.id %>"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %><% if (places[c.id] !== null) { %> — <%= places[c.id] %> <%= places[c.id] === 1 ? 'plaça lliure' : 'places lliures' %><% } %></option>
+        <% } %>
+      </select>
+    </div>
+    <div class="camp"><label>Email de la teva parella</label>
+      <input name="company_email" type="email" required maxlength="120" placeholder="parella@exemple.cat">
+      <span class="ajuda">Ha d'estar registrada a PadelVallès amb el compte verificat. Li enviarem la invitació i la plaça es confirmarà quan l'accepti.</span>
+    </div>
+    <button class="boto" type="submit">Envia la invitació</button>
+  </form>
+<% } else { %>
+  <p class="meta">Les inscripcions estan tancades.</p>
+<% } %>
+
+<h3 style="margin-top:1.5rem">Busques parella?</h3>
+<% if (elMeuAnunci) { %>
+  <div class="avis">El teu anunci està publicat:
+    <strong><%= MODALITATS[elMeuAnunci.modality] %><%= elMeuAnunci.level ? ' · ' + elMeuAnunci.level : '' %></strong><%= elMeuAnunci.note ? ' — ' + elMeuAnunci.note : '' %>
+    <form class="enlinia" action="/torneig/<%= t.id %>/busco-parella/treu" method="post" style="margin-top:.5rem">
+      <button class="boto secundari menut">Treu l'anunci</button>
+    </form>
+  </div>
+<% } else if (oberta && !laMeva) { %>
+  <details>
+    <summary>Publica que busques parella</summary>
+    <form class="formulari" action="/torneig/<%= t.id %>/busco-parella" method="post">
+      <div class="fila">
+        <div class="camp"><label>Modalitat</label>
+          <select name="modalitat" required>
+            <% for (const [k, v] of Object.entries(MODALITATS)) { %><option value="<%= k %>"><%= v %></option><% } %>
+          </select>
+        </div>
+        <div class="camp"><label>Nivell (opcional)</label><input name="nivell" maxlength="60" placeholder="P. ex.: 3a categoria"></div>
+      </div>
+      <div class="camp"><label>Nota (opcional)</label><input name="nota" maxlength="140" placeholder="P. ex.: disponible tardes entre setmana"></div>
+      <button class="boto menut" type="submit">Publica l'anunci</button>
+    </form>
+  </details>
+<% } %>
+<% if (cercadors.length) { %>
+  <ul>
+    <% for (const c of cercadors) { %>
+      <li>
+        <strong><%= c.nom %></strong> busca parella a
+        <%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %><%= c.note ? ' — ' + c.note : '' %>
+        <% if (oberta && !laMeva) { %>
+          <form class="enlinia" action="/torneig/<%= t.id %>/busco-parella/<%= c.id %>/proposa" method="post">
+            <button class="boto menut">Proposa fer parella</button>
+          </form>
+        <% } %>
+      </li>
+    <% } %>
+  </ul>
+<% } else { %>
+  <p class="meta">De moment ningú busca parella per a aquest torneig.</p>
+<% } %>

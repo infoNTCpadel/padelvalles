@@ -1,5 +1,7 @@
 <p><a href="/tornejos">← Torna als tornejos</a></p>
 <% if (typeof avis !== 'undefined' && avis === 'enviat') { %><div class="exit">Gràcies, hem rebut el teu avís i el revisarem.</div><% } %>
+<% if (typeof missatge !== 'undefined' && missatge) { %><div class="exit"><%= missatge %></div><% } %>
+<% if (typeof errorMsg !== 'undefined' && errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
 
 <div class="fitxa">
   <% if (user) { %><div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div><% } %>
@@ -20,9 +22,8 @@
 
     <% if (user) { %>
       <h2>Com m'hi inscriva?</h2>
-      <% if ((t.registration_mode || 'externa') === 'padelvalles') { %>
-        <p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès.</p>
-        <p class="meta">La inscripció en línia estarà disponible properament. De moment, contacta amb el club.</p>
+      <% if (modePV) { %>
+        <%- include('torneig-inscripcio') %>
       <% } else { %>
         <% if (t.registration_url) { %>
           <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>

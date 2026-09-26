@@ -16,7 +16,7 @@
       <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status %></span>
         <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
       </td>
-      <td><a href="/club/torneig/<%= t.id %>/edita">Edita</a> · <a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %></td>
+      <td><a href="/club/torneig/<%= t.id %>/edita">Edita</a> · <a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %><% if ((t.registration_mode || 'externa') === 'padelvalles') { %> · <a href="/club/torneig/<%= t.id %>/inscrits"><strong>Inscrits</strong></a><% } %></td>
     </tr>
   <% } %>
 </table>

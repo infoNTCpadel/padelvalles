@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { requireLogin } from '../middleware.js';
+import { MODALITATS } from '../brand.js';
 
 const r = Router();
 const NIVELLS = ['Iniciació', 'Intermig', 'Avançat', 'Competició'];
@@ -22,7 +23,40 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
   const elsMeusClubs = user.role === 'club'
     ? db.prepare(`SELECT c.* FROM club_users cu JOIN clubs c ON c.id = cu.club_id WHERE cu.user_id = ?`).all(user.id)
     : [];
-  res.render('compte', { titol: 'El meu compte', user, interessos, clubs, elsMeusClubs, NIVELLS, avisa: req.query.avisa || '', q: req.query });
+  // Fase 2: les meves inscripcions i invitacions
+  const inscripcions = db.prepare(`
+    SELECT r.*, t.name AS torneig_nom, t.starts_at, t.ends_at, c.name AS club_nom,
+      tc.modality, tc.level,
+      CASE WHEN r.player1_id = ? THEN u2.name ELSE u1.name END AS parella_nom
+    FROM registrations r
+    JOIN tournaments t ON t.id = r.tournament_id
+    JOIN clubs c ON c.id = t.club_id
+    JOIN tournament_categories tc ON tc.id = r.category_id
+    JOIN users u1 ON u1.id = r.player1_id JOIN users u2 ON u2.id = r.player2_id
+    WHERE (r.player1_id = ? OR r.player2_id = ?) AND r.status IN ('registered','waitlist')
+    ORDER BY t.starts_at ASC`).all(user.id, user.id, user.id);
+  const invitacionsRebudes = db.prepare(`
+    SELECT r.*, t.name AS torneig_nom, tc.modality, tc.level, u.name AS qui_nom
+    FROM registrations r
+    JOIN tournaments t ON t.id = r.tournament_id
+    JOIN tournament_categories tc ON tc.id = r.category_id
+    JOIN users u ON u.id = r.player1_id
+    WHERE r.player2_id = ? AND r.status = 'pending' ORDER BY r.created_at DESC`).all(user.id);
+  const invitacionsEnviades = db.prepare(`
+    SELECT r.*, t.name AS torneig_nom, tc.modality, tc.level, u.name AS qui_nom
+    FROM registrations r
+    JOIN tournaments t ON t.id = r.tournament_id
+    JOIN tournament_categories tc ON tc.id = r.category_id
+    JOIN users u ON u.id = r.player2_id
+    WHERE r.player1_id = ? AND r.status = 'pending' ORDER BY r.created_at DESC`).all(user.id);
+  const anuncis = db.prepare(`
+    SELECT ps.*, t.name AS torneig_nom FROM partner_search ps
+    JOIN tournaments t ON t.id = ps.tournament_id
+    WHERE ps.user_id = ? AND ps.status = 'open' AND t.status = 'published'
+    ORDER BY t.starts_at ASC`).all(user.id);
+  res.render('compte', { titol: 'El meu compte', user, interessos, clubs, elsMeusClubs, NIVELLS,
+    inscripcions, invitacionsRebudes, invitacionsEnviades, anuncis, MODALITATS,
+    avisa: req.query.avisa || '', q: req.query });
 });
 
 r.post('/elmeucompte', requireLogin, (req, res) => {

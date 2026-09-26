@@ -13,22 +13,66 @@
     <div class="camp"><label>Data de fi</label><input type="date" name="fi" value="<%= t ? (t.ends_at || t.fi || '') : '' %>"></div>
   </div>
   <div class="camp"><label>Categories</label>
-    <div class="fila">
-      <% for (const [k, v] of Object.entries(MODALITATS)) { %>
-        <% const cat = t && t.categories ? t.categories.find(c => c.modality === k) : null; %>
-        <label><input type="checkbox" name="modalitat" value="<%= k %>" <%= cat ? 'checked' : (!t ? 'checked' : '') %>> <%= v %></label>
-        <input name="nivell" placeholder="Nivell (opcional)" value="<%= cat ? cat.level : '' %>" style="width:10rem">
+    <% if (teInscrits > 0) { %>
+      <p class="ajuda">Aquest torneig ja té <%= teInscrits %> inscripcions: no es poden canviar les categories, però sí les places.</p>
+      <% for (const cat of (t.categories || [])) { %>
+        <div class="fila">
+          <span><strong><%= MODALITATS[cat.modality] || cat.modality %></strong><%= cat.level ? ' · ' + cat.level : '' %></span>
+          <label>Places <input name="places_<%= cat.id %>" type="number" min="1" max="500" style="width:5rem" placeholder="∞" value="<%= cat.max_pairs || '' %>"></label>
+        </div>
       <% } %>
+    <% } else { %>
+    <div class="fila">
+      <% const mods = Object.keys(MODALITATS); %>
+      <% mods.forEach((k, i) => { %>
+        <% const cat = t && t.categories ? t.categories.find(c => c.modality === k) : null; %>
+        <label><input type="checkbox" name="modalitat" value="<%= k %>" <%= cat ? 'checked' : (!t ? 'checked' : '') %>> <%= MODALITATS[k] %></label>
+        <input name="nivell" placeholder="Nivell (opcional)" value="<%= cat ? cat.level : '' %>" style="width:8rem">
+        <input name="places" type="number" min="1" max="500" placeholder="Places" title="Places per categoria (buit = sense límit)" value="<%= cat && cat.max_pairs ? cat.max_pairs : '' %>" style="width:5.5rem">
+      <% }); %>
     </div>
+    <% } %>
   </div>
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
   <div class="camp"><label>On es fan les inscripcions?</label>
-    <select name="mode_inscripcio">
-      <option value="externa" <%= t && (t.registration_mode || 'externa') === 'externa' ? 'selected' : '' %>>Al web del club (enllaç extern)</option>
-      <option value="padelvalles" <%= t && t.registration_mode === 'padelvalles' ? 'selected' : '' %>>A PadelVallès</option>
+    <select name="mode_inscripcio" id="modeInscripcio">
+      <option value="externa" <%= t && (t.registration_mode || t.mode_inscripcio || 'externa') === 'externa' ? 'selected' : '' %>>Al web del club (enllaç extern)</option>
+      <option value="padelvalles" <%= t && (t.registration_mode || t.mode_inscripcio) === 'padelvalles' ? 'selected' : '' %>>A PadelVallès</option>
     </select>
-    <span class="ajuda">En aquesta fase la inscripció es fa fora de la plataforma.</span>
+    <div id="avisQuota" class="avis" style="display:none;margin-top:.5rem"></div>
   </div>
+  <div id="campsInscripcio" style="display:none">
+    <div class="fila">
+      <div class="camp"><label>Tancament d'inscripcions</label>
+        <input type="date" name="data_limit" value="<%= t ? (t.registration_deadline || t.data_limit || '') : '' %>">
+        <span class="ajuda">Buit = fins al dia abans del torneig.</span>
+      </div>
+      <div class="camp"><label>Els jugadors es poden donar de baixa fins a</label>
+        <div><input type="number" name="hores_baixa" min="0" max="720" style="width:5rem" value="<%= t ? (t.unregister_hours ?? t.hores_baixa ?? 48) : 48 %>"> hores abans de l'inici</div>
+        <span class="ajuda">Passat aquest termini hauran de contactar amb el club.</span>
+      </div>
+    </div>
+  </div>
+<script>
+const QUOTES = <%- JSON.stringify(quotes || {}) %>;
+const selClub = document.querySelector('select[name="club_id"]');
+const selMode = document.getElementById('modeInscripcio');
+const avis = document.getElementById('avisQuota');
+const camps = document.getElementById('campsInscripcio');
+function actualitzaQuota() {
+  const esPV = selMode.value === 'padelvalles';
+  camps.style.display = esPV ? '' : 'none';
+  if (!esPV) { avis.style.display = 'none'; return; }
+  const n = QUOTES[selClub.value] || 0;
+  avis.style.display = '';
+  avis.innerHTML = n === 0
+    ? '<strong>El primer torneig del club amb inscripció a PadelVallès és gratuït.</strong>'
+    : '<strong>Recorda:</strong> a partir del segon torneig amb inscripció a PadelVallès s\u2019aplicarà una petita quota (fixa o per inscrit). T\u2019avisarem abans que entri en vigor.';
+}
+selClub.addEventListener('change', actualitzaQuota);
+selMode.addEventListener('change', actualitzaQuota);
+actualitzaQuota();
+</script>
   <div class="camp"><label>Com s'hi inscriu la gent?</label>
     <input name="via" maxlength="300" value="<%= t ? (t.registration_info || t.via || '') : '' %>" placeholder="P. ex.: WhatsApp al 600 123 456">
   </div>

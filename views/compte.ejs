@@ -34,6 +34,63 @@
   <p><a href="/club/sollicita">Tens un club? Sol·licita el teu compte de club</a></p>
 <% } %>
 
+<h2 class="seccio">Les meves inscripcions</h2>
+<% if (invitacionsRebudes.length) { %>
+  <h3>Invitacions pendents</h3>
+  <ul>
+  <% for (const i of invitacionsRebudes) { %>
+    <li><strong><%= i.qui_nom %></strong> et convida a fer parella a
+      <a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a>
+      (<%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %>)
+      <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/accepta" method="post"><button class="boto menut">Accepta</button></form>
+      <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/rebutja" method="post"><button class="boto secundari menut">Rebutja</button></form>
+    </li>
+  <% } %>
+  </ul>
+<% } %>
+<% if (invitacionsEnviades.length) { %>
+  <h3>Invitacions que has enviat</h3>
+  <ul>
+  <% for (const i of invitacionsEnviades) { %>
+    <li><a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a>
+      (<%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %>): esperant <%= i.qui_nom %>
+      <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/cancella" method="post"><button class="boto secundari menut">Cancel·la</button></form>
+    </li>
+  <% } %>
+  </ul>
+<% } %>
+<% if (inscripcions.length) { %>
+  <table class="llista">
+    <tr><th>Torneig</th><th>Categoria</th><th>Parella</th><th>Estat</th><th></th></tr>
+    <% for (const i of inscripcions) { %>
+      <tr>
+        <td><a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a><br><span class="meta"><%= i.starts_at %> · <%= i.club_nom %></span></td>
+        <td><%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %></td>
+        <td><%= i.parella_nom %></td>
+        <td>
+          <% if (i.status === 'registered') { %>✅ Inscrits<%= i.paid ? '' : ' <span class="meta">(pagament pendent al club)</span>' %>
+          <% } else { %>⏳ Llista d'espera<% } %>
+        </td>
+        <td><a href="/torneig/<%= i.tournament_id %>">Gestiona</a></td>
+      </tr>
+    <% } %>
+  </table>
+<% } %>
+<% if (!inscripcions.length && !invitacionsRebudes.length && !invitacionsEnviades.length) { %>
+  <p class="meta">Encara no tens inscripcions. Explora els <a href="/tornejos">tornejos</a>.</p>
+<% } %>
+<% if (anuncis.length) { %>
+  <h3>Els meus anuncis de «busco parella»</h3>
+  <ul>
+  <% for (const a of anuncis) { %>
+    <li><a href="/torneig/<%= a.tournament_id %>"><%= a.torneig_nom %></a>:
+      <%= MODALITATS[a.modality] %><%= a.level ? ' · ' + a.level : '' %>
+      <form class="enlinia" action="/torneig/<%= a.tournament_id %>/busco-parella/treu" method="post"><button class="boto secundari menut">Treu</button></form>
+    </li>
+  <% } %>
+  </ul>
+<% } %>
+
 <h2 class="seccio">Tornejos que m'interessen</h2>
 <% if (!interessos.length) { %><p>Encara no n'has desat cap. Explora els <a href="/tornejos">tornejos</a>.</p><% } %>
 <div class="graella">

@@ -113,11 +113,39 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status, starts_at);
 CREATE INDEX IF NOT EXISTS idx_tournaments_club ON tournaments(club_id);
 CREATE INDEX IF NOT EXISTS idx_clubs_comarca ON clubs(comarca);
+
+-- Fase 2: inscripcions dins la plataforma
+CREATE TABLE IF NOT EXISTS registrations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  category_id INTEGER NOT NULL REFERENCES tournament_categories(id) ON DELETE CASCADE,
+  player1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  player2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  paid INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_reg_torneig ON registrations(tournament_id, status);
+CREATE TABLE IF NOT EXISTS partner_search (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  modality TEXT NOT NULL,
+  level TEXT DEFAULT '',
+  note TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (tournament_id, user_id)
+);
 `);
 
 // Migracions idempotents per a BDs ja creades
 for (const [taula, columna, def] of [
   ['tournaments', 'registration_mode', `TEXT NOT NULL DEFAULT 'externa'`],
+  ['tournaments', 'registration_deadline', `TEXT DEFAULT ''`],
+  ['tournaments', 'unregister_hours', `INTEGER DEFAULT 48`],
+  ['tournament_categories', 'max_pairs', `INTEGER`],
   ['clubs', 'claim_token', `TEXT DEFAULT ''`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
