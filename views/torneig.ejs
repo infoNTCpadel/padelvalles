@@ -47,6 +47,10 @@
       </div>
     <% } %>
 
+    <div class="fila" style="margin-top:1rem">
+      <a class="boto secundari menut" href="https://wa.me/?text=<%= encodeURIComponent(shareText + ' ' + shareUrl) %>" target="_blank" rel="noopener">↗ Comparteix per WhatsApp</a>
+    </div>
+
     <details style="margin-top:1.5rem">
       <summary>Veus alguna cosa estranya en aquest torneig? Avisa'ns</summary>
       <form action="/torneig/<%= t.id %>/avis" method="post" class="formulari">

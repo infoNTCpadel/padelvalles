@@ -4,7 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= titol %> · <%= brand.name %></title>
-<meta name="description" content="<%= brand.tagline %>">
+<meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : brand.tagline %>">
+<% if (typeof canonical !== 'undefined' && canonical) { %>
+<link rel="canonical" href="<%= canonical %>">
+<meta property="og:url" content="<%= canonical %>">
+<% } %>
+<meta property="og:site_name" content="<%= brand.name %>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="<%= titol %> · <%= brand.name %>">
+<% if (typeof metaDescription !== 'undefined' && metaDescription) { %><meta property="og:description" content="<%= metaDescription %>"><% } %>
+<% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

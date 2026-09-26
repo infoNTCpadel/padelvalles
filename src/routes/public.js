@@ -60,7 +60,13 @@ r.get('/torneig/:id', (req, res) => {
     interessat = !!db.prepare('SELECT 1 FROM interests WHERE user_id = ? AND tournament_id = ?')
       .get(req.session.user.id, t.id);
   }
-  res.render('torneig', { titol: t.name, t, interessat, MODALITATS, avis: req.query.avis });
+  const base = process.env.APP_URL || 'https://padelvalles.com';
+  const canonical = `${base}/torneig/${t.id}`;
+  const metaDescription = `${t.name}: torneig de pàdel al ${t.club_nom} (${t.club_poble}), del ${t.starts_at} al ${t.ends_at}. Registra't gratis a PadelVallès per veure el cartell, el preu i com inscriure-t'hi.`;
+  const ogImage = `${base}/torneig/${t.id}/cartell.svg`;
+  const shareText = `Mira aquest torneig de pàdel: ${t.name} (${t.starts_at} – ${t.ends_at}) al ${t.club_nom} de ${t.club_poble}`;
+  res.render('torneig', { titol: t.name, t, interessat, MODALITATS, avis: req.query.avis,
+    metaDescription, canonical, ogImage, shareText, shareUrl: canonical });
 });
 
 // Cartell generat automàticament (SVG amb la marca). Accessible sempre perquè
@@ -97,7 +103,34 @@ r.get('/club/:id', (req, res) => {
   if (req.session.user) {
     segueix = !!db.prepare('SELECT 1 FROM follows WHERE user_id = ? AND club_id = ?').get(req.session.user.id, club.id);
   }
-  res.render('club', { titol: club.name, club, tornejos, segueix, COMARQUES });
+  res.render('club', { titol: club.name, club, tornejos, segueix, COMARQUES,
+    metaDescription: `${club.name}: club de pàdel a ${club.town} (${COMARQUES[club.comarca] || ''}). Consulta els seus tornejos a PadelVallès.`,
+    canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/club/${club.id}` });
+});
+
+// SEO: sitemap.xml amb tornejos publicats i clubs verificats
+r.get('/sitemap.xml', (req, res) => {
+  const base = process.env.APP_URL || 'https://padelvalles.com';
+  const urls = [
+    { loc: base + '/', changefreq: 'daily', priority: '1.0' },
+    { loc: base + '/tornejos', changefreq: 'daily', priority: '0.9' },
+    { loc: base + '/clubs', changefreq: 'weekly', priority: '0.8' },
+  ];
+  const tornejos = db.prepare(`SELECT id, COALESCE(published_at, created_at) AS lm FROM tournaments WHERE status = 'published' ORDER BY starts_at DESC`).all();
+  for (const t of tornejos) urls.push({ loc: `${base}/torneig/${t.id}`, changefreq: 'weekly', priority: '0.9', lastmod: String(t.lm || '').slice(0, 10) });
+  const clubs = db.prepare('SELECT id FROM clubs WHERE verified = 1 ORDER BY name').all();
+  for (const c of clubs) urls.push({ loc: `${base}/club/${c.id}`, changefreq: 'weekly', priority: '0.7' });
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls.map(u => `  <url><loc>${u.loc}</loc>` +
+      (u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : '') +
+      `<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join('\n') +
+    '\n</urlset>';
+  res.type('application/xml').send(xml);
+});
+
+r.get('/robots.txt', (req, res) => {
+  const base = process.env.APP_URL || 'https://padelvalles.com';
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`);
 });
 
 // Avisar l'admin d'un torneig sospitós (promoció encoberta, dades errònies...)

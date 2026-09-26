@@ -25,6 +25,7 @@ app.use(session({
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.brand = BRAND;
+  res.locals.appUrl = process.env.APP_URL || 'https://padelvalles.com';
   next();
 });
 
