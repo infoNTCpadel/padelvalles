@@ -11,16 +11,9 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
     volumes:
       - ./data:/app/data
-    networks:
-      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.padelvalles.rule=Host(`padelvalles.com`) || Host(`www.padelvalles.com`)"
       - "traefik.http.routers.padelvalles.entrypoints=websecure"
       - "traefik.http.routers.padelvalles.tls.certresolver=letsencrypt"
       - "traefik.http.services.padelvalles.loadbalancer.server.port=3000"
-
-networks:
-  proxy:
-    external: true
-    name: proxy
