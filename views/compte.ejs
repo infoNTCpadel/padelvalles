@@ -18,9 +18,11 @@
 <% if (!user.email_verified) { %>
   <div class="error">Encara no has verificat el teu email. Revisa la safata d'entrada (t'hem enviat l'enllaç en registrar-te).
     <form class="enlinia" action="/reenvia-verificacio" method="post"><button class="boto menut secundari" type="submit">Reenvia l'enllaç</button></form>
+    <br>T'has equivocat d'email? <a href="/canvia-email">Corregeix-lo aquí</a>.
   </div>
 <% } %>
 <% if (avisa === 'verifica') { %><div class="error">Verifica el teu email abans de gestionar un club.</div><% } %>
+<% if (avisa === 'email-canviat') { %><div class="avis">Email actualitzat. T'hem enviat el nou enllaç de verificació.</div><% } %>
 
 <form class="formulari" action="/elmeucompte" method="post">
   <h2>Les meves dades</h2>

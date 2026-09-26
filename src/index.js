@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'views'));
+app.set('trust proxy', 1); // darrere de Traefik: req.ip és la IP real del client (per al límit de registres)
 app.use(layouts);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(process.cwd(), 'public')));

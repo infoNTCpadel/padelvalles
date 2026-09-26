@@ -115,6 +115,18 @@ export function sendPromocioEspera(email, nom, torneigNom, categoria) {
   });
 }
 
+export function sendMonitorAutoritzat(email, nom, clubNom) {
+  return envia({
+    to: email, name: nom, tag: 'monitor autoritzat',
+    subject: `El club «${clubNom}» t'ha autoritzat com a monitor`,
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>El club <strong>${esc(clubNom)}</strong> t'ha autoritzat com a <strong>monitor</strong> a PadelVallès.</p>
+      <p>A partir d'ara, quan entris al <a href="${APP_URL}/club/panel">panell del club</a> veuràs els seus tornejos
+      i podràs gestionar-ne els inscrits (altes i baixes).</p>
+      <p>Si no saps de què va això, contacta amb el club: potser l'email s'ha escrit malament.</p>`,
+  });
+}
+
 export function sendInvitacioRebutjada(email, nom, quiRebutja, torneigNom) {
   return envia({
     to: email, name: nom, tag: 'invitació rebutjada',

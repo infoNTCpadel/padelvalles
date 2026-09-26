@@ -132,6 +132,16 @@ async function recordatorisTancament() {
 async function tascaDiaria() {
   await resumDiariClubs();
   await recordatorisTancament();
+  purgaNoVerificats();
+}
+
+// Purga de comptes que no han verificat l'email en 30 dies (emails erronis o spam).
+// Les claus foranes amb ON DELETE CASCADE netegen les files dependents.
+function purgaNoVerificats() {
+  const res = db.prepare(
+    `DELETE FROM users WHERE email_verified = 0 AND created_at < datetime('now', '-30 days')`
+  ).run();
+  if (res.changes) console.log(`[programador] purga de no verificats: ${res.changes} comptes esborrats`);
 }
 
 export function arrencaProgramador() {

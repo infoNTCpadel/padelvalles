@@ -1,0 +1,8 @@
+<h1>Corregeix l'email</h1>
+<p>Encara no has verificat el compte, així que pots corregir l'email sense tornar-te a registrar.</p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form action="/canvia-email" method="post">
+  <label>Email correcte<br><input type="email" name="email" value="<%= email %>" required></label><br><br>
+  <button class="boto" type="submit">Desa i envia el nou enllaç</button>
+</form>
+<p class="meta">T'enviarem el nou enllaç de verificació a aquesta adreça. L'anterior quedarà invalidat.</p>

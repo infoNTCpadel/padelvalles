@@ -456,7 +456,7 @@ r.get('/club/:clubId/monitors', nomesGestor, (req, res) => {
   const monitors = db.prepare(`
     SELECT u.id, u.name, u.email, cm.created_at FROM club_monitors cm
     JOIN users u ON u.id = cm.user_id WHERE cm.club_id = ? ORDER BY u.name`).all(club.id);
-  res.render('club-monitors', { titol: 'Monitors', club, monitors, error: req.query.error || null, ok: req.query.ok || null });
+  res.render('club-monitors', { titol: 'Monitors', club, monitors, error: req.query.error || null, ok: req.query.ok || null, email: req.query.email || '' });
 });
 
 r.post('/club/:clubId/monitors', nomesGestor, (req, res) => {
@@ -467,14 +467,39 @@ r.post('/club/:clubId/monitors', nomesGestor, (req, res) => {
   }
   const email = String(req.body.email || '').trim().toLowerCase();
   const u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!u || !u.email_verified) {
-    return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('Aquest email no correspon a cap compte verificat de PadelVallès.')}`);
+  const tornaError = (msg) => res.redirect(
+    `/club/${club.id}/monitors?error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`);
+  if (!u) {
+    return tornaError('Aquest email no és de cap usuari de PadelVallès. La persona s\u2019ha de registrar primer (gratis) i després la podràs autoritzar.');
+  }
+  if (!u.email_verified) {
+    return tornaError('Aquest compte encara no ha verificat l\u2019email. Demana a la persona que el verifiqui i torna-ho a provar.');
   }
   if (u.role === 'admin') {
-    return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('No cal autoritzar un administrador.')}`);
+    return tornaError('No cal autoritzar un administrador.');
+  }
+  if (esMonitorDe(u.id, club.id)) {
+    return tornaError('Aquesta persona ja és monitor autoritzat d\u2019aquest club.');
+  }
+  // Pas 1: mostrar qui és abans d'autoritzar (evita errors d'email)
+  res.render('club-monitors-confirma', { titol: 'Confirma el monitor', club, usuari: u });
+});
+
+// Pas 2: confirmació de l'autorització (amb avís per email al monitor)
+r.post('/club/:clubId/monitors/confirma', nomesGestor, (req, res) => {
+  const esAdmin = req.session.user.role === 'admin';
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.clubId);
+  if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) {
+    return res.status(404).render('404', { titol: 'No trobat' });
+  }
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (!u || !u.email_verified || u.role === 'admin') {
+    return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('No s\u2019ha pogut autoritzar: comprova l\u2019email.')}`);
   }
   if (u.role === 'player') db.prepare(`UPDATE users SET role = 'monitor' WHERE id = ?`).run(u.id);
   db.prepare('INSERT OR IGNORE INTO club_monitors (club_id, user_id) VALUES (?, ?)').run(club.id, u.id);
+  sendMonitorAutoritzat(u.email, u.name, club.name);
   res.redirect(`/club/${club.id}/monitors?ok=1`);
 });
 

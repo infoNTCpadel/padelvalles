@@ -206,8 +206,20 @@ r.post('/clubs/claims/:id/rebutja', (req, res) => {
 });
 
 r.get('/usuaris', (req, res) => {
-  const usuaris = db.prepare('SELECT id, name, email, role, email_verified, created_at FROM users ORDER BY created_at DESC LIMIT 200').all();
-  res.render('admin/usuaris', { titol: 'Usuaris', usuaris });
+  const filtre = req.query.f === 'no-verificats' ? 'WHERE email_verified = 0' : '';
+  const usuaris = db.prepare(`SELECT id, name, email, role, email_verified, created_at FROM users ${filtre} ORDER BY created_at DESC LIMIT 200`).all();
+  const totalNoVerificats = db.prepare('SELECT COUNT(*) n FROM users WHERE email_verified = 0').get().n;
+  res.render('admin/usuaris', { titol: 'Usuaris', usuaris, filtre: req.query.f === 'no-verificats' ? 'no-verificats' : 'tots', totalNoVerificats, esborrat: req.query.esborrat || null });
+});
+
+// Esborrar un compte NO verificat (neteja d'emails erronis o spam; la FK fa cascada)
+r.post('/usuaris/:id/elimina', (req, res) => {
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!u || u.email_verified || u.role === 'admin' || u.id === req.session.user.id) {
+    return res.redirect('/admin/usuaris?f=no-verificats');
+  }
+  db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
+  res.redirect('/admin/usuaris?f=no-verificats&esborrat=1');
 });
 
 // Canviar rol jugador <-> monitor (l'admin assigna el rol; el club autoritza després)
