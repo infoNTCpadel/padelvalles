@@ -10,6 +10,8 @@ const db = new DatabaseSync(path.join(dataDir, 'padelvalles.db'));
 
 db.exec(`
 PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 5000;
 
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
