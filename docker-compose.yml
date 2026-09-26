@@ -9,6 +9,9 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SESSION_SECRET=${SESSION_SECRET}
+      - APP_URL=${APP_URL:-https://padelvalles.com}
+      - BREVO_API_KEY=${BREVO_API_KEY:-}
+      - MAIL_FROM=${MAIL_FROM:-hola@padelvalles.com}
     volumes:
       - ./data:/app/data
     labels:
