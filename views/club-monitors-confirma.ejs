@@ -1,0 +1,16 @@
+<h1>Autoritza un monitor</h1>
+<p><a href="/club/<%= club.id %>/monitors">← Monitors de <%= club.name %></a></p>
+
+<div class="avis">
+  <p>Vols autoritzar aquesta persona com a <strong>monitor</strong> del club <strong><%= club.name %></strong>?</p>
+  <p><strong><%= usuari.name %></strong> (<%= usuari.email %>)</p>
+  <p class="meta">Podrà veure els inscrits dels tornejos del club i fer altes i baixes. No podrà crear ni editar tornejos ni canviar la fitxa del club. Rebrà un email d'avís.</p>
+</div>
+
+<div class="fila">
+  <form action="/club/<%= club.id %>/monitors/confirma" method="post">
+    <input type="hidden" name="email" value="<%= usuari.email %>">
+    <button class="boto" type="submit">Sí, autoritza</button>
+  </form>
+  <a class="boto secundari" href="/club/<%= club.id %>/monitors">Cancel·la</a>
+</div>

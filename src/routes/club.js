@@ -5,7 +5,7 @@ import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
-import { sendPromocioEspera, sendParellaAfegidaClub } from '../mail.js';
+import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat } from '../mail.js';
 
 const r = Router();
 const nomesClub = [requireLogin, requireRole('club', 'admin', 'monitor'), requireVerified];
@@ -496,6 +496,9 @@ r.post('/club/:clubId/monitors/confirma', nomesGestor, (req, res) => {
   const u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!u || !u.email_verified || u.role === 'admin') {
     return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('No s\u2019ha pogut autoritzar: comprova l\u2019email.')}`);
+  }
+  if (esMonitorDe(u.id, club.id)) {
+    return res.redirect(`/club/${club.id}/monitors?ok=1`);
   }
   if (u.role === 'player') db.prepare(`UPDATE users SET role = 'monitor' WHERE id = ?`).run(u.id);
   db.prepare('INSERT OR IGNORE INTO club_monitors (club_id, user_id) VALUES (?, ?)').run(club.id, u.id);

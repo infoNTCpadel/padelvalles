@@ -1,13 +1,13 @@
 <h1>Monitors de <%= club.name %></h1>
 <p><a href="/club/panel">← Panell del club</a></p>
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
-<% if (typeof ok !== 'undefined' && ok) { %><div class="exit">Canvis desats.</div><% } %>
+<% if (typeof ok !== 'undefined' && ok) { %><div class="exit">Monitor autoritzat. Li hem enviat un email d'avís.</div><% } %>
 
 <p>Els monitors autoritzats poden veure els inscrits dels tornejos del club i fer altes i baixes. No poden crear ni editar tornejos ni canviar la fitxa del club.</p>
 
 <form action="/club/<%= club.id %>/monitors" method="post" class="formulari">
   <div class="camp"><label>Autoritza un monitor (email del seu compte de PadelVallès)</label>
-    <input type="email" name="email" required placeholder="monitor@exemple.cat">
+    <input type="email" name="email" required placeholder="monitor@exemple.cat" value="<%= typeof email !== 'undefined' ? email : '' %>">
     <span class="ajuda">Ha d'estar registrat i amb el compte verificat. Si encara és jugador, passarà a ser monitor.</span>
   </div>
   <button class="boto" type="submit">Autoritza</button>
