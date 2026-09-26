@@ -1,0 +1,48 @@
+<h1>Administració</h1>
+<div class="fila">
+  <span class="etiqueta"><%= stats.clubs %> clubs verificats</span>
+  <span class="etiqueta"><%= stats.tornejos %> tornejos publicats</span>
+  <span class="etiqueta"><%= stats.usuaris %> usuaris</span>
+  <a href="/admin/tornejos">Tornejos</a> · <a href="/admin/clubs">Clubs</a> · <a href="/admin/usuaris">Usuaris</a> · <a href="/admin/historial">Historial</a>
+</div>
+
+<h2 class="seccio">Clubs pendents de verificació (<%= clubsPendents.length %>)</h2>
+<% if (!clubsPendents.length) { %><p>No n'hi ha cap.</p><% } %>
+<% for (const c of clubsPendents) { %>
+  <div class="dades" style="margin-bottom:.8rem">
+    <strong><%= c.name %></strong> · <%= c.town %> (<%= c.comarca %>)
+    <% if (c.qui) { %><div class="meta">Sol·licitat per <%= c.qui %> (<%= c.qui_email %>)</div><% } %>
+    <div class="fila" style="margin-top:.5rem">
+      <form class="enlinia" action="/admin/clubs/<%= c.id %>/aprova" method="post"><button class="boto menut">Aprova</button></form>
+      <form class="enlinia" action="/admin/clubs/<%= c.id %>/rebutja" method="post" onsubmit="return confirm('Segur que vols rebutjar aquest club?')">
+        <input name="motiu" placeholder="Motiu del rebuig" style="width:16rem"> <button class="boto perill menut">Rebutja</button>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<h2 class="seccio">Tornejos pendents de revisió (<%= tornejosPendents.length %>)</h2>
+<% if (!tornejosPendents.length) { %><p>No n'hi ha cap.</p><% } %>
+<% for (const t of tornejosPendents) { %>
+  <div class="dades" style="margin-bottom:.8rem">
+    <strong><%= t.name %></strong> · <%= t.club_nom %> (<%= t.club_poble %>) · <%= t.starts_at %> – <%= t.ends_at %>
+    <% if (t.price_text) { %><div class="meta">🎟️ <%= t.price_text %></div><% } %>
+    <% if (t.description) { %><div class="meta"><%= t.description %></div><% } %>
+    <div><img src="/torneig/<%= t.id %>/cartell.svg" alt="Previsualització del cartell" style="max-width:220px;margin:.5rem 0;border:1px solid #ddd"></div>
+    <div class="fila">
+      <form class="enlinia" action="/admin/tornejos/<%= t.id %>/aprova" method="post"><button class="boto menut">Aprova i publica</button></form>
+      <form class="enlinia" action="/admin/tornejos/<%= t.id %>/rebutja" method="post">
+        <input name="motiu" placeholder="Motiu del rebuig (el veurà el club)" style="width:18rem" required> <button class="boto perill menut">Rebutja</button>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<h2 class="seccio">Avisos de jugadors (<%= avisos.length %>)</h2>
+<% if (!avisos.length) { %><p>No n'hi ha cap.</p><% } %>
+<table class="llista">
+  <% for (const a of avisos) { %>
+    <tr><td><%= a.created_at.slice(0,16) %></td><td><strong><%= a.torneig_nom %></strong><br><%= a.message %></td>
+    <td><form class="enlinia" action="/admin/avisos/<%= a.id %>/tanca" method="post"><button class="boto secundari menut">Tanca</button></form></td></tr>
+  <% } %>
+</table>

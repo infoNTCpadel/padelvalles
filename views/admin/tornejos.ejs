@@ -1,0 +1,21 @@
+<h1>Tornejos</h1>
+<p><a href="/admin">← Administració</a></p>
+<table class="llista">
+  <tr><th>Nom</th><th>Club</th><th>Inici</th><th>Estat</th><th>Accions</th></tr>
+  <% for (const t of tornejos) { %>
+    <tr>
+      <td><%= t.name %></td><td><%= t.club_nom %></td><td><%= t.starts_at %></td>
+      <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status %></span></td>
+      <td>
+        <% if (t.status === 'pending') { %>
+          <form class="enlinia" action="/admin/tornejos/<%= t.id %>/aprova" method="post"><button class="boto menut">Aprova</button></form>
+        <% } %>
+        <% if (t.status === 'published') { %>
+          <form class="enlinia" action="/admin/tornejos/<%= t.id %>/despublica" method="post" onsubmit="return confirm('Despublicar aquest torneig?')">
+            <button class="boto perill menut">Despublica</button>
+          </form>
+        <% } %>
+      </td>
+    </tr>
+  <% } %>
+</table>

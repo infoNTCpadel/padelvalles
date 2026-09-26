@@ -1,0 +1,29 @@
+<p><a href="/clubs">← Torna als clubs</a></p>
+<h1><%= club.name %></h1>
+<div class="meta">📍 <%= club.town %> · <%= COMARQUES[club.comarca] %><% if (club.address) { %> · <%= club.address %><% } %></div>
+<% if (club.description) { %><p><%= club.description %></p><% } %>
+<div class="fila">
+  <% if (club.website) { %><a class="boto secundari menut" href="<%= club.website %>" target="_blank" rel="nofollow noopener">Web del club</a><% } %>
+  <% if (club.phone) { %><span class="meta">📞 <%= club.phone %></span><% } %>
+  <% if (user) { %>
+    <% if (segueix) { %>
+      <form class="enlinia" action="/club/<%= club.id %>/no-segueix" method="post"><button class="boto secundari menut">Deixa de seguir</button></form>
+    <% } else { %>
+      <form class="enlinia" action="/club/<%= club.id %>/segueix" method="post"><button class="boto menut">+ Segueix aquest club</button></form>
+    <% } %>
+  <% } %>
+</div>
+
+<h2 class="seccio">Propers tornejos d'aquest club</h2>
+<% if (!tornejos.length) { %><p>Aquest club no té tornejos publicats properament.</p><% } %>
+<div class="graella">
+  <% for (const t of tornejos) { %>
+    <article class="targeta">
+      <a href="/torneig/<%= t.id %>"><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell: <%= t.name %>" loading="lazy"></a>
+      <div class="cos">
+        <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
+      </div>
+    </article>
+  <% } %>
+</div>

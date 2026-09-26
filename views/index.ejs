@@ -1,0 +1,51 @@
+<section class="hero">
+  <h1>Tots els <span class="accent">tornejos de pàdel</span> del Vallès, en un sol lloc</h1>
+  <p><%= brand.tagline %>. Registra't gratis, segueix els teus clubs i no et perdis cap torneig del Vallès Occidental i Oriental.</p>
+  <form class="cercador" action="/tornejos" method="get">
+    <input type="search" name="q" placeholder="Cerca un torneig, un club, un municipi...">
+    <select name="comarca">
+      <option value="">Totes les comarques</option>
+      <% for (const [k, v] of Object.entries(COMARQUES)) { %>
+        <option value="<%= k %>"><%= v %></option>
+      <% } %>
+    </select>
+    <button class="boto" type="submit">Cerca</button>
+  </form>
+</section>
+
+<h2 class="seccio">Propers tornejos</h2>
+<% if (!propers.length) { %>
+  <p>Encara no hi ha tornejos publicats. Torna aviat!</p>
+<% } %>
+<div class="graella">
+  <% for (const t of propers) { %>
+    <article class="targeta">
+      <a href="/torneig/<%= t.id %>"><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell: <%= t.name %>"></a>
+      <div class="cos">
+        <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %> (<%= t.club_poble %>)</div>
+        <% if (t.price_text) { %><div class="meta">🎟️ <%= t.price_text %></div><% } %>
+      </div>
+    </article>
+  <% } %>
+</div>
+<p><a class="boto secundari" href="/tornejos">Veure tots els tornejos</a></p>
+
+<h2 class="seccio">Clubs del Vallès <span class="meta">(<%= totalClubs %>)</span></h2>
+<div class="graella">
+  <% for (const c of clubs) { %>
+    <article class="targeta">
+      <div class="cos">
+        <h3><a href="/club/<%= c.id %>"><%= c.name %></a></h3>
+        <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
+      </div>
+    </article>
+  <% } %>
+</div>
+<p><a href="/clubs">Veure tots els clubs →</a></p>
+
+<section class="hero" style="margin-top:2.5rem">
+  <h2>Tens un club al Vallès?</h2>
+  <p>Publica els teus tornejos a PadelVallès i arriba a tots els jugadors de les dues comarques. Revisem cada torneig abans de publicar-lo.</p>
+  <p><a class="boto" href="/club/sollicita">Sol·licita el compte del teu club</a></p>
+</section>

@@ -1,0 +1,23 @@
+<h1>Panell del club</h1>
+<div class="fila">
+  <a class="boto" href="/club/torneig/nou">+ Nou torneig</a>
+  <% for (const c of clubs) { %><a class="boto secundari menut" href="/club/perfil/<%= c.id %>">Fitxa: <%= c.name %></a><% } %>
+</div>
+
+<h2 class="seccio">Els meus tornejos</h2>
+<% if (!tornejos.length) { %><p>Encara no has creat cap torneig.</p><% } %>
+<table class="llista">
+  <tr><th>Torneig</th><th>Club</th><th>Dates</th><th>Estat</th><th></th></tr>
+  <% for (const t of tornejos) { %>
+    <tr>
+      <td><%= t.name %></td>
+      <td><%= t.club_nom %></td>
+      <td><%= t.starts_at %></td>
+      <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status %></span>
+        <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
+      </td>
+      <td><a href="/club/torneig/<%= t.id %>/edita">Edita</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %></td>
+    </tr>
+  <% } %>
+</table>
+<p class="meta">Els tornejos nous queden <strong>pendents de revisió</strong>: els publiquem quan l'administrador els aprova.</p>

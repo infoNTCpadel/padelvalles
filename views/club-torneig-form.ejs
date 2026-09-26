@@ -1,0 +1,32 @@
+<h1><%= t && t.id ? 'Edita el torneig' : 'Nou torneig' %></h1>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<p class="meta">Omple les dades i nosaltres generem el cartell oficial amb la imatge de PadelVallès i el logo del teu club. El torneig es publicarà quan l'aprovem.</p>
+<form class="formulari" action="<%= t && t.id ? '/club/torneig/' + t.id + '/edita' : '/club/torneig/nou' %>" method="post">
+  <div class="camp"><label>Club organitzador</label>
+    <select name="club_id" required>
+      <% for (const c of clubs) { %><option value="<%= c.id %>" <%= t && String(t.club_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% } %>
+    </select>
+  </div>
+  <div class="camp"><label>Nom del torneig</label><input name="nom" required maxlength="140" value="<%= t ? (t.name || t.nom || '') : '' %>" placeholder="P. ex.: Open de Tardor"></div>
+  <div class="fila">
+    <div class="camp"><label>Data d'inici</label><input type="date" name="inici" required value="<%= t ? (t.starts_at || t.inici || '') : '' %>"></div>
+    <div class="camp"><label>Data de fi</label><input type="date" name="fi" value="<%= t ? (t.ends_at || t.fi || '') : '' %>"></div>
+  </div>
+  <div class="camp"><label>Categories</label>
+    <div class="fila">
+      <% for (const [k, v] of Object.entries(MODALITATS)) { %>
+        <% const cat = t && t.categories ? t.categories.find(c => c.modality === k) : null; %>
+        <label><input type="checkbox" name="modalitat" value="<%= k %>" <%= cat ? 'checked' : (!t ? 'checked' : '') %>> <%= v %></label>
+        <input name="nivell" placeholder="Nivell (opcional)" value="<%= cat ? cat.level : '' %>" style="width:10rem">
+      <% } %>
+    </div>
+  </div>
+  <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
+  <div class="camp"><label>Com s'hi inscriu la gent?</label>
+    <input name="via" maxlength="300" value="<%= t ? (t.registration_info || t.via || '') : '' %>" placeholder="P. ex.: WhatsApp al 600 123 456">
+    <span class="ajuda">En aquesta fase la inscripció es fa fora de la plataforma.</span>
+  </div>
+  <div class="camp"><label>Enllaç d'inscripció (opcional)</label><input name="url" type="url" maxlength="300" value="<%= t ? (t.registration_url || t.url || '') : '' %>" placeholder="https://..."></div>
+  <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="5" maxlength="2000"><%= t ? (t.description || t.descripcio || '') : '' %></textarea></div>
+  <button class="boto" type="submit">Envia a revisió</button>
+</form>

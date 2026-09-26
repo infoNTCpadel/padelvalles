@@ -1,0 +1,21 @@
+<h1>Fitxa del club</h1>
+<% if (ok) { %><div class="exit">Fitxa desada.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<p class="meta">El logo que pugis aquí sortirà als cartells oficials dels teus tornejos.</p>
+<form class="formulari" action="/club/perfil/<%= club.id %>" method="post" enctype="multipart/form-data">
+  <div class="camp"><label>Nom</label><input value="<%= club.name %>" disabled></div>
+  <div class="camp"><label>Municipi</label><input value="<%= club.town %>" disabled></div>
+  <div class="camp"><label>Adreça</label><input name="adreca" maxlength="200" value="<%= club.address || '' %>"></div>
+  <div class="fila">
+    <div class="camp"><label>Web</label><input name="web" maxlength="200" value="<%= club.website || '' %>" placeholder="https://..."></div>
+    <div class="camp"><label>Telèfon</label><input name="telefon" maxlength="40" value="<%= club.phone || '' %>"></div>
+  </div>
+  <div class="camp"><label>Email de contacte</label><input name="email" type="email" maxlength="120" value="<%= club.email || '' %>"></div>
+  <div class="camp"><label>Nombre de pistes</label><input name="pistes" type="number" min="1" max="50" value="<%= club.courts || '' %>"></div>
+  <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="4" maxlength="1000"><%= club.description || '' %></textarea></div>
+  <div class="camp"><label>Logo del club (PNG o JPG, màx. 2 MB)</label>
+    <% if (club.logo_path) { %><div><img src="/fitxers/<%= club.logo_path %>" alt="Logo" style="max-height:80px"></div><% } %>
+    <input type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+  </div>
+  <button class="boto" type="submit">Desa la fitxa</button>
+</form>

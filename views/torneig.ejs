@@ -1,0 +1,49 @@
+<p><a href="/tornejos">← Torna als tornejos</a></p>
+<% if (typeof avis !== 'undefined' && avis === 'enviat') { %><div class="exit">Gràcies, hem rebut el teu avís i el revisarem.</div><% } %>
+
+<div class="fitxa">
+  <div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div>
+  <div>
+    <h1><%= t.name %></h1>
+    <dl class="dades">
+      <dt>Dates</dt><dd>📅 <%= t.starts_at %> – <%= t.ends_at %></dd>
+      <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</dd>
+      <% if (t.categories.length) { %>
+        <dt>Categories</dt>
+        <dd><% for (const c of t.categories) { %><span class="etiqueta"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></span><% } %></dd>
+      <% } %>
+      <% if (t.price_text) { %><dt>Preu</dt><dd>🎟️ <%= t.price_text %></dd><% } %>
+      <% if (t.description) { %><dt>Informació</dt><dd><%= t.description %></dd><% } %>
+    </dl>
+
+    <h2>Com m'hi inscriva?</h2>
+    <% if (t.registration_url) { %>
+      <p><a class="boto" href="<%= t.registration_url %>" target="_blank" rel="nofollow noopener">Inscriu-t'hi al web del club</a></p>
+    <% } %>
+    <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
+    <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
+
+    <div class="fila" style="margin-top:1rem">
+      <% if (user) { %>
+        <% if (interessat) { %>
+          <form class="enlinia" action="/torneig/<%= t.id %>/no-interessa" method="post"><button class="boto secundari menut">★ Ja no m'interessa</button></form>
+        <% } else { %>
+          <form class="enlinia" action="/torneig/<%= t.id %>/interessa" method="post"><button class="boto menut">☆ M'interessa</button></form>
+        <% } %>
+      <% } else { %>
+        <a href="/entra?next=/torneig/<%= t.id %>">Entra per desar-lo a "M'interessa"</a>
+      <% } %>
+    </div>
+
+    <details style="margin-top:1.5rem">
+      <summary>Veus alguna cosa estranya en aquest torneig? Avisa'ns</summary>
+      <form action="/torneig/<%= t.id %>/avis" method="post" class="formulari">
+        <div class="camp">
+          <label>Què hi veus de malament?</label>
+          <textarea name="missatge" rows="3" maxlength="500" required placeholder="P. ex.: sembla una promoció, les dates són errònies..."></textarea>
+        </div>
+        <button class="boto secundari menut" type="submit">Envia l'avís</button>
+      </form>
+    </details>
+  </div>
+</div>

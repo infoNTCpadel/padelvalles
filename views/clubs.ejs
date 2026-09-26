@@ -1,0 +1,22 @@
+<h1>Clubs del Vallès</h1>
+<form class="cercador" action="/clubs" method="get">
+  <select name="comarca">
+    <option value="">Totes les comarques</option>
+    <% for (const [k, v] of Object.entries(COMARQUES)) { %>
+      <option value="<%= k %>" <%= comarca === k ? 'selected' : '' %>><%= v %></option>
+    <% } %>
+  </select>
+  <button class="boto" type="submit">Filtra</button>
+</form>
+<div class="graella">
+  <% for (const c of clubs) { %>
+    <article class="targeta">
+      <div class="cos">
+        <h3><a href="/club/<%= c.id %>"><%= c.name %></a></h3>
+        <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
+        <% if (c.courts) { %><div class="meta"><%= c.courts %> pistes</div><% } %>
+      </div>
+    </article>
+  <% } %>
+</div>
+<% if (!clubs.length) { %><p>Encara no hi ha clubs en aquesta comarca.</p><% } %>

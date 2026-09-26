@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= titol %> · <%= brand.name %></title>
+<meta name="description" content="<%= brand.tagline %>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="cap">
+  <div class="contenidor cap-flex">
+    <a class="marca" href="/"><span class="marca-logo">PADELVALLÈS</span></a>
+    <nav class="nav">
+      <a href="/">Inici</a>
+      <a href="/tornejos">Tornejos</a>
+      <a href="/clubs">Clubs</a>
+      <% if (user) { %>
+        <a href="/elmeucompte">El meu compte</a>
+        <% if (user.role === 'club' || user.role === 'admin') { %><a href="/club/panel">Panell del club</a><% } %>
+        <% if (user.role === 'admin') { %><a href="/admin">Admin</a><% } %>
+        <form class="enlinia" action="/surt" method="post"><button class="boto menut" type="submit">Surt</button></form>
+      <% } else { %>
+        <a href="/entra">Entra</a>
+        <a class="boto menut" href="/registre">Registre't</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main class="contenidor">
+  <%- body %>
+</main>
+<footer class="peu">
+  <div class="contenidor peu-flex">
+    <span><strong>PadelVallès</strong> · <%= brand.tagline %></span>
+    <span><a href="/avis-legal">Avís legal</a> · <a href="/privacitat">Privacitat</a> · <a href="/cookies">Cookies</a></span>
+  </div>
+</footer>
+</body>
+</html>

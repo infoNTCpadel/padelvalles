@@ -1,0 +1,9 @@
+<h1>Historial de moderació</h1>
+<p><a href="/admin">← Administració</a></p>
+<table class="llista">
+  <tr><th>Data</th><th>Qui</th><th>Acció</th><th>Objectiu</th><th>Nota</th></tr>
+  <% for (const m of accions) { %>
+    <tr><td><%= m.created_at.slice(0,16) %></td><td><%= m.qui || '—' %></td><td><%= m.action %></td>
+    <td><%= m.target_type %> #<%= m.target_id %></td><td><%= m.note %></td></tr>
+  <% } %>
+</table>

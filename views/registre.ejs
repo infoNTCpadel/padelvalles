@@ -1,0 +1,13 @@
+<h1>Registre't gratis</h1>
+<p>Un sol compte per veure tots els tornejos del Vallès, desar els que t'interessen i seguir els teus clubs.</p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/registre" method="post">
+  <div class="camp"><label>Nom i cognoms</label><input name="nom" required maxlength="80"></div>
+  <div class="camp"><label>Email</label><input type="email" name="email" required></div>
+  <div class="camp"><label>Contrasenya (mínim 6 caràcters)</label><input type="password" name="contrasenya" required minlength="6"></div>
+  <div class="camp"><label>El teu nivell</label>
+    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option><%= n %></option><% } %></select>
+  </div>
+  <button class="boto" type="submit">Crea el compte</button>
+</form>
+<p>Ja tens compte? <a href="/entra">Entra</a></p>

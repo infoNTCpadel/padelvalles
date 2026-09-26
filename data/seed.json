@@ -1,0 +1,870 @@
+{
+  "clubs": [
+    {
+      "nom": "Club Padel Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://clubpadelsabadell.com",
+      "adreca": "Carrer de Calassanç Duran, 131",
+      "verificat": 1
+    },
+    {
+      "nom": "Enjoy Padel Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://enjoypadelsabadell.com",
+      "adreca": "Carrer de Calassanç Duran, 133",
+      "verificat": 1
+    },
+    {
+      "nom": "Break Pàdel Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://breakpadelsabadell.com",
+      "adreca": "Carrer de Bernat Metge, 111",
+      "verificat": 1
+    },
+    {
+      "nom": "NTC Padel",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://ntcpadel.com",
+      "adreca": "Carrer d'Einstein, 43 (Castellarnau)",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel1 Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://padel1.com",
+      "adreca": "Passeig de Can Feu, 56",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://cts.cat",
+      "adreca": "Carrer Prat de la Riba, 91",
+      "verificat": 1
+    },
+    {
+      "nom": "Indoor Padel Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Natació Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Natació Sabadell Can Llong",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Basic Factory Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Cercle Sabadellès 1856",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "iPadel Vallés",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "UFEC Sabadell – Piscines Joan Serra",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Aurial Indoor Padel Sabadell",
+      "municipi": "Sabadell",
+      "comarca": "occidental",
+      "web": "https://aurialpadel.com",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Natació Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Av. de l'Abat Marcet, s/n",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Egara Sport",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "https://egara.es",
+      "adreca": "Carrer Jacint Badiella, 5",
+      "verificat": 1
+    },
+    {
+      "nom": "Atlètic Terrassa Hockey Club",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "https://athc.cat",
+      "adreca": "Ctra. de Castellar, 628",
+      "verificat": 1
+    },
+    {
+      "nom": "Aurial Padel Indoor Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "https://aurialpadel.com",
+      "adreca": "Carrer de Finisterre, 13 B",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel 7 Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "https://padel7santmarti.com",
+      "adreca": "Carrer d'Almería, 50",
+      "verificat": 1
+    },
+    {
+      "nom": "FCV Padel Indoor Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "https://fcvpadel.com",
+      "adreca": "Carretera de Rubí, 288",
+      "verificat": 1
+    },
+    {
+      "nom": "VIP Padel Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer de l'Ebre, 7",
+      "verificat": 1
+    },
+    {
+      "nom": "Pistes de Pàdel Can Roca",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Plaça de Can Roca, 1",
+      "verificat": 1
+    },
+    {
+      "nom": "Terrassasports",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Smartfit Terrassa",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club de Tennis Les Fonts",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Real Club de Golf El Prat",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Unión Deportiva San Lorenzo",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Gimnàs Tao-Do",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Q Sport Parc Vallès",
+      "municipi": "Terrassa",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel Indoor DiR Sant Cugat",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://dir.cat",
+      "adreca": "Carretera de Rubí, 76-80",
+      "verificat": 1
+    },
+    {
+      "nom": "Augusta Padel by Marta Marrero (Aurial)",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://augustapadel.com",
+      "adreca": "Av. de la Guinardera, 11-13",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Junior 1917",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://junior.cat",
+      "adreca": "Passeig de Sant Mamet, 3-5",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Mira-sol",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://padelmirasol.cat",
+      "adreca": "Passeig de Sevilla, 53 (entrada Carrer Pontevedra, 4)",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Natació Sant Cugat",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://ctnsc.org",
+      "adreca": "Camí del Crist Treballador, s/n",
+      "verificat": 1
+    },
+    {
+      "nom": "Santcu Padel",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "https://santcupadel.com",
+      "adreca": "Av. de Cerdanyola, 115",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Esportiu Valldoreix",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Complex Esportiu EMD Valldoreix",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "ZEM Jaume Tubau",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer Ventura Gassol",
+      "verificat": 1
+    },
+    {
+      "nom": "BCN Sports Padel Agora Sant Cugat",
+      "municipi": "Sant Cugat del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer Ferrer i Guàrdia, s/n",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Indoor Rubí",
+      "municipi": "Rubí",
+      "comarca": "occidental",
+      "web": "https://padelindoorrubi.com",
+      "adreca": "Av. de la Llana, 109",
+      "verificat": 1
+    },
+    {
+      "nom": "Winner Padel",
+      "municipi": "Rubí",
+      "comarca": "occidental",
+      "web": "https://winnerpadel.es",
+      "adreca": "Carrer Luxemburg, 7",
+      "verificat": 1
+    },
+    {
+      "nom": "Elite Padel & Fitness",
+      "municipi": "Rubí",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Duet Sports CEM 25 de Setembre",
+      "municipi": "Rubí",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Sportenis Rubí",
+      "municipi": "Rubí",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel Cerdanyola",
+      "municipi": "Cerdanyola del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer Cardoner, 31",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Bellaterra",
+      "municipi": "Cerdanyola del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Instal·lacions Esportives Campus UAB",
+      "municipi": "Cerdanyola del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club de Pàdel Ripollet",
+      "municipi": "Ripollet",
+      "comarca": "occidental",
+      "web": "https://padelcpr.com",
+      "adreca": "Av. del Riu Ripoll, 39",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Ripollet",
+      "municipi": "Ripollet",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Barberà Padel Indoor",
+      "municipi": "Barberà del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Air Club Padel",
+      "municipi": "Barberà del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Team",
+      "municipi": "Barberà del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer de Monturiol, 30",
+      "verificat": 1
+    },
+    {
+      "nom": "Penya Esports Club",
+      "municipi": "Castellar del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Matchball Padel",
+      "municipi": "Castellar del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Npadel Indoor Castellar",
+      "municipi": "Castellar del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Racó Esports",
+      "municipi": "Castellar del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club de Tennis Castellar del Vallès",
+      "municipi": "Castellar del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "X7 Indoor Pàdel Sabadell Sud",
+      "municipi": "Sant Quirze del Vallès",
+      "comarca": "occidental",
+      "web": "https://padelx7.com",
+      "adreca": "Carrer de Francesc Duran i Reynals, 1",
+      "verificat": 1
+    },
+    {
+      "nom": "Indoor Club Vallés",
+      "municipi": "Sant Quirze del Vallès",
+      "comarca": "occidental",
+      "web": "https://indoorclubvalles.com",
+      "adreca": "C/ de Francesc Duran i Reynals, 1",
+      "verificat": 1
+    },
+    {
+      "nom": "iPadel Vallés",
+      "municipi": "Sant Quirze del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer de Narcís Monturiol, 4",
+      "verificat": 1
+    },
+    {
+      "nom": "Can Casablanques",
+      "municipi": "Sant Quirze del Vallès",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "Carrer del Priorat, s/n",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Pàdel Reixac (Club Pàdel Tennis MiR)",
+      "municipi": "Montcada i Reixac",
+      "comarca": "occidental",
+      "web": "https://clubpadelmir.com",
+      "adreca": "Carretera de Sant Adrià a la Roca, km 8,8",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Can Falguera",
+      "municipi": "Palau-solità i Plegamans",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Palau",
+      "municipi": "Palau-solità i Plegamans",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel Club Palau",
+      "municipi": "Palau-solità i Plegamans",
+      "comarca": "occidental",
+      "web": "https://xeu.cat/padel-club-palau/",
+      "adreca": "Camí de Santa Magdalena",
+      "verificat": 1
+    },
+    {
+      "nom": "Oha Padel",
+      "municipi": "Polinyà",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Tempus Pàdel Club",
+      "municipi": "Polinyà",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "DiR Metasports Polinyà",
+      "municipi": "Polinyà",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Aurial Vila",
+      "municipi": "Viladecavalls",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Casal Viladecavalls",
+      "municipi": "Viladecavalls",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Deportiu Terrassa Hockey",
+      "municipi": "Matadepera",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Epic Instal·lacions Esportives",
+      "municipi": "Matadepera",
+      "comarca": "occidental",
+      "web": "",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Catalunya Pàdel Club",
+      "municipi": "Santa Perpètua de Mogoda",
+      "comarca": "occidental",
+      "web": "https://catalunyapadelclub.com",
+      "adreca": "Passeig de la Florida, 39",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Indoor Granollers",
+      "municipi": "Granollers",
+      "comarca": "oriental",
+      "web": "http://www.padelindoorgranollers.com/",
+      "adreca": "Avinguda de Sant Julià, 201",
+      "verificat": 1
+    },
+    {
+      "nom": "Tennis Pàdel Granollers",
+      "municipi": "Granollers",
+      "comarca": "oriental",
+      "web": "http://www.tpgranollers.cat/",
+      "adreca": "Carrer del Camp de les Moreres, 23",
+      "verificat": 1
+    },
+    {
+      "nom": "Crack Sports Club",
+      "municipi": "Granollers",
+      "comarca": "oriental",
+      "web": "http://cracksportsclub.com/",
+      "adreca": "Carrer Turó d'en Bruguet, 2",
+      "verificat": 1
+    },
+    {
+      "nom": "Can Prat Pàdel Club",
+      "municipi": "Mollet del Vallès",
+      "comarca": "oriental",
+      "web": "https://www.canpratpadelclub.cat/",
+      "adreca": "Avinguda de Can Prat, 16",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Mollet – El Calderí",
+      "municipi": "Mollet del Vallès",
+      "comarca": "oriental",
+      "web": "",
+      "adreca": "Camí Antic del Calderí, s/n",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Parets",
+      "municipi": "Parets del Vallès",
+      "comarca": "oriental",
+      "web": "http://padelparets.cat/",
+      "adreca": "Avinguda de Catalunya, 74",
+      "verificat": 1
+    },
+    {
+      "nom": "Pistes de Pàdel CEM Les Vernedes",
+      "municipi": "Montornès del Vallès",
+      "comarca": "oriental",
+      "web": "http://www.cemlesvernedes.cat/",
+      "adreca": "Carrer del Gran Vial, 3",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Montmeló",
+      "municipi": "Montmeló",
+      "comarca": "oriental",
+      "web": "http://www.padelmontmelo.com/",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Nou Pàdel Les Franqueses",
+      "municipi": "les Franqueses del Vallès",
+      "comarca": "oriental",
+      "web": "http://noupadellesfranqueses.com/",
+      "adreca": "Camí Antic de Vic, 15",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Els Gorchs",
+      "municipi": "les Franqueses del Vallès",
+      "comarca": "oriental",
+      "web": "http://www.elsgorchs.com/",
+      "adreca": "Avinguda, 20, urbanització Els Gorchs",
+      "verificat": 0
+    },
+    {
+      "nom": "Patronat Municipal d'Esports de les Franqueses",
+      "municipi": "les Franqueses del Vallès",
+      "comarca": "oriental",
+      "web": "https://tennisplana.com/",
+      "adreca": "",
+      "verificat": 0
+    },
+    {
+      "nom": "Pàdel Aliança",
+      "municipi": "Lliçà d'Amunt",
+      "comarca": "oriental",
+      "web": "http://padelalianca.com/",
+      "adreca": "Carrer de l'Aliança, 17",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis i Pàdel Serra Esport",
+      "municipi": "Lliçà de Vall",
+      "comarca": "oriental",
+      "web": "",
+      "adreca": "Carrer de Josep Llimona, 51",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis i Pàdel Les Argelagues",
+      "municipi": "Lliçà de Vall",
+      "comarca": "oriental",
+      "web": "http://www.lesargelagues.com/",
+      "adreca": "Carrer del Pilar, 4",
+      "verificat": 1
+    },
+    {
+      "nom": "Padelin Sports Club",
+      "municipi": "Lliçà de Vall",
+      "comarca": "oriental",
+      "web": "https://padelinclub.com/",
+      "adreca": "Carrer Can Nadal, 12",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis i Pàdel Can Juli",
+      "municipi": "Santa Eulàlia de Ronçana",
+      "comarca": "oriental",
+      "web": "http://www.ctpcanjuli.com/",
+      "adreca": "Carrer Lleida, 9",
+      "verificat": 1
+    },
+    {
+      "nom": "Padel Pinedes",
+      "municipi": "Santa Eulàlia de Ronçana",
+      "comarca": "oriental",
+      "web": "https://playtomic.io/tenant/a9688c20-0dce-47a9-bc74-c69f352d9bd5",
+      "adreca": "Carrer Joan I",
+      "verificat": 1
+    },
+    {
+      "nom": "City Sports",
+      "municipi": "l'Ametlla del Vallès",
+      "comarca": "oriental",
+      "web": "http://www.citysports.cat/",
+      "adreca": "Carrer del Club, 10",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Pàdel Fontmartina",
+      "municipi": "Sant Celoni",
+      "comarca": "oriental",
+      "web": "https://padelmaria.com/",
+      "adreca": "",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Tennis Cardedeu",
+      "municipi": "Cardedeu",
+      "comarca": "oriental",
+      "web": "http://www.tennisplana.com/",
+      "adreca": "Parc dels Pinetons",
+      "verificat": 0
+    },
+    {
+      "nom": "L'Esportiu de Llinars",
+      "municipi": "Llinars del Vallès",
+      "comarca": "oriental",
+      "web": "https://claror.cat/club/lesportiu-de-llinars/",
+      "adreca": "Avinguda Pau Casals, 281-283",
+      "verificat": 1
+    },
+    {
+      "nom": "Alfou Pàdel Club",
+      "municipi": "Sant Antoni de Vilamajor",
+      "comarca": "oriental",
+      "web": "https://xeu.cat/alfou-padel-club/",
+      "adreca": "Avinguda de Cardedeu, 2",
+      "verificat": 1
+    },
+    {
+      "nom": "Pàdel Club La Llagosta",
+      "municipi": "la Llagosta",
+      "comarca": "oriental",
+      "web": "https://xeu.cat/padel-club-la-llagosta/",
+      "adreca": "Carrer Girona, 1",
+      "verificat": 1
+    },
+    {
+      "nom": "Club Regasol",
+      "municipi": "Bigues i Riells del Fai",
+      "comarca": "oriental",
+      "web": "http://www.clubregasol.com/",
+      "adreca": "Carrer de la Garça, 4",
+      "verificat": 0
+    },
+    {
+      "nom": "Àgora (Egora la Garriga)",
+      "municipi": "la Garriga",
+      "comarca": "oriental",
+      "web": "https://www.egoralagarriga.cat/",
+      "adreca": "Carrer del Bassal, s/n",
+      "verificat": 0
+    },
+    {
+      "nom": "Pàdel Gualba",
+      "municipi": "Gualba",
+      "comarca": "oriental",
+      "web": "",
+      "adreca": "",
+      "verificat": 0
+    },
+    {
+      "nom": "VIP Padel Vilanova",
+      "municipi": "Vilanova del Vallès",
+      "comarca": "oriental",
+      "web": "http://www.vippadelvilanova.com/",
+      "adreca": "Can Rabassa, Camí de Vilassar, s/n",
+      "telefon": "936 39 48 26",
+      "verificat": 1
+    }
+  ],
+  "tornejos": [
+    {
+      "nom": "Master Final Circuito Regipadeltour 2026",
+      "club": "VIP Padel Vilanova",
+      "inici": "2026-10-05",
+      "fi": "2026-10-11",
+      "preu": "32 € per persona (una categoria) · 50 € dues categories",
+      "inscripcio": "Inscripció i pagament a l'aplicació oficial Regi Events",
+      "url": "https://app.regieventss.com/tournaments/9591577-master-final-circuito-regipadeltour-2026",
+      "descripcio": "Master Final del Circuit Regipadeltour 2026. Torneig setmanal de dilluns a diumenge amb partits complets i quadre de consolació premium. Premis per a campions i finalistes. Puntuable pel rànquing del circuit.",
+      "categories": [
+        {
+          "modalitat": "F",
+          "nivell": "1a"
+        },
+        {
+          "modalitat": "F",
+          "nivell": "2a"
+        },
+        {
+          "modalitat": "F",
+          "nivell": "3a"
+        },
+        {
+          "modalitat": "F",
+          "nivell": "4a"
+        },
+        {
+          "modalitat": "M",
+          "nivell": "1a"
+        },
+        {
+          "modalitat": "M",
+          "nivell": "2a"
+        },
+        {
+          "modalitat": "M",
+          "nivell": "3a"
+        },
+        {
+          "modalitat": "M",
+          "nivell": "4a"
+        },
+        {
+          "modalitat": "X",
+          "nivell": "2a"
+        },
+        {
+          "modalitat": "X",
+          "nivell": "3a"
+        }
+      ]
+    },
+    {
+      "nom": "Circuit Open Head Players",
+      "club": "Pàdel Club La Llagosta",
+      "inici": "2026-10-04",
+      "fi": "2026-10-11",
+      "preu": "",
+      "inscripcio": "Tancament d'inscripció: 2 d'octubre de 2026 a les 10:00. Torneig federat de la Federació Catalana de Pàdel.",
+      "url": "https://fcpadel.cat/competicio/circuits/circuit-open",
+      "descripcio": "Prova del Circuit Open Head Players de la Federació Catalana de Pàdel.",
+      "categories": []
+    }
+  ]
+}

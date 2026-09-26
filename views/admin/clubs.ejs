@@ -1,0 +1,9 @@
+<h1>Clubs</h1>
+<p><a href="/admin">← Administració</a></p>
+<table class="llista">
+  <tr><th>Nom</th><th>Municipi</th><th>Comarca</th><th>Verificat</th></tr>
+  <% for (const c of clubs) { %>
+    <tr><td><%= c.name %></td><td><%= c.town %></td><td><%= c.comarca %></td>
+    <td><%= c.verified ? 'Sí' : 'Pendent' %></td></tr>
+  <% } %>
+</table>

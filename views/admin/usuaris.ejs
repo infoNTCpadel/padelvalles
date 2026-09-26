@@ -1,0 +1,9 @@
+<h1>Usuaris</h1>
+<p><a href="/admin">← Administració</a></p>
+<table class="llista">
+  <tr><th>Nom</th><th>Email</th><th>Rol</th><th>Verificat</th><th>Alta</th></tr>
+  <% for (const u of usuaris) { %>
+    <tr><td><%= u.name %></td><td><%= u.email %></td><td><%= u.role %></td>
+    <td><%= u.email_verified ? 'Sí' : 'No' %></td><td><%= u.created_at.slice(0,10) %></td></tr>
+  <% } %>
+</table>

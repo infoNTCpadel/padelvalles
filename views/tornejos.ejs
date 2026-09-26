@@ -1,0 +1,41 @@
+<h1>Tornejos</h1>
+<form class="cercador formulari" action="/tornejos" method="get" style="max-width:none">
+  <input type="search" name="q" placeholder="Cerca..." value="<%= filtres.q %>">
+  <select name="comarca">
+    <option value="">Totes les comarques</option>
+    <% for (const [k, v] of Object.entries(COMARQUES)) { %>
+      <option value="<%= k %>" <%= filtres.comarca === k ? 'selected' : '' %>><%= v %></option>
+    <% } %>
+  </select>
+  <select name="club">
+    <option value="">Tots els clubs</option>
+    <% for (const c of clubs) { %>
+      <option value="<%= c.id %>" <%= String(filtres.club) === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
+    <% } %>
+  </select>
+  <select name="modalitat">
+    <option value="">Totes les modalitats</option>
+    <% for (const [k, v] of Object.entries(MODALITATS)) { %>
+      <option value="<%= k %>" <%= filtres.modalitat === k ? 'selected' : '' %>><%= v %></option>
+    <% } %>
+  </select>
+  <input type="month" name="mes" value="<%= filtres.mes %>">
+  <button class="boto" type="submit">Filtra</button>
+</form>
+
+<% if (!tornejos.length) { %>
+  <p>No hi ha tornejos amb aquests filtres.</p>
+<% } %>
+<div class="graella">
+  <% for (const t of tornejos) { %>
+    <article class="targeta">
+      <a href="/torneig/<%= t.id %>"><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell: <%= t.name %>" loading="lazy"></a>
+      <div class="cos">
+        <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
+        <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</div>
+        <% if (t.price_text) { %><div class="meta">🎟️ <%= t.price_text %></div><% } %>
+      </div>
+    </article>
+  <% } %>
+</div>

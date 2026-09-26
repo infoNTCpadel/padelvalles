@@ -1,0 +1,25 @@
+<h1>Sol·licita el compte del teu club</h1>
+<p>Amb el compte de club podràs publicar els teus tornejos. Els revisem un per un abans de publicar-los.</p>
+<% if (ok) { %><div class="exit">Sol·licitud enviada. Et verificarem el club i t'avisarem per email.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/club/sollicita" method="post">
+  <div class="camp">
+    <label>El teu club ja és al directori?</label>
+    <select name="club_id">
+      <option value="">-- El meu club no hi és --</option>
+      <% for (const c of clubs) { %><option value="<%= c.id %>"><%= c.name %> (<%= c.town %>)</option><% } %>
+    </select>
+  </div>
+  <p class="meta">Si no hi és, indica'l aquí i el donarem d'alta:</p>
+  <div class="camp"><label>Nom del club</label><input name="nou_nom" maxlength="120"></div>
+  <div class="fila">
+    <div class="camp"><label>Municipi</label><input name="nou_poble" maxlength="80"></div>
+    <div class="camp"><label>Comarca</label>
+      <select name="comarca"><option value="occidental">Vallès Occidental</option><option value="oriental">Vallès Oriental</option></select>
+    </div>
+  </div>
+  <div class="camp"><label>Persona de contacte i telèfon (per verificar que ets del club)</label>
+    <input name="contacte" maxlength="300" required placeholder="Nom, càrrec i telèfon">
+  </div>
+  <button class="boto" type="submit">Envia la sol·licitud</button>
+</form>

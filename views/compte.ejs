@@ -1,0 +1,52 @@
+<h1>El meu compte</h1>
+<% if (!user.email_verified) { %>
+  <div class="error">Encara no has verificat el teu email. Revisa la safata d'entrada (t'hem enviat l'enllaç en registrar-te).
+    <form class="enlinia" action="/reenvia-verificacio" method="post"><button class="boto menut secundari" type="submit">Reenvia l'enllaç</button></form>
+  </div>
+<% } %>
+<% if (avisa === 'verifica') { %><div class="error">Verifica el teu email abans de gestionar un club.</div><% } %>
+
+<form class="formulari" action="/elmeucompte" method="post">
+  <h2>Les meves dades</h2>
+  <div class="camp"><label>Nom i cognoms</label><input name="nom" value="<%= user.name %>" maxlength="80"></div>
+  <div class="camp"><label>Email</label><input value="<%= user.email %>" disabled></div>
+  <div class="camp"><label>El teu nivell</label>
+    <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option <%= user.level === n ? 'selected' : '' %>><%= n %></option><% } %></select>
+  </div>
+  <button class="boto" type="submit">Desa els canvis</button>
+</form>
+
+<form class="formulari" action="/elmeucompte/contrasenya" method="post">
+  <h2>Canvia la contrasenya</h2>
+  <% if (q.guardat) { %><div class="flash ok">Dades guardades.</div><% } %>
+  <% if (q.contrasenya === 'ok') { %><div class="flash ok">Contrasenya canviada correctament.</div><% } %>
+  <% if (q.error === 'contrasenya') { %><div class="flash err">La contrasenya actual no és correcta o la nova té menys de 6 caràcters.</div><% } %>
+  <div class="camp"><label>Contrasenya actual</label><input type="password" name="actual" required></div>
+  <div class="camp"><label>Nova contrasenya (mínim 6 caràcters)</label><input type="password" name="nova" minlength="6" required></div>
+  <button class="boto" type="submit">Canvia la contrasenya</button>
+</form>
+
+<% if (elsMeusClubs.length) { %>
+  <h2>Els meus clubs</h2>
+  <ul><% for (const c of elsMeusClubs) { %><li><a href="/club/<%= c.id %>"><%= c.name %></a></li><% } %></ul>
+  <p><a class="boto secundari" href="/club/panel">Anar al panell del club</a></p>
+<% } else { %>
+  <p><a href="/club/sollicita">Tens un club? Sol·licita el teu compte de club</a></p>
+<% } %>
+
+<h2 class="seccio">Tornejos que m'interessen</h2>
+<% if (!interessos.length) { %><p>Encara no n'has desat cap. Explora els <a href="/tornejos">tornejos</a>.</p><% } %>
+<div class="graella">
+  <% for (const t of interessos) { %>
+    <article class="targeta">
+      <div class="cos">
+        <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %></div>
+      </div>
+    </article>
+  <% } %>
+</div>
+
+<h2 class="seccio">Clubs que segueixo</h2>
+<% if (!clubs.length) { %><p>Encara no segueixes cap club.</p><% } %>
+<ul><% for (const c of clubs) { %><li><a href="/club/<%= c.id %>"><%= c.name %></a> (<%= c.town %>)</li><% } %></ul>

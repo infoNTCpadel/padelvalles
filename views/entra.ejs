@@ -1,0 +1,9 @@
+<h1>Entra</h1>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/entra" method="post">
+  <input type="hidden" name="next" value="<%= next %>">
+  <div class="camp"><label>Email</label><input type="email" name="email" required></div>
+  <div class="camp"><label>Contrasenya</label><input type="password" name="contrasenya" required></div>
+  <button class="boto" type="submit">Entra</button>
+</form>
+<p>No tens compte? <a href="/registre">Registre't gratis</a></p>
