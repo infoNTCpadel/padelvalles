@@ -46,9 +46,12 @@ r.post('/registre', (req, res) => {
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(info.lastInsertRowid, token);
   sendVerificationEmail(em, nom.trim(), token);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
-  req.session.user = sessio(user);
-  const desti = next.startsWith('/') ? next : '/elmeucompte?benvingut=1';
-  res.redirect(desti);
+  const desti = next.startsWith('/') && !next.startsWith('//') ? next : '/elmeucompte?benvingut=1';
+  req.session.regenerate((err) => {
+    if (err) return res.redirect('/entra');
+    req.session.user = sessio(user);
+    res.redirect(desti);
+  });
 });
 
 // Entrada
@@ -60,12 +63,22 @@ r.get('/entra', (req, res) => {
 r.post('/entra', (req, res) => {
   const em = String(req.body.email || '').trim().toLowerCase();
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(em);
+  const entraError = (msg) => res.render('entra', { titol: 'Entra', error: msg, next: req.body.next || '', restablerta: null });
   if (!user || !bcrypt.compareSync(String(req.body.contrasenya || ''), user.password_hash)) {
-    return res.render('entra', { titol: 'Entra', error: 'Email o contrasenya incorrectes.', next: req.body.next || '', restablerta: null });
+    // Límit anti-força bruta: 10 intents fallits per hora i IP
+    if (!permet('entra:' + req.ip, 10, 3600 * 1000)) {
+      return entraError('Massa intents fallits. Torna-ho a provar d\u2019aquí a una estona.');
+    }
+    return entraError('Email o contrasenya incorrectes.');
   }
-  req.session.user = sessio(user);
   const next = req.body.next || '/';
-  res.redirect(next.startsWith('/') ? next : '/');
+  const segur = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  // Regenera l'ID de sessió en entrar: evita fixació de sessió
+  req.session.regenerate((err) => {
+    if (err) return res.redirect('/entra');
+    req.session.user = sessio(user);
+    res.redirect(segur);
+  });
 });
 
 r.post('/surt', (req, res) => {
