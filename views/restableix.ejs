@@ -1,0 +1,6 @@
+<h1>Nova contrasenya</h1>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form action="/restableix/<%= token %>" method="post" class="formulari">
+  <div class="camp"><label>Nova contrasenya (mínim 6 caràcters)</label><input type="password" name="contrasenya" required minlength="6"></div>
+  <button class="boto" type="submit">Desa la nova contrasenya</button>
+</form>

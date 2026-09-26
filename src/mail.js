@@ -11,6 +11,10 @@ export function verificationUrl(token) {
   return `${APP_URL}/verifica/${token}`;
 }
 
+export function resetUrl(token) {
+  return `${APP_URL}/restableix/${token}`;
+}
+
 export async function sendVerificationEmail(email, nom, token) {
   const url = verificationUrl(token);
   if (!BREVO_API_KEY) {
@@ -124,6 +128,18 @@ export function sendMonitorAutoritzat(email, nom, clubNom) {
       <p>A partir d'ara, quan entris al <a href="${APP_URL}/club/panel">panell del club</a> veuràs els seus tornejos
       i podràs gestionar-ne els inscrits (altes i baixes).</p>
       <p>Si no saps de què va això, contacta amb el club: potser l'email s'ha escrit malament.</p>`,
+  });
+}
+
+export function sendPasswordReset(email, nom, token) {
+  const url = resetUrl(token);
+  return envia({
+    to: email, name: nom, tag: 'restabliment',
+    subject: 'Restableix la teva contrasenya de PadelVallès',
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>Has demanat restablir la teva contrasenya de <strong>PadelVallès</strong>. Fes clic a l'enllaç (caduca en 1 hora):</p>
+      <p><a href="${url}">${url}</a></p>
+      <p>Si no l'has demanat tu, ignora aquest missatge.</p>`,
   });
 }
 

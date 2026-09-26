@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import db from '../db.js';
-import { sendVerificationEmail } from '../mail.js';
+import { sendVerificationEmail, sendPasswordReset } from '../mail.js';
 import { permet } from '../lib/rateLimit.js';
 import { NIVELLS } from '../brand.js';
 
@@ -54,14 +54,14 @@ r.post('/registre', (req, res) => {
 // Entrada
 r.get('/entra', (req, res) => {
   if (req.session.user) return res.redirect('/');
-  res.render('entra', { titol: 'Entra', error: null, next: req.query.next || '' });
+  res.render('entra', { titol: 'Entra', error: null, next: req.query.next || '', restablerta: req.query.restablerta || null });
 });
 
 r.post('/entra', (req, res) => {
   const em = String(req.body.email || '').trim().toLowerCase();
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(em);
   if (!user || !bcrypt.compareSync(String(req.body.contrasenya || ''), user.password_hash)) {
-    return res.render('entra', { titol: 'Entra', error: 'Email o contrasenya incorrectes.', next: req.body.next || '' });
+    return res.render('entra', { titol: 'Entra', error: 'Email o contrasenya incorrectes.', next: req.body.next || '', restablerta: null });
   }
   req.session.user = sessio(user);
   const next = req.body.next || '/';
@@ -75,7 +75,7 @@ r.post('/surt', (req, res) => {
 // Verificació d'email
 r.get('/verifica/:token', (req, res) => {
   const tok = db.prepare('SELECT * FROM email_tokens WHERE token = ?').get(req.params.token);
-  if (!tok) return res.render('entra', { titol: 'Entra', error: 'Enllaç de verificació no vàlid.', next: '' });
+  if (!tok) return res.render('entra', { titol: 'Entra', error: 'Enllaç de verificació no vàlid.', next: '', restablerta: null });
   db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(tok.user_id);
   db.prepare('DELETE FROM email_tokens WHERE user_id = ?').run(tok.user_id);
   if (req.session.user && req.session.user.id === tok.user_id) req.session.user.email_verified = 1;
@@ -124,6 +124,55 @@ r.post('/canvia-email', (req, res) => {
   sendVerificationEmail(nou, u.name, token);
   req.session.user.email = nou;
   res.redirect('/elmeucompte?avisa=email-canviat');
+});
+
+// He oblidat la contrasenya: demanar l'enllaç de restabliment
+r.get('/oblit-contrasenya', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  res.render('oblit-contrasenya', { titol: 'Restableix la contrasenya', error: null, enviat: false });
+});
+
+r.post('/oblit-contrasenya', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  const fet = () => res.render('oblit-contrasenya', { titol: 'Restableix la contrasenya', error: null, enviat: true });
+  if (!permet('oblit:' + req.ip, 5, 3600 * 1000)) return fet(); // límit anti-abús, sense revelar res
+  const em = String(req.body.email || '').trim().toLowerCase();
+  const u = db.prepare('SELECT * FROM users WHERE email = ?').get(em);
+  if (u) {
+    const token = crypto.randomBytes(24).toString('hex');
+    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(u.id);
+    db.prepare('INSERT INTO password_resets (user_id, token) VALUES (?, ?)').run(u.id, token);
+    sendPasswordReset(u.email, u.name, token);
+  }
+  // Mateix missatge existeixi o no el compte: no revelem quins emails estan registrats
+  return fet();
+});
+
+// Restablir la contrasenya amb el token (d'un sol ús, caduca en 1 hora)
+function tokenResetValid(token) {
+  const t = db.prepare(`SELECT * FROM password_resets WHERE token = ? AND created_at > datetime('now', '-1 hour')`).get(token);
+  return t || null;
+}
+
+r.get('/restableix/:token', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  const t = tokenResetValid(req.params.token);
+  if (!t) return res.render('entra', { titol: 'Entra', error: 'Aquest enllaç no és vàlid o ha caducat. Demana\u2019n un de nou.', next: '', restablerta: null });
+  res.render('restableix', { titol: 'Nova contrasenya', error: null, token: req.params.token });
+});
+
+r.post('/restableix/:token', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  const t = tokenResetValid(req.params.token);
+  if (!t) return res.render('entra', { titol: 'Entra', error: 'Aquest enllaç no és vàlid o ha caducat. Demana\u2019n un de nou.', next: '', restablerta: null });
+  const nova = String(req.body.contrasenya || '');
+  if (nova.length < 6) {
+    return res.render('restableix', { titol: 'Nova contrasenya', error: 'La contrasenya ha de tenir mínim 6 caràcters.', token: req.params.token });
+  }
+  const hash = bcrypt.hashSync(nova, 10);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, t.user_id);
+  db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(t.user_id);
+  res.redirect('/entra?restablerta=1');
 });
 
 export default r;

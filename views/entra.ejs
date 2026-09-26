@@ -1,9 +1,10 @@
 <h1>Entra</h1>
 <% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (restablerta) { %><div class="avis">Contrasenya actualitzada. Ja pots entrar amb la nova.</div><% } %>
 <form class="formulari" action="/entra" method="post">
   <input type="hidden" name="next" value="<%= next %>">
   <div class="camp"><label>Email</label><input type="email" name="email" required></div>
   <div class="camp"><label>Contrasenya</label><input type="password" name="contrasenya" required></div>
   <button class="boto" type="submit">Entra</button>
 </form>
-<p>No tens compte? <a href="/registre">Registre't gratis</a></p>
+<p>No tens compte? <a href="/registre">Registre't gratis</a> · <a href="/oblit-contrasenya">He oblidat la contrasenya</a></p>

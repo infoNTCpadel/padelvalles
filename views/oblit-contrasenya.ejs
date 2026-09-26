@@ -1,0 +1,11 @@
+<h1>Restableix la contrasenya</h1>
+<% if (enviat) { %>
+  <div class="avis">Si aquest email és d'un compte de PadelVallès, t'hem enviat l'enllaç per restablir la contrasenya. Revisa la safata d'entrada (caduca en 1 hora).</div>
+<% } else { %>
+  <% if (error) { %><div class="error"><%= error %></div><% } %>
+  <form action="/oblit-contrasenya" method="post" class="formulari">
+    <div class="camp"><label>Email del teu compte</label><input type="email" name="email" required></div>
+    <button class="boto" type="submit">Envia'm l'enllaç</button>
+  </form>
+<% } %>
+<p><a href="/entra">← Torna a entrar</a></p>

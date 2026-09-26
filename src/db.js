@@ -100,6 +100,12 @@ CREATE TABLE IF NOT EXISTS email_tokens (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS password_resets (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS moderation_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   actor_id INTEGER REFERENCES users(id),
