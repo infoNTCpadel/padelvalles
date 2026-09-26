@@ -59,11 +59,11 @@ r.post('/torneig/:id/inscriu', juga, (req, res) => {
   if (!company.email_verified) return torna(res, t.id, null, 'La teva parella encara no ha verificat el compte.');
   if (company.id === me) return torna(res, t.id, null, 'No et pots convidar a tu mateix.');
   if (inscripcioDe(t.id, company.id)) return torna(res, t.id, null, 'Aquest jugador ja està inscrit en aquest torneig.');
+  const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);
   db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, status)
     VALUES (?, ?, ?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, company.id, jo.name, company.name);
   db.prepare(`UPDATE partner_search SET status = 'closed' WHERE tournament_id = ? AND user_id = ? AND status = 'open'`)
     .run(t.id, me);
-  const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);
   sendInvitacioParella(company.email, company.name, jo.name, t.name, etiqueta(cat));
   return torna(res, t.id, 'invitacio-enviada');
 });
@@ -196,11 +196,11 @@ r.post('/torneig/:id/busco-parella/:psid/proposa', juga, (req, res) => {
   const cat = db.prepare(`SELECT * FROM tournament_categories
     WHERE tournament_id = ? AND modality = ? AND level = ?`).get(t.id, cercador.modality, cercador.level);
   if (!cat) return torna(res, t.id, null, 'La categoria d\u2019aquest anunci ja no existeix en el torneig.');
+  const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);
   db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, status)
     VALUES (?, ?, ?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, cercador.user_id, jo.name, cercador.nom);
   db.prepare(`UPDATE partner_search SET status = 'closed' WHERE tournament_id = ? AND user_id = ? AND status = 'open'`)
     .run(t.id, me);
-  const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);
   sendInvitacioParella(cercador.email, cercador.nom, jo.name, t.name, etiqueta(cat));
   return torna(res, t.id, 'proposta-enviada');
 });

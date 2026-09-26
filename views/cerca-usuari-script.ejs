@@ -1,0 +1,48 @@
+<script>
+// Autocompletat de cerca d'usuaris registrats.
+// S'aplica a cada .cerca-usuari: l'input visible .cerca-usuari-nom cerca pel nom
+// i en triar un suggeriment omple l'input hidden (que és el que s'envia).
+(function () {
+  document.querySelectorAll('.cerca-usuari').forEach(function (cont) {
+    var nom = cont.querySelector('.cerca-usuari-nom');
+    var desti = cont.querySelector('input[type=hidden]');
+    var caixa = cont.querySelector('.suggeriments');
+    if (!nom || !desti || !caixa) return;
+    var t = null;
+    nom.addEventListener('input', function () {
+      desti.value = '';
+      clearTimeout(t);
+      var q = nom.value.trim();
+      if (q.length < 2) { caixa.innerHTML = ''; caixa.style.display = 'none'; return; }
+      t = setTimeout(function () {
+        fetch('/api/cerca-usuaris?q=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); })
+          .then(function (usuaris) {
+            caixa.innerHTML = '';
+            if (!usuaris.length) { caixa.style.display = 'none'; return; }
+            usuaris.forEach(function (u) {
+              var d = document.createElement('div');
+              d.className = 'suggeriment';
+              d.textContent = u.name + ' · ' + u.email;
+              d.addEventListener('mousedown', function () {
+                nom.value = u.name;
+                desti.value = u.email;
+                caixa.innerHTML = ''; caixa.style.display = 'none';
+              });
+              caixa.appendChild(d);
+            });
+            caixa.style.display = 'block';
+          })
+          .catch(function () { caixa.style.display = 'none'; });
+      }, 250);
+    });
+    // Si escriu directament un email sense triar cap suggeriment, també val
+    if (nom.form) nom.form.addEventListener('submit', function () {
+      if (!desti.value && nom.value.indexOf('@') > 0) desti.value = nom.value.trim();
+    });
+    document.addEventListener('click', function (e) {
+      if (!cont.contains(e.target)) caixa.style.display = 'none';
+    });
+  });
+})();
+</script>

@@ -88,3 +88,11 @@ table.llista th { background: var(--bg); color: #fff; }
 .avis input[readonly] { font-family: monospace; padding: .4rem .6rem; border: 1px solid var(--vora); border-radius: 6px; }
 .accions a, .accions form { margin-right: .4rem; }
 .llista .meta { font-size: .82rem; color: #6B6257; }
+
+/* Autocompletat de cerca d'usuaris */
+.cerca-usuari { position: relative; }
+.suggeriments { display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 50;
+  background: #fff; border: 1px solid #D8CBB6; border-radius: 0 0 8px 8px;
+  max-height: 220px; overflow-y: auto; box-shadow: 0 8px 20px rgba(43,43,41,.12); }
+.suggeriment { padding: .55rem .8rem; cursor: pointer; font-size: .95rem; }
+.suggeriment:hover { background: #F7EFE3; }

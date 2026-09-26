@@ -18,15 +18,24 @@
   </div>
   <div class="fila">
     <div class="camp"><label>Jugador 1 · nom</label><input name="nom1" required maxlength="80" placeholder="Nom i cognoms"></div>
-    <div class="camp"><label>Jugador 1 · email (si té compte)</label><input name="email1" type="email" maxlength="120" placeholder="opcional"></div>
+    <div class="camp cerca-usuari"><label>Jugador 1 · té compte? cerca'l pel nom</label>
+      <input type="text" class="cerca-usuari-nom" maxlength="120" placeholder="opcional" autocomplete="off">
+      <input type="hidden" name="email1">
+      <div class="suggeriments"></div>
+    </div>
   </div>
   <div class="fila">
     <div class="camp"><label>Jugador 2 · nom</label><input name="nom2" required maxlength="80" placeholder="Nom i cognoms"></div>
-    <div class="camp"><label>Jugador 2 · email (si té compte)</label><input name="email2" type="email" maxlength="120" placeholder="opcional"></div>
+    <div class="camp cerca-usuari"><label>Jugador 2 · té compte? cerca'l pel nom</label>
+      <input type="text" class="cerca-usuari-nom" maxlength="120" placeholder="opcional" autocomplete="off">
+      <input type="hidden" name="email2">
+      <div class="suggeriments"></div>
+    </div>
   </div>
-  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Si l'email és d'un usuari registrat i verificat, la parella hi queda vinculada i rep l'avís per email; si no, queda apuntada només amb el nom.</p>
+  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Cerca el jugador pel nom i tria'l de la llista: la parella quedarà vinculada al seu compte i rebrà l'avís per email. Si no té compte, deixa-ho en blanc i queda apuntada només amb el nom.</p>
   <button class="boto" type="submit">Afegeix la parella</button>
 </form>
+<%- include('cerca-usuari-script') %>
 <% } %>
 
 <% for (const c of categories) { %>
