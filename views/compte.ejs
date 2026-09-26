@@ -64,6 +64,17 @@
   <% } %>
   </ul>
 <% } %>
+<% if (typeof invitacionsRebutjades !== 'undefined' && invitacionsRebutjades.length) { %>
+  <h3>Invitacions rebutjades</h3>
+  <ul>
+  <% for (const i of invitacionsRebutjades) { %>
+    <li>❌ <strong><%= i.qui_nom %></strong> ha rebutjat la teva invitació per a
+      <a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a>
+      (<%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %>).
+      Pots convidar una altra parella.</li>
+  <% } %>
+  </ul>
+<% } %>
 <% if (inscripcions.length) { %>
   <table class="llista">
     <tr><th>Torneig</th><th>Categoria</th><th>Parella</th><th>Estat</th><th></th></tr>

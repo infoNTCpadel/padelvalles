@@ -47,6 +47,15 @@ CREATE TABLE IF NOT EXISTS club_users (
   PRIMARY KEY (user_id, club_id)
 );
 
+-- Monitors autoritzats per un club (veure inscrits + altes/baixes, sense gestionar el club)
+CREATE TABLE IF NOT EXISTS club_monitors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (club_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS tournaments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
@@ -167,6 +176,7 @@ for (const [taula, columna, def] of [
   ['tournaments', 'tipus', `TEXT DEFAULT 'open'`],
   ['tournament_categories', 'max_pairs', `INTEGER`],
   ['clubs', 'claim_token', `TEXT DEFAULT ''`],
+  ['tournaments', 'mostra_inscrits', `INTEGER NOT NULL DEFAULT 1`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);

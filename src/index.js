@@ -34,7 +34,18 @@ app.use((req, res, next) => {
         WHERE player2_id = ? AND status = 'pending'`).get(req.session.user.id).n;
     } catch { /* si la taula encara no existeix, no bloqueja la web */ }
   }
-  res.locals.invitacionsPendents = invitacionsPendents;
+  // Panell del club: gestors, admins i monitors autoritzats en algun club
+  let tePanell = false;
+  if (req.session.user) {
+    const rol = req.session.user.role;
+    tePanell = rol === 'club' || rol === 'admin';
+    if (!tePanell && rol === 'monitor') {
+      try {
+        tePanell = !!db.prepare('SELECT 1 FROM club_monitors WHERE user_id = ? LIMIT 1').get(req.session.user.id);
+      } catch { /* taula encara no creada */ }
+    }
+  }
+  res.locals.tePanell = tePanell;
   next();
 });
 

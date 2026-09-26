@@ -1,9 +1,14 @@
 <h1>Usuaris</h1>
 <p><a href="/admin">← Administració</a></p>
 <table class="llista">
-  <tr><th>Nom</th><th>Email</th><th>Rol</th><th>Verificat</th><th>Alta</th></tr>
+  <tr><th>Nom</th><th>Email</th><th>Rol</th><th>Verificat</th><th>Alta</th><th></th></tr>
   <% for (const u of usuaris) { %>
     <tr><td><%= u.name %></td><td><%= u.email %></td><td><%= u.role %></td>
-    <td><%= u.email_verified ? 'Sí' : 'No' %></td><td><%= u.created_at.slice(0,10) %></td></tr>
+    <td><%= u.email_verified ? 'Sí' : 'No' %></td><td><%= u.created_at.slice(0,10) %></td>
+    <td><% if (u.role === 'player') { %>
+      <form class="enlinia" action="/admin/usuaris/<%= u.id %>/rol" method="post"><input type="hidden" name="rol" value="monitor"><button class="boto secundari menut">Fes monitor</button></form>
+    <% } else if (u.role === 'monitor') { %>
+      <form class="enlinia" action="/admin/usuaris/<%= u.id %>/rol" method="post"><input type="hidden" name="rol" value="player"><button class="boto secundari menut">Torna a jugador</button></form>
+    <% } %></td></tr>
   <% } %>
 </table>

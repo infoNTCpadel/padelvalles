@@ -98,6 +98,9 @@
         <span class="ajuda">Passat aquest termini hauran de contactar amb el club.</span>
       </div>
     </div>
+    <div class="camp"><label><input type="checkbox" name="mostra_inscrits" value="1"<%= !t || t.mostra_inscrits ? ' checked' : '' %>> Mostra públicament els noms dels inscrits</label>
+      <span class="ajuda">El nombre d'inscrits per categoria sempre és visible; els noms, només si ho actives.</span>
+    </div>
   </div>
 <script>
 const QUOTES = <%- JSON.stringify(quotes || {}) %>;

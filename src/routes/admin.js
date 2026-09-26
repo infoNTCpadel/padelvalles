@@ -210,6 +210,17 @@ r.get('/usuaris', (req, res) => {
   res.render('admin/usuaris', { titol: 'Usuaris', usuaris });
 });
 
+// Canviar rol jugador <-> monitor (l'admin assigna el rol; el club autoritza després)
+r.post('/usuaris/:id/rol', (req, res) => {
+  const rol = req.body.rol === 'monitor' ? 'monitor' : 'player';
+  const u = db.prepare('SELECT role FROM users WHERE id = ?').get(req.params.id);
+  if (u && (u.role === 'player' || u.role === 'monitor')) {
+    db.prepare('UPDATE users SET role = ? WHERE id = ?').run(rol, req.params.id);
+    log(req.session.user.id, 'canvi_rol', 'user', req.params.id, `${u.role} -> ${rol}`);
+  }
+  res.redirect('/admin/usuaris');
+});
+
 r.get('/historial', (req, res) => {
   const accions = db.prepare(`
     SELECT m.*, u.name AS qui FROM moderation_log m LEFT JOIN users u ON u.id = m.actor_id

@@ -29,10 +29,9 @@
       <a href="/tornejos">Tornejos</a>
       <a href="/clubs">Clubs</a>
       <% if (user) { %>
-        <a href="/elmeucompte">El meu compte<% if (typeof invitacionsPendents !== 'undefined' && invitacionsPendents > 0) { %> <span class="insignia comptador"><%= invitacionsPendents %></span><% } %></a>
-        <% if (user.role === 'club' || user.role === 'admin') { %><a href="/club/panel">Panell del club</a><% } %>
+        <% if (typeof tePanell !== 'undefined' && tePanell) { %><a href="/club/panel">Panell del club</a><% } %>
         <% if (user.role === 'admin') { %><a href="/admin">Admin</a><% } %>
-        <a class="qui-ses" href="/elmeucompte" title="El meu compte">👤 <%= user.name %></a>
+        <a class="qui-ses" href="/elmeucompte" title="El meu compte">👤 <span class="qui-nom"><%= user.name %></span><% if (typeof invitacionsPendents !== 'undefined' && invitacionsPendents > 0) { %> <span class="insignia comptador"><%= invitacionsPendents %></span><% } %></a>
         <form class="enlinia" action="/surt" method="post"><button class="boto menut" type="submit">Surt</button></form>
       <% } else { %>
         <a href="/entra">Entra</a>

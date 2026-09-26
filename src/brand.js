@@ -54,3 +54,20 @@ export function nomNivell(id) {
   const n = NIVELLS.find(n => n.id === id);
   return n ? `${n.nom} (${n.rang})` : '';
 }
+
+// Estat del torneig segons les dates (semàfor públic)
+export const ESTATS_TORNEIG = {
+  oberta: 'Inscripció oberta',
+  tancada: 'Inscripció tancada',
+  enjoc: 'En joc',
+  finalitzat: 'Finalitzat',
+};
+
+export function estatTorneig(t) {
+  const avui = new Date().toISOString().slice(0, 10);
+  if (!t) return { clau: 'tancada', etiqueta: ESTATS_TORNEIG.tancada };
+  if (t.ends_at && t.ends_at < avui) return { clau: 'finalitzat', etiqueta: ESTATS_TORNEIG.finalitzat };
+  if (t.starts_at && t.starts_at <= avui) return { clau: 'enjoc', etiqueta: ESTATS_TORNEIG.enjoc };
+  if (t.registration_deadline && avui > t.registration_deadline) return { clau: 'tancada', etiqueta: ESTATS_TORNEIG.tancada };
+  return { clau: 'oberta', etiqueta: ESTATS_TORNEIG.oberta };
+}

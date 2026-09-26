@@ -8,7 +8,9 @@ import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria 
 import { sendPromocioEspera, sendParellaAfegidaClub } from '../mail.js';
 
 const r = Router();
-const nomesClub = [requireLogin, requireRole('club', 'admin'), requireVerified];
+const nomesClub = [requireLogin, requireRole('club', 'admin', 'monitor'), requireVerified];
+// Gestió plena del club (crear/editar/duplicar tornejos, perfil): monitors exclosos
+const nomesGestor = [requireLogin, requireRole('club', 'admin'), requireVerified];
 
 const pujada = multer({
   dest: path.join(process.cwd(), 'data', 'uploads'),
@@ -19,7 +21,12 @@ const pujada = multer({
   }
 });
 
-function clubsDe(userId) {
+function clubsDe(userId, role) {
+  if (role === 'monitor') {
+    return db.prepare(`
+      SELECT c.* FROM club_monitors cm JOIN clubs c ON c.id = cm.club_id
+      WHERE cm.user_id = ? ORDER BY c.name`).all(userId);
+  }
   return db.prepare(`
     SELECT c.* FROM club_users cu JOIN clubs c ON c.id = cu.club_id
     WHERE cu.user_id = ?`).all(userId);
@@ -28,6 +35,16 @@ function clubsDe(userId) {
 function potGestionar(userId, clubId, esAdmin) {
   if (esAdmin) return true;
   return !!db.prepare('SELECT 1 FROM club_users WHERE user_id = ? AND club_id = ?').get(userId, clubId);
+}
+
+// El monitor autoritzat pel club pot veure inscrits i fer altes/baixes (no gestionar el club)
+function esMonitorDe(userId, clubId) {
+  return !!db.prepare('SELECT 1 FROM club_monitors WHERE user_id = ? AND club_id = ?').get(userId, clubId);
+}
+
+function potVeureInscrits(userId, clubId, esAdmin) {
+  if (esAdmin || potGestionar(userId, clubId, false)) return true;
+  return esMonitorDe(userId, clubId);
 }
 
 // Sol·licitar compte de club (qualsevol usuari registrat).
@@ -86,15 +103,16 @@ r.post('/club/sollicita', requireLogin, (req, res) => {
 // Panell del club
 r.get('/club/panel', nomesClub, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
+  const esMonitor = req.session.user.role === 'monitor';
   const clubs = esAdmin
     ? db.prepare('SELECT * FROM clubs ORDER BY name').all()
-    : clubsDe(req.session.user.id);
+    : clubsDe(req.session.user.id, req.session.user.role);
   const ids = clubs.map(c => c.id);
   const tornejos = ids.length ? db.prepare(`
     SELECT t.*, c.name AS club_nom FROM tournaments t JOIN clubs c ON c.id = t.club_id
     WHERE t.club_id IN (${ids.map(() => '?').join(',')})
     ORDER BY t.starts_at DESC`).all(...ids) : [];
-  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos });
+  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor });
 });
 
 // Formulari de torneig
@@ -117,9 +135,9 @@ function filesCategories(t, body) {
   ];
 }
 
-r.get('/club/torneig/nou', nomesClub, (req, res) => {
+r.get('/club/torneig/nou', nomesGestor, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
-  const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id);
+  const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id, req.session.user.role);
   const pendents = db.prepare(`SELECT COUNT(*) AS n FROM tournaments WHERE created_by = ? AND status = 'pending'`)
     .get(req.session.user.id).n;
   const quotes = {};
@@ -134,7 +152,7 @@ r.get('/club/torneig/nou', nomesClub, (req, res) => {
 function desaTorneig(req, id) {
   const esAdmin = req.session.user.role === 'admin';
   const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', mode_inscripcio = 'externa',
-    data_limit = '', hores_baixa = '48', tipus = 'open' } = req.body;
+    data_limit = '', hores_baixa = '48', tipus = 'open', mostra_inscrits = '' } = req.body;
   const clubId = Number(club_id);
   if (!potGestionar(req.session.user.id, clubId, esAdmin)) throw new Error('No pots gestionar aquest club.');
   // Categories dinàmiques: tantes files com calgui (p. ex. Masculí 1a cat, Masculí 2a cat...)
@@ -164,6 +182,7 @@ function desaTorneig(req, id) {
     registration_deadline: deadline,
     unregister_hours: unregisterHores,
     tipus: tipusT,
+    mostra_inscrits: mostra_inscrits ? 1 : 0,
     description: String(descripcio).trim().slice(0, 2000)
   };
   if (!dades.name || !dades.starts_at) throw new Error('Falten el nom o la data del torneig.');
@@ -182,10 +201,10 @@ function desaTorneig(req, id) {
     if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
       registration_info=?, registration_url=?, registration_mode=?, registration_deadline=?,
-      unregister_hours=?, tipus=?, description=?, status=?, reject_reason='' WHERE id=?`)
+      unregister_hours=?, tipus=?, mostra_inscrits=?, description=?, status=?, reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
         dades.registration_info, dades.registration_url, dades.registration_mode, dades.registration_deadline,
-        dades.unregister_hours, dades.tipus, dades.description, nouEstat, id);
+        dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, nouEstat, id);
     if (nInscrits > 0) {
       // Amb inscripcions actives no es poden canviar les categories, només les places
       recreaCategories = false;
@@ -203,11 +222,11 @@ function desaTorneig(req, id) {
   } else {
     const info = db.prepare(`INSERT INTO tournaments
       (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode,
-       registration_deadline, unregister_hours, tipus, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
+       registration_deadline, unregister_hours, tipus, mostra_inscrits, description, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
         dades.registration_info, dades.registration_url, dades.registration_mode,
-        dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.description, req.session.user.id);
+        dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, req.session.user.id);
     tid = info.lastInsertRowid;
   }
   if (recreaCategories) {
@@ -217,13 +236,13 @@ function desaTorneig(req, id) {
   return tid;
 }
 
-r.post('/club/torneig/nou', nomesClub, (req, res) => {
+r.post('/club/torneig/nou', nomesGestor, (req, res) => {
   try {
     desaTorneig(req, null);
     res.redirect('/club/panel?enviat=1');
   } catch (e) {
     const esAdmin = req.session.user.role === 'admin';
-    const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id);
+    const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id, req.session.user.role);
     const quotes = {};
     for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
     res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG,
@@ -231,12 +250,12 @@ r.post('/club/torneig/nou', nomesClub, (req, res) => {
   }
 });
 
-r.get('/club/torneig/:id/edita', nomesClub, (req, res) => {
+r.get('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!t || !potGestionar(req.session.user.id, t.club_id, esAdmin)) return res.status(404).render('404', { titol: 'No trobat' });
   t.categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
-  const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id);
+  const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id, req.session.user.role);
   const quotes = {};
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id, t.id);
   const teInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
@@ -245,7 +264,7 @@ r.get('/club/torneig/:id/edita', nomesClub, (req, res) => {
     quotes, teInscrits, filesCategories: filesCategories(t, null), error: null });
 });
 
-r.post('/club/torneig/:id/edita', nomesClub, (req, res) => {
+r.post('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   try {
     desaTorneig(req, Number(req.params.id));
     res.redirect('/club/panel?enviat=1');
@@ -286,25 +305,36 @@ function agafaTorneigClub(req, res) {
   return t;
 }
 
+// Accés a inscrits: gestors + monitors autoritzats pel club
+function agafaTorneigInscrits(req, res) {
+  const esAdmin = req.session.user.role === 'admin';
+  const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
+  if (!t || !potVeureInscrits(req.session.user.id, t.club_id, esAdmin)) {
+    res.status(404).render('404', { titol: 'No trobat' });
+    return null;
+  }
+  return t;
+}
+
 r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
-  const t = agafaTorneigClub(req, res);
+  const t = agafaTorneigInscrits(req, res);
   if (!t) return;
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
     alta: req.query.alta || null, errorMsg: req.query.error || null });
 });
 
 // Duplicar un torneig (mateixes dades i categories, sense dates ni inscrits)
-r.post('/club/torneig/:id/duplica', nomesClub, (req, res) => {
+r.post('/club/torneig/:id/duplica', nomesGestor, (req, res) => {
   const t = agafaTorneigClub(req, res);
   if (!t) return;
   const nou = transaccio(() => {
     const r = db.prepare(`INSERT INTO tournaments
       (club_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
-       registration_mode, registration_deadline, unregister_hours, status, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 'pending', ?, datetime('now'))`).run(
+       registration_mode, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 'pending', ?, datetime('now'))`).run(
       t.club_id, (t.name || 'Torneig') + ' (còpia)', t.description || '', t.tipus || 'open',
       t.starts_at, t.ends_at, t.price_text || '', t.registration_info || '', t.registration_url || '',
-      t.registration_mode || 'externa', t.unregister_hours ?? 48, req.session.user.id);
+      t.registration_mode || 'externa', t.unregister_hours ?? 48, t.mostra_inscrits ?? 1, req.session.user.id);
     const nouId = r.lastInsertRowid;
     const cats = db.prepare('SELECT modality, level, max_pairs FROM tournament_categories WHERE tournament_id = ?').all(t.id);
     const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
@@ -316,7 +346,7 @@ r.post('/club/torneig/:id/duplica', nomesClub, (req, res) => {
 
 // Alta manual d'una parella pel club (les que arriben per telèfon, WhatsApp o recepció)
 r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
-  const t = agafaTorneigClub(req, res);
+  const t = agafaTorneigInscrits(req, res);
   if (!t) return;
   const enrere = `/club/torneig/${t.id}/inscrits`;
   try {
@@ -364,7 +394,7 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
 });
 
 r.post('/club/torneig/:id/inscrits/:rid/pagat', nomesClub, (req, res) => {
-  const t = agafaTorneigClub(req, res);
+  const t = agafaTorneigInscrits(req, res);
   if (!t) return;
   const insc = db.prepare('SELECT * FROM registrations WHERE id = ? AND tournament_id = ?').get(req.params.rid, t.id);
   if (!insc) return res.status(404).render('404', { titol: 'No trobat' });
@@ -373,7 +403,7 @@ r.post('/club/torneig/:id/inscrits/:rid/pagat', nomesClub, (req, res) => {
 });
 
 r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
-  const t = agafaTorneigClub(req, res);
+  const t = agafaTorneigInscrits(req, res);
   if (!t) return;
   const insc = db.prepare('SELECT * FROM registrations WHERE id = ? AND tournament_id = ?').get(req.params.rid, t.id);
   if (!insc) return res.status(404).render('404', { titol: 'No trobat' });
@@ -395,7 +425,7 @@ r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
 });
 
 r.get('/club/torneig/:id/inscrits.csv', nomesClub, (req, res) => {
-  const t = agafaTorneigClub(req, res);
+  const t = agafaTorneigInscrits(req, res);
   if (!t) return;
   const files = ['categoria;estat;parella;jugador1;email1;telefon1;jugador2;email2;telefon2;pagat'];
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -415,15 +445,58 @@ r.get('/club/torneig/:id/inscrits.csv', nomesClub, (req, res) => {
 
 function esc(s) { return String(s).replace(/</g, '&lt;'); }
 
+// Monitors autoritzats pel club (veure inscrits + altes/baixes)
+// Només el gestor del club pot autoritzar-los.
+r.get('/club/:clubId/monitors', nomesGestor, (req, res) => {
+  const esAdmin = req.session.user.role === 'admin';
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.clubId);
+  if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) {
+    return res.status(404).render('404', { titol: 'No trobat' });
+  }
+  const monitors = db.prepare(`
+    SELECT u.id, u.name, u.email, cm.created_at FROM club_monitors cm
+    JOIN users u ON u.id = cm.user_id WHERE cm.club_id = ? ORDER BY u.name`).all(club.id);
+  res.render('club-monitors', { titol: 'Monitors', club, monitors, error: req.query.error || null, ok: req.query.ok || null });
+});
+
+r.post('/club/:clubId/monitors', nomesGestor, (req, res) => {
+  const esAdmin = req.session.user.role === 'admin';
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.clubId);
+  if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) {
+    return res.status(404).render('404', { titol: 'No trobat' });
+  }
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (!u || !u.email_verified) {
+    return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('Aquest email no correspon a cap compte verificat de PadelVallès.')}`);
+  }
+  if (u.role === 'admin') {
+    return res.redirect(`/club/${club.id}/monitors?error=${encodeURIComponent('No cal autoritzar un administrador.')}`);
+  }
+  if (u.role === 'player') db.prepare(`UPDATE users SET role = 'monitor' WHERE id = ?`).run(u.id);
+  db.prepare('INSERT OR IGNORE INTO club_monitors (club_id, user_id) VALUES (?, ?)').run(club.id, u.id);
+  res.redirect(`/club/${club.id}/monitors?ok=1`);
+});
+
+r.post('/club/:clubId/monitors/:uid/treu', nomesGestor, (req, res) => {
+  const esAdmin = req.session.user.role === 'admin';
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.clubId);
+  if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) {
+    return res.status(404).render('404', { titol: 'No trobat' });
+  }
+  db.prepare('DELETE FROM club_monitors WHERE club_id = ? AND user_id = ?').run(club.id, req.params.uid);
+  res.redirect(`/club/${club.id}/monitors?ok=1`);
+});
+
 // Fitxa del club (dades + logo)
-r.get('/club/perfil/:id', nomesClub, (req, res) => {
+r.get('/club/perfil/:id', nomesGestor, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
   if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) return res.status(404).render('404', { titol: 'No trobat' });
   res.render('club-perfil', { titol: 'Fitxa del club', club, error: null, ok: req.query.ok });
 });
 
-r.post('/club/perfil/:id', nomesClub, pujada.single('logo'), (req, res) => {
+r.post('/club/perfil/:id', nomesGestor, pujada.single('logo'), (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
   if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) return res.status(404).render('404', { titol: 'No trobat' });

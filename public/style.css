@@ -98,4 +98,15 @@ table.llista th { background: var(--bg); color: #fff; }
 .suggeriment:hover { background: #F7EFE3; }
 .insignia.comptador { background: #E8703A; color: #fff; }
 .qui-ses { font-weight: 600; white-space: nowrap; }
-@media (max-width: 640px) { .qui-ses { display: none; } }
+@media (max-width: 640px) { .qui-ses .qui-nom { display: none; } }
+/* Estat del torneig: semàfor */
+.estat { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; font-weight: 600; }
+.estat::before { content: ""; width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
+.estat.oberta::before { background: #2F9E44; }
+.estat.tancada::before { background: #E8A13A; }
+.estat.enjoc::before { background: #D64545; }
+.estat.finalitzat::before { background: #9A9A98; }
+.estat.oberta { color: #237A35; }
+.estat.tancada { color: #9A6B1A; }
+.estat.enjoc { color: #B03232; }
+.estat.finalitzat { color: #6E6E6C; }

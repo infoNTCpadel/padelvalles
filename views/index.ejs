@@ -23,6 +23,7 @@
       <a class="targeta-cap" href="/torneig/<%= t.id %>"><img src="/logo.png" alt="PadelVallès"><span>PADELVALLÈS</span></a>
       <div class="cos">
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <% if (typeof estatTorneig !== 'undefined') { const e = estatTorneig(t); %><div><span class="estat <%= e.clau %>"><%= e.etiqueta %></span></div><% } %>
         <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %> (<%= t.club_poble %>)</div>
       </div>
     </article>

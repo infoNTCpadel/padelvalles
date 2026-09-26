@@ -57,13 +57,23 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
     JOIN tournament_categories tc ON tc.id = r.category_id
     JOIN users u ON u.id = r.player2_id
     WHERE r.player1_id = ? AND r.status = 'pending' ORDER BY r.created_at DESC`).all(user.id);
+  // Invitacions que m'han rebutjat (només les veig jo, caduquen als 20 dies)
+  const invitacionsRebutjades = db.prepare(`
+    SELECT r.*, t.name AS torneig_nom, tc.modality, tc.level, u.name AS qui_nom
+    FROM registrations r
+    JOIN tournaments t ON t.id = r.tournament_id
+    JOIN tournament_categories tc ON tc.id = r.category_id
+    JOIN users u ON u.id = r.player2_id
+    WHERE r.player1_id = ? AND r.status = 'rejected'
+      AND r.decided_at >= datetime('now', '-20 days')
+    ORDER BY r.decided_at DESC`).all(user.id);
   const anuncis = db.prepare(`
     SELECT ps.*, t.name AS torneig_nom FROM partner_search ps
     JOIN tournaments t ON t.id = ps.tournament_id
     WHERE ps.user_id = ? AND ps.status = 'open' AND t.status = 'published'
     ORDER BY t.starts_at ASC`).all(user.id);
   res.render('compte', { titol: 'El meu compte', user, interessos, clubs, elsMeusClubs, NIVELLS,
-    inscripcions, invitacionsRebudes, invitacionsEnviades, anuncis, MODALITATS,
+    inscripcions, invitacionsRebudes, invitacionsEnviades, invitacionsRebutjades, anuncis, MODALITATS,
     avisa: req.query.avisa || '', q: req.query });
 });
 

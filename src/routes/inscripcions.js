@@ -116,7 +116,7 @@ r.post('/torneig/:id/invitacio/:rid/rebutja', juga, (req, res) => {
   if (!insc || insc.player2_id !== me || insc.status !== 'pending') {
     return torna(res, req.params.id, null, 'Invitació no vàlida.');
   }
-  db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
+  db.prepare(`UPDATE registrations SET status = 'rejected', decided_at = datetime('now') WHERE id = ?`).run(insc.id);
   const t = getTorneig(req.params.id);
   const { p1, p2 } = parellaDe(insc);
   if (t) sendInvitacioRebutjada(p1.email, p1.name, p2.name, t.name);

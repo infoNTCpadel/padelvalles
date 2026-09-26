@@ -1,7 +1,11 @@
 <h1>Panell del club</h1>
+<% if (typeof esMonitor !== 'undefined' && esMonitor) { %>
+<p class="avis">Has entrat com a <strong>monitor</strong>: pots veure els inscrits i fer altes i baixes dels tornejos dels clubs que t'han autoritzat.</p>
+<% } %>
 <div class="fila">
-  <a class="boto" href="/club/torneig/nou">+ Nou torneig</a>
-  <% for (const c of clubs) { %><a class="boto secundari menut" href="/club/perfil/<%= c.id %>">Fitxa: <%= c.name %></a><% } %>
+  <% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a class="boto" href="/club/torneig/nou">+ Nou torneig</a><% } %>
+  <% for (const c of clubs) { %><% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a class="boto secundari menut" href="/club/perfil/<%= c.id %>">Fitxa: <%= c.name %></a><% } %><% } %>
+  <% if (typeof esMonitor === 'undefined' || !esMonitor) { %><% for (const c of clubs) { %><a class="boto secundari menut" href="/club/<%= c.id %>/monitors">Monitors: <%= c.name %></a><% } %><% } %>
 </div>
 
 <h2 class="seccio">Els meus tornejos</h2>
@@ -16,8 +20,9 @@
       <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status %></span>
         <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
       </td>
-      <td><a href="/club/torneig/<%= t.id %>/edita">Edita</a> · <a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %><% if ((t.registration_mode || 'externa') === 'padelvalles') { %> · <a href="/club/torneig/<%= t.id %>/inscrits"><strong>Inscrits</strong></a><% } %>
-        <form class="enlinia" action="/club/torneig/<%= t.id %>/duplica" method="post" onsubmit="return confirm('Vols duplicar aquest torneig? Es copiaran les dades i les categories, sense dates ni inscrits.')"><button class="boto secundari menut" type="submit">Duplica</button></form></td>
+      <td><% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a href="/club/torneig/<%= t.id %>/edita">Edita</a> · <% } %><a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %><% if ((t.registration_mode || 'externa') === 'padelvalles') { %> · <a href="/club/torneig/<%= t.id %>/inscrits"><strong>Inscrits</strong></a><% } %>
+        <% if (typeof esMonitor === 'undefined' || !esMonitor) { %>
+        <form class="enlinia" action="/club/torneig/<%= t.id %>/duplica" method="post" onsubmit="return confirm('Vols duplicar aquest torneig? Es copiaran les dades i les categories, sense dates ni inscrits.')"><button class="boto secundari menut" type="submit">Duplica</button></form><% } %></td>
     </tr>
   <% } %>
 </table>

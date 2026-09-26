@@ -7,7 +7,11 @@
   <% if (user) { %><div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div><% } %>
   <div>
     <h1><%= t.name %></h1>
-    <p><span class="etiqueta"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span></p>
+    <p><span class="etiqueta"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span>
+      <% if (typeof estat !== 'undefined') { %> <span class="estat <%= estat.clau %>"><%= estat.etiqueta %></span><% } %></p>
+    <% if (typeof estat !== 'undefined' && estat.clau !== 'oberta') { %>
+      <div class="avis"><%= estat.clau === 'finalitzat' ? 'Aquest torneig ja ha finalitzat.' : estat.clau === 'enjoc' ? 'Aquest torneig ja està en joc.' : 'Les inscripcions d\u2019aquest torneig estan tancades.' %></div>
+    <% } %>
     <dl class="dades">
       <dt>Dates</dt><dd>📅 <%= t.starts_at %> – <%= t.ends_at %></dd>
       <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</dd>
@@ -52,6 +56,18 @@
     <div class="fila" style="margin-top:1rem">
       <a class="boto secundari menut" href="https://wa.me/?text=<%= encodeURIComponent(shareText + ' ' + shareUrl) %>" target="_blank" rel="noopener">↗ Comparteix per WhatsApp</a>
     </div>
+
+    <% if (typeof inscritsPerCat !== 'undefined' && t.categories.length) { %>
+      <h2>Inscrits</h2>
+      <ul>
+      <% for (const c of t.categories) { const info = inscritsPerCat[c.id] || { n: 0, max: null, parelles: [] }; %>
+        <li><strong><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></strong>:
+          <%= info.n %><%= info.max ? '/' + info.max : '' %> parelles
+          <% if (user && info.parelles.length) { %><br><span class="meta"><%= info.parelles.map(p => p.player1_name + ' / ' + p.player2_name).join(' · ') %></span><% } %>
+        </li>
+      <% } %>
+      </ul>
+    <% } %>
 
     <details style="margin-top:1.5rem">
       <summary>Veus alguna cosa estranya en aquest torneig? Avisa'ns</summary>

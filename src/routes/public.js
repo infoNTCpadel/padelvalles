@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { cartellSVG } from '../poster.js';
-import { COMARQUES, MODALITATS, TIPUS_TORNEIG } from '../brand.js';
+import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig } from '../brand.js';
 import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
 
 const r = Router();
@@ -27,10 +27,10 @@ r.get('/', (req, res) => {
     ORDER BY t.starts_at ASC LIMIT 6`).all(avui);
   const clubs = db.prepare(`SELECT * FROM clubs WHERE verified = 1 ORDER BY name LIMIT 8`).all();
   const totalClubs = db.prepare(`SELECT COUNT(*) AS n FROM clubs WHERE verified = 1`).get().n;
-  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, COMARQUES });
+  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, COMARQUES, estatTorneig });
 });
 
-// Llistat de tornejos amb filtres
+// Llistat de tornejos amb filtres (inclou els finalitzats dels últims 60 dies com a historial)
 r.get('/tornejos', (req, res) => {
   const { comarca = '', club = '', modalitat = '', q = '', mes = '' } = req.query;
   const avui = new Date().toISOString().slice(0, 10);
@@ -39,17 +39,22 @@ r.get('/tornejos', (req, res) => {
     FROM tournaments t
     JOIN clubs c ON c.id = t.club_id
     LEFT JOIN tournament_categories tc ON tc.tournament_id = t.id
-    WHERE t.status = 'published' AND t.ends_at >= ?`;
-  const p = [avui];
+    WHERE t.status = 'published' AND t.ends_at >= date('now', '-60 days')`;
+  const p = [];
   if (comarca) { sql += ' AND c.comarca = ?'; p.push(comarca); }
   if (club) { sql += ' AND t.club_id = ?'; p.push(Number(club)); }
   if (modalitat) { sql += ' AND tc.modality = ?'; p.push(modalitat); }
   if (q) { sql += ' AND (t.name LIKE ? OR c.name LIKE ? OR c.town LIKE ?)'; p.push(`%${q}%`, `%${q}%`, `%${q}%`); }
   if (mes) { sql += ` AND strftime('%Y-%m', t.starts_at) = ?`; p.push(mes); }
   sql += ' ORDER BY t.starts_at ASC';
-  const tornejos = db.prepare(sql).all(...p);
+  const tots = db.prepare(sql).all(...p);
+  // Primer els vigents, després l'historial recent
+  const tornejos = [
+    ...tots.filter(t => t.ends_at >= avui),
+    ...tots.filter(t => t.ends_at < avui).reverse(),
+  ];
   const clubs = db.prepare('SELECT id, name FROM clubs WHERE verified = 1 ORDER BY name').all();
-  res.render('tornejos', { titol: 'Tornejos', tornejos, clubs, filtres: { comarca, club, modalitat, q, mes }, COMARQUES, MODALITATS });
+  res.render('tornejos', { titol: 'Tornejos', tornejos, clubs, filtres: { comarca, club, modalitat, q, mes }, COMARQUES, MODALITATS, estatTorneig });
 });
 
 // Fitxa del torneig
@@ -112,9 +117,22 @@ r.get('/torneig/:id', (req, res) => {
     'anunci-tret': 'Anunci retirat.',
     'proposta-enviada': 'Proposta enviada. Si l\u2019accepta, quedareu inscrits com a parella.',
   };
+  // Recompte d'inscrits per categoria (sempre públic) + noms (si el club ho permet)
+  const inscritsPerCat = {};
+  for (const c of t.categories) {
+    const parelles = db.prepare(`
+      SELECT player1_name, player2_name FROM registrations
+      WHERE category_id = ? AND status = 'registered' ORDER BY decided_at ASC, id ASC`).all(c.id);
+    inscritsPerCat[c.id] = {
+      n: parelles.length,
+      max: c.max_pairs,
+      parelles: t.mostra_inscrits ? parelles : [],
+    };
+  }
+  const estat = estatTorneig(t);
   res.render('torneig', { titol: t.name, t, interessat, MODALITATS, TIPUS_TORNEIG, avis: req.query.avis,
     missatge: MISS[req.query.avis] || null, errorMsg: req.query.error || null,
-    modePV, oberta, lesMeves, places, cercadors, elMeuAnunci,
+    modePV, oberta, lesMeves, places, cercadors, elMeuAnunci, inscritsPerCat, estat,
     metaDescription, canonical, ogImage, shareText, shareUrl: canonical });
 });
 
