@@ -1,12 +1,13 @@
 <h1>Clubs del Vallès</h1>
 <form class="cercador" action="/clubs" method="get">
+  <input type="search" name="q" placeholder="Cerca per nom o municipi..." value="<%= q %>">
   <select name="comarca">
     <option value="">Totes les comarques</option>
     <% for (const [k, v] of Object.entries(COMARQUES)) { %>
       <option value="<%= k %>" <%= comarca === k ? 'selected' : '' %>><%= v %></option>
     <% } %>
   </select>
-  <button class="boto" type="submit">Filtra</button>
+  <button class="boto" type="submit">Cerca</button>
 </form>
 <div class="graella">
   <% for (const c of clubs) { %>

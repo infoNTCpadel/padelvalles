@@ -36,11 +36,21 @@
     <tr>
       <td><strong><%= c.name %></strong><br><span class="meta"><%= c.town %> · <%= c.comarca %></span></td>
       <td><span class="meta"><%= c.email || '—' %><br><%= c.phone || '' %></span></td>
-      <td><span class="meta"><%= c.gestors || '—' %></span></td>
+      <td>
+        <% if (c.gestors) { %>
+          <% for (const g of c.gestors.split(';;')) { const [gid, ...rest] = g.split('|'); const geti = rest.join('|'); %>
+            <span class="meta"><%= geti %></span>
+            <form action="/admin/clubs/<%= c.id %>/gestor/<%= gid %>/treu?estat=<%= estat %><%= q ? '&q=' + encodeURIComponent(q) : '' %>" method="post" style="display:inline">
+              <button class="boto petit secundari" type="submit" title="Treure aquest gestor" onclick="return confirm('Treure aquest gestor del club?')">✕</button>
+            </form><br>
+          <% } %>
+        <% } else { %><span class="meta">—</span><% } %>
+      </td>
       <td style="text-align:center"><%= c.n_tornejos %></td>
       <td><%- c.verified ? '<span class="etiqueta ok">Verificat</span>' : '<span class="etiqueta pendent">Pendent</span>' %></td>
       <td class="accions">
         <a href="/club/<%= c.id %>" target="_blank">Veure</a>
+        <a href="/club/perfil/<%= c.id %>">Fitxa</a>
         <form action="/admin/clubs/<%= c.id %>/enllac" method="post" style="display:inline">
           <button class="boto petit secundari" type="submit" title="Genera un enllaç perquè el club reclami la gestió">Enllaç reclamació</button>
         </form>

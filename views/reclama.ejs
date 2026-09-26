@@ -7,7 +7,13 @@
   <% } %>
 </div>
 
-<% if (jaGestor) { %>
+<% if (esAdmin) { %>
+  <div class="avis">
+    <strong>Has entrat com a administrador.</strong><br>
+    No cal que reclamis clubs: ja pots gestionar-los tots des del panell.
+  </div>
+  <p><a class="boto" href="/club/panel">Ves al panell</a></p>
+<% } else if (jaGestor) { %>
   <p>Ja ets gestor d'aquest club.</p>
   <p><a class="boto" href="/club/panel">Ves al panell del club</a></p>
 <% } else { %>

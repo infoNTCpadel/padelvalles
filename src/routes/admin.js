@@ -106,7 +106,7 @@ r.get('/clubs', (req, res) => {
   const clubs = db.prepare(`
     SELECT c.*,
       (SELECT COUNT(*) FROM tournaments t WHERE t.club_id = c.id) AS n_tornejos,
-      (SELECT GROUP_CONCAT(u.name || ' <' || u.email || '>', ', ')
+      (SELECT GROUP_CONCAT(u.id || '|' || u.name || ' <' || u.email || '>', ';;')
          FROM club_users cu JOIN users u ON u.id = cu.user_id WHERE cu.club_id = c.id) AS gestors
     FROM clubs c ${where} ORDER BY c.verified, c.name`).all(...params);
   const total = db.prepare('SELECT COUNT(*) n FROM clubs').get().n;
@@ -116,6 +116,12 @@ r.get('/clubs', (req, res) => {
     appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
 });
 
+// Treure un gestor d'un club
+r.post('/clubs/:id/gestor/:uid/treu', (req, res) => {
+  db.prepare('DELETE FROM club_users WHERE club_id = ? AND user_id = ?').run(req.params.id, req.params.uid);
+  log(req.session.user.id, 'club_gestor_tret', 'club', req.params.id, 'uid=' + req.params.uid);
+  res.redirect('/admin/clubs?' + new URLSearchParams({ estat: req.query.estat || 'tots', q: req.query.q || '' }).toString());
+});
 // Generar enllaç de reclamació per a un club (per enviar al contacte del club)
 r.post('/clubs/:id/enllac', (req, res) => {
   const token = crypto.randomBytes(20).toString('hex');

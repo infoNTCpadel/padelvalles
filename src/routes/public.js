@@ -74,12 +74,14 @@ r.get('/torneig/:id/cartell.svg', (req, res) => {
 // Directorio de clubs
 r.get('/clubs', (req, res) => {
   const { comarca = '' } = req.query;
+  const q = String(req.query.q || '').trim();
   let sql = 'SELECT * FROM clubs WHERE verified = 1';
   const p = [];
   if (comarca) { sql += ' AND comarca = ?'; p.push(comarca); }
+  if (q) { sql += ' AND (name LIKE ? OR town LIKE ?)'; p.push(`%${q}%`, `%${q}%`); }
   sql += ' ORDER BY town, name';
   const clubs = db.prepare(sql).all(...p);
-  res.render('clubs', { titol: 'Clubs', clubs, comarca, COMARQUES });
+  res.render('clubs', { titol: 'Clubs', clubs, comarca, q, COMARQUES });
 });
 
 // Fitxa del club

@@ -197,10 +197,12 @@ r.get('/reclama/:token', requireLogin, requireVerified, (req, res) => {
     .get(req.session.user.id, club.id);
   const gestors = db.prepare(`SELECT u.name FROM club_users cu JOIN users u ON u.id = cu.user_id WHERE cu.club_id = ?`)
     .all(club.id).map(g => g.name);
-  res.render('reclama', { titol: 'Reclama el teu club', club, jaGestor: !!jaGestor, gestors });
+  res.render('reclama', { titol: 'Reclama el teu club', club, jaGestor: !!jaGestor, gestors,
+    esAdmin: req.session.user.role === 'admin' });
 });
 
 r.post('/reclama/:token', requireLogin, requireVerified, (req, res) => {
+  if (req.session.user.role === 'admin') return res.redirect('/club/panel');
   const club = db.prepare('SELECT * FROM clubs WHERE claim_token = ?').get(req.params.token);
   if (!club) return res.status(404).render('404', { titol: 'Enllaç no vàlid' });
   db.prepare('INSERT OR IGNORE INTO club_users (user_id, club_id) VALUES (?, ?)').run(req.session.user.id, club.id);
