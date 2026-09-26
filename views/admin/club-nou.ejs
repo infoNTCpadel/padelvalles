@@ -1,0 +1,32 @@
+<h1>Nou club</h1>
+<p><a href="/admin/clubs">← Clubs</a></p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<p class="meta">Els clubs creats des d'aquí queden verificats i visibles de seguida.</p>
+<form class="formulari" action="/admin/clubs/nou" method="post" enctype="multipart/form-data">
+  <div class="camp"><label>Nom *</label><input name="nom" maxlength="120" required value="<%= valors.name || '' %>"></div>
+  <div class="fila">
+    <div class="camp"><label>Municipi *</label><input name="municipi" maxlength="120" required value="<%= valors.town || '' %>"></div>
+    <div class="camp"><label>Comarca *</label>
+      <select name="comarca" required>
+        <option value="">—</option>
+        <% for (const [k, v] of Object.entries(COMARQUES)) { %>
+          <option value="<%= k %>" <%= valors.comarca === k ? 'selected' : '' %>><%= v %></option>
+        <% } %>
+      </select>
+    </div>
+  </div>
+  <div class="camp"><label>Adreça</label><input name="adreca" maxlength="200" value="<%= valors.address || '' %>"></div>
+  <div class="fila">
+    <div class="camp"><label>Web</label><input name="web" maxlength="200" placeholder="https://..." value="<%= valors.website || '' %>"></div>
+    <div class="camp"><label>Telèfon</label><input name="telefon" maxlength="40" value="<%= valors.phone || '' %>"></div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>Email de contacte</label><input name="email" type="email" maxlength="120" value="<%= valors.email || '' %>"></div>
+    <div class="camp"><label>Nombre de pistes</label><input name="pistes" type="number" min="1" max="50" value="<%= valors.courts || '' %>"></div>
+  </div>
+  <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="4" maxlength="1000"><%= valors.description || '' %></textarea></div>
+  <div class="camp"><label>Logo del club (PNG o JPG, màx. 2 MB)</label>
+    <input type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+  </div>
+  <button class="boto" type="submit">Crea el club</button>
+</form>

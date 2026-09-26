@@ -1,5 +1,9 @@
 <h1>Clubs</h1>
-<p><a href="/admin">← Administració</a></p>
+<p><a href="/admin">← Administració</a> · <a class="boto menut" href="/admin/clubs/nou">＋ Nou club</a></p>
+
+<% if (creat) { const c = clubs.find(x => String(x.id) === String(creat)); %>
+  <% if (c) { %><div class="exit">Club «<%= c.name %>» creat i verificat.</div><% } %>
+<% } %>
 
 <div class="crm-resum">
   <div class="crm-dada"><strong><%= total %></strong><span>clubs totals</span></div>

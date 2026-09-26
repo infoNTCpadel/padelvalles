@@ -1,10 +1,22 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
+import multer from 'multer';
+import path from 'node:path';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
+import { COMARQUES } from '../brand.js';
 
 const r = Router();
 r.use(requireRole('admin'));
+
+const pujada = multer({
+  dest: path.join(process.cwd(), 'data', 'uploads'),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = ['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype);
+    cb(ok ? null : new Error('Format no vàlid'), ok);
+  }
+});
 
 function log(actorId, action, type, id, note = '') {
   db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
@@ -112,8 +124,36 @@ r.get('/clubs', (req, res) => {
   const total = db.prepare('SELECT COUNT(*) n FROM clubs').get().n;
   const nPendents = db.prepare('SELECT COUNT(*) n FROM clubs WHERE verified = 0').get().n;
   res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents,
-    reclamat: req.query.reclamat || null,
+    reclamat: req.query.reclamat || null, creat: req.query.creat || null,
     appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
+});
+
+// Formulari de nou club (l'admin el crea ja verificat)
+r.get('/clubs/nou', (req, res) => {
+  res.render('admin/club-nou', { titol: 'Nou club', COMARQUES, error: null, valors: {} });
+});
+
+r.post('/clubs/nou', pujada.single('logo'), (req, res) => {
+  const v = {
+    name: String(req.body.nom || '').trim(),
+    town: String(req.body.municipi || '').trim(),
+    comarca: COMARQUES[req.body.comarca] ? req.body.comarca : '',
+    address: String(req.body.adreca || '').trim(),
+    website: String(req.body.web || '').trim(),
+    phone: String(req.body.telefon || '').trim(),
+    email: String(req.body.email || '').trim(),
+    courts: String(req.body.pistes || '').trim(),
+    description: String(req.body.descripcio || '').trim(),
+  };
+  if (!v.name || !v.town || !v.comarca) {
+    return res.render('admin/club-nou', { titol: 'Nou club', COMARQUES, error: 'Nom, municipi i comarca són obligatoris.', valors: v });
+  }
+  const logoPath = req.file ? 'uploads/' + req.file.filename : null;
+  const info = db.prepare(`INSERT INTO clubs (name, town, comarca, address, website, phone, email, courts, description, logo_path, verified)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`).run(v.name, v.town, v.comarca, v.address, v.website, v.phone,
+    v.email, v.courts === '' ? null : Number(v.courts), v.description, logoPath);
+  log(req.session.user.id, 'club_creat', 'club', info.lastInsertRowid, v.name);
+  res.redirect('/admin/clubs?creat=' + info.lastInsertRowid);
 });
 
 // Treure un gestor d'un club
