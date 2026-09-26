@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import db from '../db.js';
+import { sendVerificationEmail } from '../mail.js';
 
 const r = Router();
 const NIVELLS = ['Iniciació', 'Intermig', 'Avançat', 'Competició'];
@@ -30,7 +31,7 @@ r.post('/registre', (req, res) => {
     .run(em, hash, nom.trim(), nivell);
   const token = crypto.randomBytes(24).toString('hex');
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(info.lastInsertRowid, token);
-  console.log(`[verificació] ${em}: http://localhost:${process.env.PORT || 3000}/verifica/${token}`);
+  sendVerificationEmail(em, nom.trim(), token);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.user = sessio(user);
   const desti = next.startsWith('/') ? next : '/elmeucompte?benvingut=1';
@@ -74,7 +75,7 @@ r.post('/reenvia-verificacio', (req, res) => {
   const token = crypto.randomBytes(24).toString('hex');
   db.prepare('DELETE FROM email_tokens WHERE user_id = ?').run(req.session.user.id);
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(req.session.user.id, token);
-  console.log(`[verificació] ${req.session.user.email}: http://localhost:${process.env.PORT || 3000}/verifica/${token}`);
+  sendVerificationEmail(req.session.user.email, req.session.user.name, token);
   res.redirect('/elmeucompte?reenvit=1');
 });
 
