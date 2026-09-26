@@ -1,4 +1,20 @@
 <h1>El meu compte</h1>
+<p class="meta">Sessió iniciada com a <strong><%= user.name %></strong> · <%= { player: 'jugador/a', club: 'club', admin: 'administrador' }[user.role] || user.role %></p>
+<% if (invitacionsRebudes.length) { %>
+  <div class="avis">
+    <strong>📩 Tens <%= invitacionsRebudes.length %> invitació<%= invitacionsRebudes.length > 1 ? 'ns' : '' %> pendent<%= invitacionsRebudes.length > 1 ? 's' : '' %> de parella</strong>
+    <ul>
+    <% for (const i of invitacionsRebudes) { %>
+      <li><strong><%= i.qui_nom %></strong> et convida a fer parella a
+        <a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a>
+        (<%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %>)
+        <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/accepta" method="post"><button class="boto menut">Accepta</button></form>
+        <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/rebutja" method="post"><button class="boto secundari menut">Rebutja</button></form>
+      </li>
+    <% } %>
+    </ul>
+  </div>
+<% } %>
 <% if (!user.email_verified) { %>
   <div class="error">Encara no has verificat el teu email. Revisa la safata d'entrada (t'hem enviat l'enllaç en registrar-te).
     <form class="enlinia" action="/reenvia-verificacio" method="post"><button class="boto menut secundari" type="submit">Reenvia l'enllaç</button></form>
@@ -37,19 +53,6 @@
 <% } %>
 
 <h2 class="seccio">Les meves inscripcions</h2>
-<% if (invitacionsRebudes.length) { %>
-  <h3>Invitacions pendents</h3>
-  <ul>
-  <% for (const i of invitacionsRebudes) { %>
-    <li><strong><%= i.qui_nom %></strong> et convida a fer parella a
-      <a href="/torneig/<%= i.tournament_id %>"><%= i.torneig_nom %></a>
-      (<%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %>)
-      <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/accepta" method="post"><button class="boto menut">Accepta</button></form>
-      <form class="enlinia" action="/torneig/<%= i.tournament_id %>/invitacio/<%= i.id %>/rebutja" method="post"><button class="boto secundari menut">Rebutja</button></form>
-    </li>
-  <% } %>
-  </ul>
-<% } %>
 <% if (invitacionsEnviades.length) { %>
   <h3>Invitacions que has enviat</h3>
   <ul>
@@ -70,7 +73,7 @@
         <td><%= MODALITATS[i.modality] %><%= i.level ? ' · ' + i.level : '' %></td>
         <td><%= i.parella_nom %></td>
         <td>
-          <% if (i.status === 'registered') { %>✅ Inscrits<%= i.paid ? '' : ' <span class="meta">(pagament pendent al club)</span>' %>
+          <% if (i.status === 'registered') { %>✅ Inscrits<%- i.paid ? '' : ' <span class="meta">(pagament pendent al club)</span>' %>
           <% } else { %>⏳ Llista d'espera<% } %>
         </td>
         <td><a href="/torneig/<%= i.tournament_id %>">Gestiona</a></td>

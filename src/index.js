@@ -26,6 +26,15 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.brand = BRAND;
   res.locals.appUrl = process.env.APP_URL || 'https://padelvalles.com';
+  // Invitacions pendents: insígnia visible des de qualsevol pàgina
+  let invitacionsPendents = 0;
+  if (req.session.user) {
+    try {
+      invitacionsPendents = db.prepare(`SELECT COUNT(*) n FROM registrations
+        WHERE player2_id = ? AND status = 'pending'`).get(req.session.user.id).n;
+    } catch { /* si la taula encara no existeix, no bloqueja la web */ }
+  }
+  res.locals.invitacionsPendents = invitacionsPendents;
   next();
 });
 

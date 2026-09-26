@@ -96,3 +96,6 @@ table.llista th { background: var(--bg); color: #fff; }
   max-height: 220px; overflow-y: auto; box-shadow: 0 8px 20px rgba(43,43,41,.12); }
 .suggeriment { padding: .55rem .8rem; cursor: pointer; font-size: .95rem; }
 .suggeriment:hover { background: #F7EFE3; }
+.insignia.comptador { background: #E8703A; color: #fff; }
+.qui-ses { font-weight: 600; white-space: nowrap; }
+@media (max-width: 640px) { .qui-ses { display: none; } }
