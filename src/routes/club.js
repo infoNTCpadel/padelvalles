@@ -3,9 +3,9 @@ import multer from 'multer';
 import path from 'node:path';
 import db from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
-import { MODALITATS } from '../brand.js';
-import { comptaAmbInscripcio, promouLlistaEspera } from '../lib/inscripcions.js';
-import { sendPromocioEspera } from '../mail.js';
+import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
+import { comptaAmbInscripcio, promouLlistaEspera, inscripcioDe, placesCategoria } from '../lib/inscripcions.js';
+import { sendPromocioEspera, sendParellaAfegidaClub } from '../mail.js';
 
 const r = Router();
 const nomesClub = [requireLogin, requireRole('club', 'admin'), requireVerified];
@@ -30,10 +30,16 @@ function potGestionar(userId, clubId, esAdmin) {
   return !!db.prepare('SELECT 1 FROM club_users WHERE user_id = ? AND club_id = ?').get(userId, clubId);
 }
 
-// Sol·licitar compte de club (qualsevol usuari registrat)
+// Sol·licitar compte de club (qualsevol usuari registrat).
+// La sol·licitud queda PENDENT: és l'admin qui l'aprova i llavors l'usuari
+// passa a ser gestor del club. Així ningú pot autoassignar-se un club.
 r.get('/club/sollicita', requireLogin, (req, res) => {
   const clubs = db.prepare('SELECT id, name, town FROM clubs ORDER BY name').all();
-  res.render('club-sollicita', { titol: 'Sol·licita compte de club', clubs, error: null, ok: req.query.ok });
+  const meves = db.prepare(`
+    SELECT cc.*, c.name AS club_nom FROM club_claims cc
+    JOIN clubs c ON c.id = cc.club_id
+    WHERE cc.user_id = ? ORDER BY cc.created_at DESC`).all(req.session.user.id);
+  res.render('club-sollicita', { titol: 'Sol·licita compte de club', clubs, error: null, ok: req.query.ok, meves });
 });
 
 r.post('/club/sollicita', requireLogin, (req, res) => {
@@ -42,26 +48,38 @@ r.post('/club/sollicita', requireLogin, (req, res) => {
   const nouPoble = String(req.body.nou_poble || '').trim();
   const comarca = String(req.body.comarca || 'occidental');
   const contacte = String(req.body.contacte || '').trim().slice(0, 300);
+  const clubs = db.prepare('SELECT id, name, town FROM clubs ORDER BY name').all();
+  const meves = db.prepare(`
+    SELECT cc.*, c.name AS club_nom FROM club_claims cc
+    JOIN clubs c ON c.id = cc.club_id
+    WHERE cc.user_id = ? ORDER BY cc.created_at DESC`).all(req.session.user.id);
+  const mostra = (error) => res.render('club-sollicita',
+    { titol: 'Sol·licita compte de club', clubs, error, ok: null, meves });
 
   if (!clubId && !(nouNom && nouPoble)) {
-    const clubs = db.prepare('SELECT id, name, town FROM clubs ORDER BY name').all();
-    return res.render('club-sollicita', { titol: 'Sol·licita compte de club', clubs, error: 'Tria el teu club o indica el nom i el municipi si no hi és.', ok: null });
+    return mostra('Tria el teu club o indica el nom i el municipi si no hi és.');
   }
 
   let id = clubId;
   if (!id) {
-    const info = db.prepare(`INSERT INTO clubs (name, town, comarca, verified, claimed) VALUES (?, ?, ?, 0, 1)`)
+    const info = db.prepare(`INSERT INTO clubs (name, town, comarca, verified, claimed) VALUES (?, ?, ?, 0, 0)`)
       .run(nouNom.slice(0, 120), nouPoble.slice(0, 80), comarca === 'oriental' ? 'oriental' : 'occidental');
     id = info.lastInsertRowid;
   } else {
-    db.prepare('UPDATE clubs SET claimed = 1 WHERE id = ?').run(id);
+    const club = db.prepare('SELECT id FROM clubs WHERE id = ?').get(id);
+    if (!club) return mostra('Club no vàlid.');
   }
-  db.prepare('INSERT OR IGNORE INTO club_users (user_id, club_id) VALUES (?, ?)').run(req.session.user.id, id);
+  if (db.prepare('SELECT 1 FROM club_users WHERE user_id = ? AND club_id = ?').get(req.session.user.id, id)) {
+    return mostra('Ja ets gestor d\u2019aquest club.');
+  }
+  if (db.prepare(`SELECT 1 FROM club_claims WHERE user_id = ? AND club_id = ? AND status = 'pending'`)
+    .get(req.session.user.id, id)) {
+    return mostra('Ja tens una sol·licitud pendent per a aquest club.');
+  }
+  db.prepare(`INSERT INTO club_claims (user_id, club_id, note) VALUES (?, ?, ?)`)
+    .run(req.session.user.id, id, contacte);
   db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
               VALUES (?, 'club_sollicitat', 'club', ?, ?)`).run(req.session.user.id, id, contacte);
-  // L'usuari passa a rol club, però el club queda pendent de verificació
-  db.prepare(`UPDATE users SET role = 'club' WHERE id = ? AND role = 'player'`).run(req.session.user.id);
-  req.session.user.role = 'club';
   res.redirect('/club/sollicita?ok=1');
 });
 
@@ -80,6 +98,25 @@ r.get('/club/panel', nomesClub, (req, res) => {
 });
 
 // Formulari de torneig
+// Files del formulari de categories: d'una edició (BD), d'un rebot amb error (body) o per defecte
+function filesCategories(t, body) {
+  if (body && (body.cat_modalitat || body.modalitat)) {
+    const mods = [].concat(body.cat_modalitat || []);
+    const nivs = [].concat(body.cat_nivell || []);
+    const pls = [].concat(body.cat_places || []);
+    const files = mods.map((m, i) => ({ modality: m, level: nivs[i] || '', max_pairs: pls[i] || '' }));
+    if (files.length) return files;
+  }
+  if (t && t.categories && t.categories.length) {
+    return t.categories.map(c => ({ modality: c.modality, level: c.level || '', max_pairs: c.max_pairs ?? '' }));
+  }
+  return [
+    { modality: 'M', level: '', max_pairs: '' },
+    { modality: 'F', level: '', max_pairs: '' },
+    { modality: 'X', level: '', max_pairs: '' },
+  ];
+}
+
 r.get('/club/torneig/nou', nomesClub, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id);
@@ -88,7 +125,8 @@ r.get('/club/torneig/nou', nomesClub, (req, res) => {
   const quotes = {};
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
   res.render('club-torneig-form', {
-    titol: 'Nou torneig', t: null, clubs, MODALITATS, quotes, teInscrits: 0,
+    titol: 'Nou torneig', t: null, clubs, MODALITATS, TIPUS_TORNEIG, quotes, teInscrits: 0,
+    filesCategories: filesCategories(null, null),
     error: pendents >= 3 ? 'Tens 3 tornejos pendents de revisió. Espera que els aprovem abans de crear-ne més.' : null
   });
 });
@@ -96,17 +134,19 @@ r.get('/club/torneig/nou', nomesClub, (req, res) => {
 function desaTorneig(req, id) {
   const esAdmin = req.session.user.role === 'admin';
   const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', mode_inscripcio = 'externa',
-    data_limit = '', hores_baixa = '48' } = req.body;
+    data_limit = '', hores_baixa = '48', tipus = 'open' } = req.body;
   const clubId = Number(club_id);
   if (!potGestionar(req.session.user.id, clubId, esAdmin)) throw new Error('No pots gestionar aquest club.');
-  const modalitats = [].concat(req.body.modalitat || []).filter(m => MODALITATS[m]);
-  const nivells = [].concat(req.body.nivell || []);
-  const places = [].concat(req.body.places || []);
+  // Categories dinàmiques: tantes files com calgui (p. ex. Masculí 1a cat, Masculí 2a cat...)
+  const catMods = [].concat(req.body.cat_modalitat || []).filter(m => MODALITATS[m]);
+  const catNivells = [].concat(req.body.cat_nivell || []);
+  const catPlaces = [].concat(req.body.cat_places || []);
   const registration_mode = mode_inscripcio === 'padelvalles' ? 'padelvalles' : 'externa';
   const deadline = String(data_limit).slice(0, 10);
   const unregisterHores = Math.max(0, Math.min(720, parseInt(hores_baixa, 10) || 0));
+  const tipusT = TIPUS_TORNEIG[tipus] ? tipus : 'open';
   const maxPairs = i => {
-    const v = String(places[i] || '').trim();
+    const v = String(catPlaces[i] || '').trim();
     if (v === '') return null;
     const n = parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? Math.min(n, 500) : null;
@@ -123,9 +163,11 @@ function desaTorneig(req, id) {
     registration_mode,
     registration_deadline: deadline,
     unregister_hours: unregisterHores,
+    tipus: tipusT,
     description: String(descripcio).trim().slice(0, 2000)
   };
   if (!dades.name || !dades.starts_at) throw new Error('Falten el nom o la data del torneig.');
+  if (!id && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
 
   let tid = id;
   let recreaCategories = true;
@@ -137,12 +179,13 @@ function desaTorneig(req, id) {
     const nouEstat = esAdmin ? actual.status : 'pending';
     const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
+    if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
       registration_info=?, registration_url=?, registration_mode=?, registration_deadline=?,
-      unregister_hours=?, description=?, status=?, reject_reason='' WHERE id=?`)
+      unregister_hours=?, tipus=?, description=?, status=?, reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
         dades.registration_info, dades.registration_url, dades.registration_mode, dades.registration_deadline,
-        dades.unregister_hours, dades.description, nouEstat, id);
+        dades.unregister_hours, dades.tipus, dades.description, nouEstat, id);
     if (nInscrits > 0) {
       // Amb inscripcions actives no es poden canviar les categories, només les places
       recreaCategories = false;
@@ -159,15 +202,17 @@ function desaTorneig(req, id) {
     }
   } else {
     const info = db.prepare(`INSERT INTO tournaments
-      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
+      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode,
+       registration_deadline, unregister_hours, tipus, description, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode, dades.description, req.session.user.id);
+        dades.registration_info, dades.registration_url, dades.registration_mode,
+        dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.description, req.session.user.id);
     tid = info.lastInsertRowid;
   }
   if (recreaCategories) {
     const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
-    modalitats.forEach((m, i) => ins.run(tid, m, String(nivells[i] || '').trim().slice(0, 60), maxPairs(i)));
+    catMods.forEach((m, i) => ins.run(tid, m, String(catNivells[i] || '').trim().slice(0, 60), maxPairs(i)));
   }
   return tid;
 }
@@ -181,7 +226,8 @@ r.post('/club/torneig/nou', nomesClub, (req, res) => {
     const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id);
     const quotes = {};
     for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
-    res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, quotes, teInscrits: 0, error: e.message });
+    res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG,
+      quotes, teInscrits: 0, filesCategories: filesCategories(null, req.body), error: e.message });
   }
 });
 
@@ -195,7 +241,8 @@ r.get('/club/torneig/:id/edita', nomesClub, (req, res) => {
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id, t.id);
   const teInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
     WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(t.id).n;
-  res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, quotes, teInscrits, error: null });
+  res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, TIPUS_TORNEIG,
+    quotes, teInscrits, filesCategories: filesCategories(t, null), error: null });
 });
 
 r.post('/club/torneig/:id/edita', nomesClub, (req, res) => {
@@ -214,9 +261,12 @@ function inscritsDe(torneigId) {
     const etiqueta = (MODALITATS[c.modality] || c.modality) + (c.level ? ' · ' + c.level : '');
     for (const estat of ['registered', 'waitlist', 'pending']) {
       c[estat] = db.prepare(`
-        SELECT r.*, u1.name AS nom1, u1.email AS email1, u2.name AS nom2, u2.email AS email2
+        SELECT r.*,
+          COALESCE(u1.name, r.player1_name, '') AS nom1, u1.email AS email1,
+          COALESCE(u2.name, r.player2_name, '') AS nom2, u2.email AS email2
         FROM registrations r
-        JOIN users u1 ON u1.id = r.player1_id JOIN users u2 ON u2.id = r.player2_id
+        LEFT JOIN users u1 ON u1.id = r.player1_id
+        LEFT JOIN users u2 ON u2.id = r.player2_id
         WHERE r.tournament_id = ? AND r.category_id = ? AND r.status = ?
         ORDER BY r.decided_at ASC, r.id ASC`).all(torneigId, c.id, estat);
     }
@@ -239,7 +289,55 @@ function agafaTorneigClub(req, res) {
 r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
   const t = agafaTorneigClub(req, res);
   if (!t) return;
-  res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS });
+  res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
+    alta: req.query.alta || null, errorMsg: req.query.error || null });
+});
+
+// Alta manual d'una parella pel club (les que arriben per telèfon, WhatsApp o recepció)
+r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
+  const t = agafaTorneigClub(req, res);
+  if (!t) return;
+  const enrere = `/club/torneig/${t.id}/inscrits`;
+  try {
+    if ((t.registration_mode || 'externa') !== 'padelvalles') {
+      throw new Error('Aquest torneig no té la inscripció a PadelVallès.');
+    }
+    const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ? AND tournament_id = ?')
+      .get(req.body.categoria, t.id);
+    if (!cat) throw new Error('Categoria no vàlida.');
+    const nom1 = String(req.body.nom1 || '').trim().slice(0, 80);
+    const nom2 = String(req.body.nom2 || '').trim().slice(0, 80);
+    const email1 = String(req.body.email1 || '').trim().toLowerCase();
+    const email2 = String(req.body.email2 || '').trim().toLowerCase();
+    if (!nom1 || !nom2) throw new Error('Cal el nom dels dos jugadors.');
+    // Si l'email és d'un usuari registrat i verificat, la parella hi queda vinculada
+    const resol = (email, nom) => {
+      if (!email) return { id: null, nom, email: null };
+      const u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
+      if (!u) throw new Error(`L'email ${email} no és d'un usuari registrat. Deixa l'email en blanc per apuntar la parella només amb el nom.`);
+      if (!u.email_verified) throw new Error(`L'usuari ${email} encara no ha verificat el compte.`);
+      return { id: u.id, nom: u.name, email: u.email };
+    };
+    const j1 = resol(email1, nom1);
+    const j2 = resol(email2, nom2);
+    if (j1.id && j1.id === j2.id) throw new Error('Els dos jugadors no poden ser la mateixa persona.');
+    for (const j of [j1, j2]) {
+      if (j.id && inscripcioDe(t.id, j.id)) throw new Error(`${j.nom} ja està inscrit en aquest torneig.`);
+    }
+    const lliures = placesCategoria(cat.id);
+    const nouEstat = (lliures === null || lliures > 0) ? 'registered' : 'waitlist';
+    db.prepare(`INSERT INTO registrations
+      (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, added_by_club, status, paid, decided_at)
+      VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'))`)
+      .run(t.id, cat.id, j1.id, j2.id, j1.nom, j2.nom, nouEstat, req.body.pagat ? 1 : 0);
+    const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');
+    const enEspera = nouEstat === 'waitlist';
+    if (j1.email) sendParellaAfegidaClub(j1.email, j1.nom, t.name, et, enEspera);
+    if (j2.email) sendParellaAfegidaClub(j2.email, j2.nom, t.name, et, enEspera);
+    res.redirect(enrere + '?alta=1');
+  } catch (e) {
+    res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+  }
 });
 
 r.post('/club/torneig/:id/inscrits/:rid/pagat', nomesClub, (req, res) => {
@@ -262,8 +360,9 @@ r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
     const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(promoguda.category_id);
     const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');
     for (const uid of [promoguda.player1_id, promoguda.player2_id]) {
+      if (!uid) continue;
       const u = db.prepare('SELECT name, email FROM users WHERE id = ?').get(uid);
-      sendPromocioEspera(u.email, u.name, t.name, et);
+      if (u) sendPromocioEspera(u.email, u.name, t.name, et);
     }
   }
   res.redirect(`/club/torneig/${t.id}/inscrits`);

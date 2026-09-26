@@ -32,3 +32,11 @@ export const MODALITATS = {
   F: 'Femení',
   X: 'Mixte'
 };
+
+// Tipus de torneig: els clubs organitzen tornejos de diversos dies i poden
+// ser federats, opens o pertànyer a un circuit no federat.
+export const TIPUS_TORNEIG = {
+  federat: 'Federat',
+  open: 'Open',
+  circuit: 'Circuit no federat',
+};

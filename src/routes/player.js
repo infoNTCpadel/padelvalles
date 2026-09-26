@@ -27,12 +27,12 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
   const inscripcions = db.prepare(`
     SELECT r.*, t.name AS torneig_nom, t.starts_at, t.ends_at, c.name AS club_nom,
       tc.modality, tc.level,
-      CASE WHEN r.player1_id = ? THEN u2.name ELSE u1.name END AS parella_nom
+      CASE WHEN r.player1_id = ? THEN COALESCE(u2.name, r.player2_name, '') ELSE COALESCE(u1.name, r.player1_name, '') END AS parella_nom
     FROM registrations r
     JOIN tournaments t ON t.id = r.tournament_id
     JOIN clubs c ON c.id = t.club_id
     JOIN tournament_categories tc ON tc.id = r.category_id
-    JOIN users u1 ON u1.id = r.player1_id JOIN users u2 ON u2.id = r.player2_id
+    LEFT JOIN users u1 ON u1.id = r.player1_id LEFT JOIN users u2 ON u2.id = r.player2_id
     WHERE (r.player1_id = ? OR r.player2_id = ?) AND r.status IN ('registered','waitlist')
     ORDER BY t.starts_at ASC`).all(user.id, user.id, user.id);
   const invitacionsRebudes = db.prepare(`

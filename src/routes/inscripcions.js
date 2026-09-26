@@ -38,8 +38,8 @@ function torna(res, tid, avis, error) {
 
 function parellaDe(insc) {
   return {
-    p1: db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(insc.player1_id),
-    p2: db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(insc.player2_id),
+    p1: insc.player1_id ? db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(insc.player1_id) : null,
+    p2: insc.player2_id ? db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(insc.player2_id) : null,
   };
 }
 
@@ -59,8 +59,8 @@ r.post('/torneig/:id/inscriu', juga, (req, res) => {
   if (!company.email_verified) return torna(res, t.id, null, 'La teva parella encara no ha verificat el compte.');
   if (company.id === me) return torna(res, t.id, null, 'No et pots convidar a tu mateix.');
   if (inscripcioDe(t.id, company.id)) return torna(res, t.id, null, 'Aquest jugador ja està inscrit en aquest torneig.');
-  db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, status)
-    VALUES (?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, company.id);
+  db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, company.id, jo.name, company.name);
   db.prepare(`UPDATE partner_search SET status = 'closed' WHERE tournament_id = ? AND user_id = ? AND status = 'open'`)
     .run(t.id, me);
   const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);
@@ -146,8 +146,8 @@ r.post('/torneig/:id/baixa/:rid', juga, (req, res) => {
   if (promoguda) {
     const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(promoguda.category_id);
     const { p1, p2 } = parellaDe(promoguda);
-    sendPromocioEspera(p1.email, p1.name, t.name, etiqueta(cat));
-    sendPromocioEspera(p2.email, p2.name, t.name, etiqueta(cat));
+    if (p1) sendPromocioEspera(p1.email, p1.name, t.name, etiqueta(cat));
+    if (p2) sendPromocioEspera(p2.email, p2.name, t.name, etiqueta(cat));
   }
   return torna(res, req.params.id, 'baixa-feta');
 });
@@ -196,8 +196,8 @@ r.post('/torneig/:id/busco-parella/:psid/proposa', juga, (req, res) => {
   const cat = db.prepare(`SELECT * FROM tournament_categories
     WHERE tournament_id = ? AND modality = ? AND level = ?`).get(t.id, cercador.modality, cercador.level);
   if (!cat) return torna(res, t.id, null, 'La categoria d\u2019aquest anunci ja no existeix en el torneig.');
-  db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, status)
-    VALUES (?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, cercador.user_id);
+  db.prepare(`INSERT INTO registrations (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')`).run(t.id, cat.id, me, cercador.user_id, jo.name, cercador.nom);
   db.prepare(`UPDATE partner_search SET status = 'closed' WHERE tournament_id = ? AND user_id = ? AND status = 'open'`)
     .run(t.id, me);
   const jo = db.prepare('SELECT name FROM users WHERE id = ?').get(me);

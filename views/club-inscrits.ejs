@@ -3,6 +3,32 @@
 <% if (t.registration_deadline) { %><p class="meta">Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
 <p class="meta">Els jugadors es poden donar de baixa ells mateixos fins a <%= t.unregister_hours ?? 48 %> hores abans de l'inici. El pagament es fa fora de la plataforma: marca aquí qui ha pagat.</p>
 
+<% if ((t.registration_mode || 'externa') === 'padelvalles') { %>
+<h2>Afegeix una parella</h2>
+<% if (alta) { %><div class="exit">Parella afegida correctament.</div><% } %>
+<% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
+<form class="formulari" action="/club/torneig/<%= t.id %>/inscrits/nova" method="post">
+  <div class="fila">
+    <div class="camp"><label>Categoria</label>
+      <select name="categoria" required>
+        <% for (const c of categories) { %><option value="<%= c.id %>"><%= c.etiqueta %></option><% } %>
+      </select>
+    </div>
+    <div class="camp"><label>&nbsp;</label><label><input type="checkbox" name="pagat" value="1"> Pagat</label></div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>Jugador 1 · nom</label><input name="nom1" required maxlength="80" placeholder="Nom i cognoms"></div>
+    <div class="camp"><label>Jugador 1 · email (si té compte)</label><input name="email1" type="email" maxlength="120" placeholder="opcional"></div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>Jugador 2 · nom</label><input name="nom2" required maxlength="80" placeholder="Nom i cognoms"></div>
+    <div class="camp"><label>Jugador 2 · email (si té compte)</label><input name="email2" type="email" maxlength="120" placeholder="opcional"></div>
+  </div>
+  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Si l'email és d'un usuari registrat i verificat, la parella hi queda vinculada i rep l'avís per email; si no, queda apuntada només amb el nom.</p>
+  <button class="boto" type="submit">Afegeix la parella</button>
+</form>
+<% } %>
+
 <% for (const c of categories) { %>
   <h2><%= c.etiqueta %><% if (c.max_pairs) { %> <small class="meta">(<%= c.nInscrits %>/<%= c.max_pairs %> places)</small><% } else { %> <small class="meta">(<%= c.nInscrits %> inscrits)</small><% } %></h2>
 

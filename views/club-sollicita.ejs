@@ -1,7 +1,24 @@
 <h1>Sol·licita el compte del teu club</h1>
 <p>Amb el compte de club podràs publicar els teus tornejos. Els revisem un per un abans de publicar-los.</p>
-<% if (ok) { %><div class="exit">Sol·licitud enviada. Et verificarem el club i t'avisarem per email.</div><% } %>
+<% if (ok) { %><div class="exit">Sol·licitud enviada. La revisarem i t'avisarem per email quan t'haguem donat accés.</div><% } %>
 <% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (meves && meves.length) { %>
+  <h2>Les teves sol·licituds</h2>
+  <table class="llista">
+    <tr><th>Club</th><th>Estat</th><th>Data</th></tr>
+    <% for (const s of meves) { %>
+      <tr>
+        <td><%= s.club_nom %></td>
+        <td>
+          <% if (s.status === 'pending') { %><span class="etiqueta pendent">Pendent de revisió</span>
+          <% } else if (s.status === 'approved') { %><span class="etiqueta ok">Aprovada</span>
+          <% } else { %><span class="etiqueta">Rebutjada</span><% } %>
+        </td>
+        <td><span class="meta"><%= (s.created_at || '').slice(0, 10) %></span></td>
+      </tr>
+    <% } %>
+  </table>
+<% } %>
 <form class="formulari" action="/club/sollicita" method="post">
   <div class="camp">
     <label>El teu club ja és al directori?</label>

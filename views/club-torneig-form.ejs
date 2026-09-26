@@ -12,6 +12,14 @@
     <div class="camp"><label>Data d'inici</label><input type="date" name="inici" required value="<%= t ? (t.starts_at || t.inici || '') : '' %>"></div>
     <div class="camp"><label>Data de fi</label><input type="date" name="fi" value="<%= t ? (t.ends_at || t.fi || '') : '' %>"></div>
   </div>
+  <div class="camp"><label>Tipus de torneig</label>
+    <select name="tipus">
+      <% for (const [k, v] of Object.entries(TIPUS_TORNEIG)) { %>
+        <option value="<%= k %>" <%= (t && (t.tipus || 'open')) === k ? 'selected' : '' %>><%= v %></option>
+      <% } %>
+    </select>
+    <span class="ajuda">Es mostra al cartell del torneig.</span>
+  </div>
   <div class="camp"><label>Categories</label>
     <% if (teInscrits > 0) { %>
       <p class="ajuda">Aquest torneig ja té <%= teInscrits %> inscripcions: no es poden canviar les categories, però sí les places.</p>
@@ -22,15 +30,53 @@
         </div>
       <% } %>
     <% } else { %>
-    <div class="fila">
-      <% const mods = Object.keys(MODALITATS); %>
-      <% mods.forEach((k, i) => { %>
-        <% const cat = t && t.categories ? t.categories.find(c => c.modality === k) : null; %>
-        <label><input type="checkbox" name="modalitat" value="<%= k %>" <%= cat ? 'checked' : (!t ? 'checked' : '') %>> <%= MODALITATS[k] %></label>
-        <input name="nivell" placeholder="Nivell (opcional)" value="<%= cat ? cat.level : '' %>" style="width:8rem">
-        <input name="places" type="number" min="1" max="500" placeholder="Places" title="Places per categoria (buit = sense límit)" value="<%= cat && cat.max_pairs ? cat.max_pairs : '' %>" style="width:5.5rem">
-      <% }); %>
-    </div>
+      <p class="ajuda">Afegeix tantes categories com calgui: p. ex. «Masculí · 1a categoria», «Masculí · 2a categoria», «Femení · 1a categoria»...</p>
+      <div id="categories">
+        <% for (const f of filesCategories) { %>
+          <div class="fila cat-fila" style="align-items:flex-end">
+            <div class="camp"><label>Modalitat</label>
+              <select name="cat_modalitat">
+                <% for (const [k, v] of Object.entries(MODALITATS)) { %>
+                  <option value="<%= k %>" <%= f.modality === k ? 'selected' : '' %>><%= v %></option>
+                <% } %>
+              </select>
+            </div>
+            <div class="camp"><label>Categoria</label>
+              <input name="cat_nivell" maxlength="60" placeholder="P. ex.: 1a categoria" value="<%= f.level || '' %>" style="width:10rem">
+            </div>
+            <div class="camp"><label>Places</label>
+              <input name="cat_places" type="number" min="1" max="500" placeholder="∞" title="Places per categoria (buit = sense límit)" value="<%= f.max_pairs ?? '' %>" style="width:5.5rem">
+            </div>
+            <div class="camp"><button type="button" class="boto secundari menut treu-cat">Treu</button></div>
+          </div>
+        <% } %>
+      </div>
+      <button type="button" id="afegeixCat" class="boto secundari menut">＋ Afegeix categoria</button>
+<script>
+(function () {
+  const MODS = <%- JSON.stringify(MODALITATS) %>;
+  const contenidor = document.getElementById('categories');
+  function fila() {
+    const div = document.createElement('div');
+    div.className = 'fila cat-fila';
+    div.style.alignItems = 'flex-end';
+    const opcions = Object.entries(MODS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+    div.innerHTML =
+      '<div class="camp"><label>Modalitat</label><select name="cat_modalitat">' + opcions + '</select></div>' +
+      '<div class="camp"><label>Categoria</label><input name="cat_nivell" maxlength="60" placeholder="P. ex.: 1a categoria" style="width:10rem"></div>' +
+      '<div class="camp"><label>Places</label><input name="cat_places" type="number" min="1" max="500" placeholder="∞" title="Places per categoria (buit = sense límit)" style="width:5.5rem"></div>' +
+      '<div class="camp"><button type="button" class="boto secundari menut treu-cat">Treu</button></div>';
+    return div;
+  }
+  document.getElementById('afegeixCat').addEventListener('click', () => contenidor.appendChild(fila()));
+  contenidor.addEventListener('click', (e) => {
+    if (e.target.classList.contains('treu-cat')) {
+      const files = contenidor.querySelectorAll('.cat-fila');
+      if (files.length > 1) e.target.closest('.cat-fila').remove();
+    }
+  });
+})();
+</script>
     <% } %>
   </div>
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>

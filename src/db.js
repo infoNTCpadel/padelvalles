@@ -119,8 +119,11 @@ CREATE TABLE IF NOT EXISTS registrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
   category_id INTEGER NOT NULL REFERENCES tournament_categories(id) ON DELETE CASCADE,
-  player1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  player2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  player1_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  player2_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  player1_name TEXT DEFAULT '',
+  player2_name TEXT DEFAULT '',
+  added_by_club INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending',
   paid INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -138,6 +141,22 @@ CREATE TABLE IF NOT EXISTS partner_search (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (tournament_id, user_id)
 );
+-- Sol·licituds de gestió d'un club (pendents d'aprovació de l'admin)
+CREATE TABLE IF NOT EXISTS club_claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  note TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_at TEXT
+);
+-- Estat d'execució de les tasques programades internes
+CREATE TABLE IF NOT EXISTS cron_state (
+  clau TEXT PRIMARY KEY,
+  valor TEXT DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `);
 
 // Migracions idempotents per a BDs ja creades
@@ -145,11 +164,53 @@ for (const [taula, columna, def] of [
   ['tournaments', 'registration_mode', `TEXT NOT NULL DEFAULT 'externa'`],
   ['tournaments', 'registration_deadline', `TEXT DEFAULT ''`],
   ['tournaments', 'unregister_hours', `INTEGER DEFAULT 48`],
+  ['tournaments', 'tipus', `TEXT DEFAULT 'open'`],
   ['tournament_categories', 'max_pairs', `INTEGER`],
   ['clubs', 'claim_token', `TEXT DEFAULT ''`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
+}
+
+// Migració: parelles apuntades manualment pel club (jugadors sense compte).
+// Cal reconstruir la taula perquè player1_id/player2_id passen a ser NULLables.
+{
+  const cols = db.prepare('PRAGMA table_info(registrations)').all().map(c => c.name);
+  if (!cols.includes('player1_name')) {
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE registrations_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES tournament_categories(id) ON DELETE CASCADE,
+          player1_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          player2_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          player1_name TEXT DEFAULT '',
+          player2_name TEXT DEFAULT '',
+          added_by_club INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'pending',
+          paid INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          decided_at TEXT
+        );
+        INSERT INTO registrations_new
+          (id, tournament_id, category_id, player1_id, player2_id, status, paid, created_at, decided_at)
+          SELECT id, tournament_id, category_id, player1_id, player2_id, status, paid, created_at, decided_at
+          FROM registrations;
+        DROP TABLE registrations;
+        ALTER TABLE registrations_new RENAME TO registrations;
+        CREATE INDEX IF NOT EXISTS idx_reg_torneig ON registrations(tournament_id, status);
+        UPDATE registrations
+          SET player1_name = (SELECT name FROM users WHERE users.id = registrations.player1_id),
+              player2_name = (SELECT name FROM users WHERE users.id = registrations.player2_id);
+      `);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+  }
 }
 
 export default db;

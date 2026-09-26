@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { cartellSVG } from '../poster.js';
-import { COMARQUES, MODALITATS } from '../brand.js';
+import { COMARQUES, MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { inscripcioOberta, placesCategoria, inscripcioDe, potDesapuntar } from '../lib/inscripcions.js';
 
 const r = Router();
@@ -108,7 +108,7 @@ r.get('/torneig/:id', (req, res) => {
     'anunci-tret': 'Anunci retirat.',
     'proposta-enviada': 'Proposta enviada. Si l\u2019accepta, quedareu inscrits com a parella.',
   };
-  res.render('torneig', { titol: t.name, t, interessat, MODALITATS, avis: req.query.avis,
+  res.render('torneig', { titol: t.name, t, interessat, MODALITATS, TIPUS_TORNEIG, avis: req.query.avis,
     missatge: MISS[req.query.avis] || null, errorMsg: req.query.error || null,
     modePV, oberta, laMeva, pucDesapuntar, places, cercadors, elMeuAnunci,
     metaDescription, canonical, ogImage, shareText, shareUrl: canonical });

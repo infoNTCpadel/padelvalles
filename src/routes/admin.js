@@ -5,6 +5,7 @@ import path from 'node:path';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
 import { COMARQUES } from '../brand.js';
+import { sendClaimResolta } from '../mail.js';
 
 const r = Router();
 r.use(requireRole('admin'));
@@ -123,7 +124,14 @@ r.get('/clubs', (req, res) => {
     FROM clubs c ${where} ORDER BY c.verified, c.name`).all(...params);
   const total = db.prepare('SELECT COUNT(*) n FROM clubs').get().n;
   const nPendents = db.prepare('SELECT COUNT(*) n FROM clubs WHERE verified = 0').get().n;
-  res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents,
+  const claims = db.prepare(`
+    SELECT cc.*, u.name AS usuari_nom, u.email AS usuari_email, c.name AS club_nom, c.verified AS club_verificat
+    FROM club_claims cc
+    JOIN users u ON u.id = cc.user_id
+    JOIN clubs c ON c.id = cc.club_id
+    WHERE cc.status = 'pending'
+    ORDER BY cc.created_at ASC`).all();
+  res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents, claims,
     reclamat: req.query.reclamat || null, creat: req.query.creat || null,
     appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
 });
@@ -168,6 +176,33 @@ r.post('/clubs/:id/enllac', (req, res) => {
   db.prepare('UPDATE clubs SET claim_token = ? WHERE id = ?').run(token, req.params.id);
   log(req.session.user.id, 'club_enllac_reclamacio', 'club', req.params.id);
   res.redirect('/admin/clubs?reclamat=' + req.params.id);
+});
+
+// Aprovar una sol·licitud de gestió de club: l'usuari passa a ser gestor
+r.post('/clubs/claims/:id/aprova', (req, res) => {
+  const claim = db.prepare(`SELECT * FROM club_claims WHERE id = ? AND status = 'pending'`).get(req.params.id);
+  if (!claim) return res.redirect('/admin/clubs');
+  db.prepare('INSERT OR IGNORE INTO club_users (user_id, club_id) VALUES (?, ?)').run(claim.user_id, claim.club_id);
+  db.prepare('UPDATE clubs SET claimed = 1 WHERE id = ?').run(claim.club_id);
+  db.prepare(`UPDATE users SET role = 'club' WHERE id = ? AND role = 'player'`).run(claim.user_id);
+  db.prepare(`UPDATE club_claims SET status = 'approved', decided_at = datetime('now') WHERE id = ?`).run(claim.id);
+  const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(claim.club_id);
+  const usuari = db.prepare('SELECT name, email FROM users WHERE id = ?').get(claim.user_id);
+  log(req.session.user.id, 'club_claim_aprovat', 'club', claim.club_id, usuari.email);
+  sendClaimResolta(usuari.email, usuari.name, club.name, true);
+  res.redirect('/admin/clubs');
+});
+
+// Rebutjar una sol·licitud de gestió de club
+r.post('/clubs/claims/:id/rebutja', (req, res) => {
+  const claim = db.prepare(`SELECT * FROM club_claims WHERE id = ? AND status = 'pending'`).get(req.params.id);
+  if (!claim) return res.redirect('/admin/clubs');
+  db.prepare(`UPDATE club_claims SET status = 'rejected', decided_at = datetime('now') WHERE id = ?`).run(claim.id);
+  const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(claim.club_id);
+  const usuari = db.prepare('SELECT name, email FROM users WHERE id = ?').get(claim.user_id);
+  log(req.session.user.id, 'club_claim_rebutjat', 'club', claim.club_id, usuari.email);
+  sendClaimResolta(usuari.email, usuari.name, club.name, false);
+  res.redirect('/admin/clubs');
 });
 
 r.get('/usuaris', (req, res) => {

@@ -7,6 +7,7 @@
   <% if (user) { %><div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div><% } %>
   <div>
     <h1><%= t.name %></h1>
+    <p><span class="etiqueta"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span></p>
     <dl class="dades">
       <dt>Dates</dt><dd>📅 <%= t.starts_at %> – <%= t.ends_at %></dd>
       <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</dd>

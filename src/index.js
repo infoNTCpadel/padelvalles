@@ -48,6 +48,7 @@ import playerRoutes from './routes/player.js';
 import clubRoutes from './routes/club.js';
 import adminRoutes from './routes/admin.js';
 import inscripcioRoutes from './routes/inscripcions.js';
+import { arrencaProgramador } from './lib/programador.js';
 
 app.use('/', authRoutes);
 app.use('/', playerRoutes);
@@ -59,5 +60,8 @@ app.use('/admin', adminRoutes);
 app.use('/', publicRoutes);
 
 app.use((req, res) => res.status(404).render('404', { titol: 'Pàgina no trobada' }));
+
+// Tasques programades internes (resum diari als clubs, recordatoris de tancament)
+arrencaProgramador();
 
 app.listen(PORT, () => console.log(`PadelVallès escoltant al port ${PORT}`));

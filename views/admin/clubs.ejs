@@ -8,7 +8,34 @@
 <div class="crm-resum">
   <div class="crm-dada"><strong><%= total %></strong><span>clubs totals</span></div>
   <div class="crm-dada alerta"><strong><%= nPendents %></strong><span>pendents de verificació</span></div>
+  <div class="crm-dada alerta"><strong><%= claims.length %></strong><span>sol·licituds de gestió</span></div>
 </div>
+
+<% if (claims.length) { %>
+  <h2>Sol·licituds de gestió pendents</h2>
+  <p class="meta">Aquests usuaris volen gestionar un club. Fins que no ho aprovis, no hi tenen accés.</p>
+  <table class="llista">
+    <tr><th>Usuari</th><th>Club</th><th>Contacte indicat</th><th>Data</th><th></th></tr>
+    <% for (const s of claims) { %>
+      <tr>
+        <td><strong><%= s.usuari_nom %></strong><br><span class="meta"><%= s.usuari_email %></span></td>
+        <td><%= s.club_nom %>
+          <% if (!s.club_verificat) { %><br><span class="etiqueta pendent">Club pendent de verificació</span><% } %>
+        </td>
+        <td><span class="meta"><%= s.note || '—' %></span></td>
+        <td><span class="meta"><%= (s.created_at || '').slice(0, 10) %></span></td>
+        <td class="accions">
+          <form action="/admin/clubs/claims/<%= s.id %>/aprova" method="post" style="display:inline">
+            <button class="boto petit" type="submit">Aprova</button>
+          </form>
+          <form action="/admin/clubs/claims/<%= s.id %>/rebutja" method="post" style="display:inline">
+            <button class="boto petit secundari" type="submit" onclick="return confirm('Rebutjar aquesta sol·licitud?')">Rebutja</button>
+          </form>
+        </td>
+      </tr>
+    <% } %>
+  </table>
+<% } %>
 
 <% if (reclamat) { const c = clubs.find(x => String(x.id) === String(reclamat)); %>
   <% if (c && c.claim_token) { %>

@@ -125,3 +125,53 @@ export function sendInvitacioRebutjada(email, nom, quiRebutja, torneigNom) {
       <p>Si busques parella, pots publicar un anunci a la fitxa del torneig, a l'apartat «Busques parella?».</p>`,
   });
 }
+
+export function sendClaimResolta(email, nom, clubNom, aprovada) {
+  return envia({
+    to: email, name: nom, tag: 'reclamació club',
+    subject: aprovada ? `Ja ets gestor de «${clubNom}» a PadelVallès` : `Sol·licitud per a «${clubNom}» no aprovada`,
+    html: aprovada
+      ? `<p>Hola ${esc(nom)},</p>
+        <p>La teva sol·licitud per gestionar el club <strong>${esc(clubNom)}</strong> ha estat <strong>aprovada</strong>.</p>
+        <p>Ja pots entrar al <a href="${APP_URL}/club/panel">panell del club</a> i publicar-hi els vostres tornejos.</p>`
+      : `<p>Hola ${esc(nom)},</p>
+        <p>La teva sol·licitud per gestionar el club <strong>${esc(clubNom)}</strong> no ha estat aprovada.</p>
+        <p>Si creus que és un error, contacta amb nosaltres responent aquest correu.</p>`,
+  });
+}
+
+export function sendResumDiariClub(email, nom, clubNom, linies) {
+  const items = linies.map(l => `<li>${l}</li>`).join('');
+  return envia({
+    to: email, name: nom, tag: 'resum diari',
+    subject: `Resum d'inscripcions: ${clubNom}`,
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>Moviments d'inscripcions de les últimes 24 hores a <strong>${esc(clubNom)}</strong>:</p>
+      <ul>${items}</ul>
+      <p>Pots veure el detall al <a href="${APP_URL}/club/panel">panell del club</a>.</p>`,
+  });
+}
+
+export function sendRecordatoriTancament(email, nom, torneigNom, torneigId, dataLimit) {
+  return envia({
+    to: email, name: nom, tag: 'recordatori tancament',
+    subject: `Últims dies per apuntar-te a «${torneigNom}»`,
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>Ens vas marcar que t'interessava el torneig <strong>${esc(torneigNom)}</strong>.</p>
+      <p>Les inscripcions tanquen el <strong>${esc(dataLimit)}</strong>: si vols jugar-hi, apunta-t'hi abans que sigui tard.</p>
+      <p><a href="${APP_URL}/torneig/${torneigId}">Veure el torneig i inscriure'm</a></p>`,
+  });
+}
+
+export function sendParellaAfegidaClub(email, nom, torneigNom, categoria, enEspera) {
+  return envia({
+    to: email, name: nom, tag: 'alta manual',
+    subject: enEspera ? `En llista d'espera: «${torneigNom}»` : `Inscripció confirmada: «${torneigNom}»`,
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>El club organitzador t'ha inscrit al torneig <strong>${esc(torneigNom)}</strong> (${esc(categoria)}).
+      ${enEspera ? 'De moment esteu en <strong>llista d\u2019espera</strong>: t\u2019avisarem si s\u2019allibera alguna plaça.'
+        : 'La vostra inscripció ja està <strong>confirmada</strong>.'}</p>
+      <p>Recorda que el pagament es fa directament al club organitzador.</p>
+      <p>Pots veure la teva inscripció a <a href="${APP_URL}/elmeucompte">El meu compte</a>.</p>`,
+  });
+}
