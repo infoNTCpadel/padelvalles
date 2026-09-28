@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
+import { sembraCandidats20260928 } from './seed-candidats-20260928.js';
 
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -263,6 +264,9 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_reg_p2 ON registrations(tournament_id, p
 db.exec(`CREATE INDEX IF NOT EXISTS idx_ps_torneig ON partner_search(tournament_id, status)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_claims_club ON club_claims(club_id, status)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_interests_t ON interests(tournament_id)`);
+
+// Sembra idempotent de tornejos proposats per la cerca setmanal (pendents de revisió per l'admin)
+sembraCandidats20260928(db);
 
 // Transacció: tot o res. Si alguna ordre falla, es desfà tot el bloc.
 export function transaccio(fn) {
