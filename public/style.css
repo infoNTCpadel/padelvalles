@@ -111,3 +111,5 @@ table.llista th { background: var(--bg); color: #fff; }
 .estat.enjoc { color: #B03232; }
 .estat.finalitzat { color: #6E6E6C; }
 .verificat { font-size: .85em; vertical-align: baseline; }
+.logo-club { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; border: 2px solid var(--vora); background: #fff; margin-bottom: .75rem; }
+.logo-club img { width: 100%; height: 100%; object-fit: cover; display: block; }
