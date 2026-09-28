@@ -110,3 +110,4 @@ table.llista th { background: var(--bg); color: #fff; }
 .estat.tancada { color: #9A6B1A; }
 .estat.enjoc { color: #B03232; }
 .estat.finalitzat { color: #6E6E6C; }
+.verificat { font-size: .85em; vertical-align: baseline; }

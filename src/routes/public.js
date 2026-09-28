@@ -8,7 +8,7 @@ const r = Router();
 
 function getTorneig(id) {
   const t = db.prepare(`
-    SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path
+    SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path, c.claimed AS club_claimed
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
     WHERE t.id = ?`).get(id);
   if (!t) return null;
@@ -21,7 +21,7 @@ function getTorneig(id) {
 r.get('/', (req, res) => {
   const avui = new Date().toISOString().slice(0, 10);
   const propers = db.prepare(`
-    SELECT t.*, c.name AS club_nom, c.town AS club_poble
+    SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.claimed AS club_claimed
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
     WHERE t.status = 'published' AND t.ends_at >= ?
     ORDER BY t.starts_at ASC LIMIT 6`).all(avui);
@@ -35,7 +35,7 @@ r.get('/tornejos', (req, res) => {
   const { comarca = '', club = '', modalitat = '', q = '', mes = '' } = req.query;
   const avui = new Date().toISOString().slice(0, 10);
   let sql = `
-    SELECT DISTINCT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca
+    SELECT DISTINCT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.claimed AS club_claimed
     FROM tournaments t
     JOIN clubs c ON c.id = t.club_id
     LEFT JOIN tournament_categories tc ON tc.tournament_id = t.id
@@ -117,17 +117,21 @@ r.get('/torneig/:id', (req, res) => {
     'anunci-tret': 'Anunci retirat.',
     'proposta-enviada': 'Proposta enviada. Si l\u2019accepta, quedareu inscrits com a parella.',
   };
-  // Recompte d'inscrits per categoria (sempre públic) + noms (si el club ho permet)
-  const inscritsPerCat = {};
-  for (const c of t.categories) {
-    const parelles = db.prepare(`
-      SELECT player1_name, player2_name FROM registrations
-      WHERE category_id = ? AND status = 'registered' ORDER BY decided_at ASC, id ASC`).all(c.id);
-    inscritsPerCat[c.id] = {
-      n: parelles.length,
-      max: c.max_pairs,
-      parelles: t.mostra_inscrits ? parelles : [],
-    };
+  // Recompte d'inscrits per categoria: només si la inscripció es fa a PadelVallès.
+  // Amb inscripció externa no hi ha inscrits controlables i la secció s'amaga.
+  let inscritsPerCat;
+  if (modePV) {
+    inscritsPerCat = {};
+    for (const c of t.categories) {
+      const parelles = db.prepare(`
+        SELECT player1_name, player2_name FROM registrations
+        WHERE category_id = ? AND status = 'registered' ORDER BY decided_at ASC, id ASC`).all(c.id);
+      inscritsPerCat[c.id] = {
+        n: parelles.length,
+        max: c.max_pairs,
+        parelles: t.mostra_inscrits ? parelles : [],
+      };
+    }
   }
   const estat = estatTorneig(t);
   res.render('torneig', { titol: t.name, t, interessat, MODALITATS, TIPUS_TORNEIG, avis: req.query.avis,

@@ -24,7 +24,7 @@
       <div class="cos">
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
         <% if (typeof estatTorneig !== 'undefined') { const e = estatTorneig(t); %><div><span class="estat <%= e.clau %>"><%= e.etiqueta %></span></div><% } %>
-        <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %> (<%= t.club_poble %>)</div>
+        <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> (<%= t.club_poble %>)</div>
       </div>
     </article>
   <% } %>
@@ -36,7 +36,7 @@
   <% for (const c of clubs) { %>
     <article class="targeta">
       <div class="cos">
-        <h3><a href="/club/<%= c.id %>"><%= c.name %></a></h3>
+        <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
         <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
       </div>
     </article>

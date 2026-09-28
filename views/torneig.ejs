@@ -14,7 +14,7 @@
     <% } %>
     <dl class="dades">
       <dt>Dates</dt><dd>📅 <%= t.starts_at %> – <%= t.ends_at %></dd>
-      <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</dd>
+      <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> (<%= t.club_poble %>)</dd>
       <% if (t.categories.length) { %>
         <dt>Categories</dt>
         <dd><% for (const c of t.categories) { %><span class="etiqueta"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></span><% } %></dd>

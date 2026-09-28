@@ -1,5 +1,6 @@
 <p><a href="/clubs">← Torna als clubs</a></p>
-<h1><%= club.name %></h1>
+<% if (club.logo_path) { %><div><img src="/fitxers/<%= club.logo_path %>" alt="Logo del <%= club.name %>" style="max-height:90px;margin-bottom:.5rem"></div><% } %>
+<h1><%= club.name %><%- club.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h1>
 <div class="meta">📍 <%= club.town %> · <%= COMARQUES[club.comarca] %><% if (club.address) { %> · <%= club.address %><% } %></div>
 <% if (club.description) { %><p><%= club.description %></p><% } %>
 <div class="fila">

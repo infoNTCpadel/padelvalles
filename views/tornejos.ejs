@@ -34,7 +34,7 @@
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
         <% if (typeof estatTorneig !== 'undefined') { const e = estatTorneig(t); %><div><span class="estat <%= e.clau %>"><%= e.etiqueta %></span></div><% } %>
         <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
-        <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a> (<%= t.club_poble %>)</div>
+        <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> (<%= t.club_poble %>)</div>
       </div>
     </article>
   <% } %>

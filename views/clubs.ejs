@@ -13,7 +13,7 @@
   <% for (const c of clubs) { %>
     <article class="targeta">
       <div class="cos">
-        <h3><a href="/club/<%= c.id %>"><%= c.name %></a></h3>
+        <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
         <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
         <% if (c.courts) { %><div class="meta"><%= c.courts %> pistes</div><% } %>
       </div>
