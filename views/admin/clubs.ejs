@@ -89,6 +89,10 @@
           <form action="/admin/clubs/<%= c.id %>/aprova" method="post" style="display:inline">
             <button class="boto petit" type="submit">Aprova</button>
           </form>
+        <% } else { %>
+          <form action="/admin/clubs/<%= c.id %>/amaga?estat=<%= estat %><%= q ? '&q=' + encodeURIComponent(q) : '' %>" method="post" style="display:inline">
+            <button class="boto petit secundari" type="submit" title="Amagar el club del web públic (reversible amb Aprova)" onclick="return confirm('Amagar aquest club del web públic? Els seus tornejos també s\u2019ocultaran. Es pot revertir amb Aprova.')">Amaga</button>
+          </form>
         <% } %>
       </td>
     </tr>

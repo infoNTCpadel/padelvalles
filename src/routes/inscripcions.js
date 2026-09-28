@@ -18,7 +18,7 @@ function getTorneig(id) {
   const t = db.prepare(`
     SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
-    WHERE t.id = ?`).get(id);
+    WHERE t.id = ? AND c.verified = 1`).get(id);
   if (!t) return null;
   t.categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
   return t;

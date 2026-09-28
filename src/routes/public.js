@@ -10,7 +10,7 @@ function getTorneig(id) {
   const t = db.prepare(`
     SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path, c.claimed AS club_claimed
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
-    WHERE t.id = ?`).get(id);
+    WHERE t.id = ? AND c.verified = 1`).get(id);
   if (!t) return null;
   t.categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
   t.club = { name: t.club_nom, town: t.club_poble, logo_path: t.logo_path };
@@ -23,7 +23,7 @@ r.get('/', (req, res) => {
   const propers = db.prepare(`
     SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.claimed AS club_claimed
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
-    WHERE t.status = 'published' AND t.ends_at >= ?
+    WHERE t.status = 'published' AND t.ends_at >= ? AND c.verified = 1
     ORDER BY t.starts_at ASC LIMIT 6`).all(avui);
   const clubs = db.prepare(`SELECT * FROM clubs WHERE verified = 1 ORDER BY name LIMIT 8`).all();
   const totalClubs = db.prepare(`SELECT COUNT(*) AS n FROM clubs WHERE verified = 1`).get().n;
@@ -39,7 +39,7 @@ r.get('/tornejos', (req, res) => {
     FROM tournaments t
     JOIN clubs c ON c.id = t.club_id
     LEFT JOIN tournament_categories tc ON tc.tournament_id = t.id
-    WHERE t.status = 'published' AND t.ends_at >= date('now', '-60 days')`;
+    WHERE t.status = 'published' AND t.ends_at >= date('now', '-60 days') AND c.verified = 1`;
   const p = [];
   if (comarca) { sql += ' AND c.comarca = ?'; p.push(comarca); }
   if (club) { sql += ' AND t.club_id = ?'; p.push(Number(club)); }
@@ -187,7 +187,7 @@ r.get('/sitemap.xml', (req, res) => {
     { loc: base + '/tornejos', changefreq: 'daily', priority: '0.9' },
     { loc: base + '/clubs', changefreq: 'weekly', priority: '0.8' },
   ];
-  const tornejos = db.prepare(`SELECT id, COALESCE(published_at, created_at) AS lm FROM tournaments WHERE status = 'published' ORDER BY starts_at DESC`).all();
+  const tornejos = db.prepare(`SELECT t.id, COALESCE(t.published_at, t.created_at) AS lm FROM tournaments t JOIN clubs c ON c.id = t.club_id WHERE t.status = 'published' AND c.verified = 1 ORDER BY t.starts_at DESC`).all();
   for (const t of tornejos) urls.push({ loc: `${base}/torneig/${t.id}`, changefreq: 'weekly', priority: '0.9', lastmod: String(t.lm || '').slice(0, 10) });
   const clubs = db.prepare('SELECT id FROM clubs WHERE verified = 1 ORDER BY name').all();
   for (const c of clubs) urls.push({ loc: `${base}/club/${c.id}`, changefreq: 'weekly', priority: '0.7' });

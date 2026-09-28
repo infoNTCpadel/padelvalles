@@ -63,6 +63,14 @@ r.post('/clubs/:id/rebutja', (req, res) => {
   res.redirect('/admin');
 });
 
+// Amagar un club verificat (p. ex. ha tancat): desapareix del web públic.
+// Reversible: amb "Aprova" torna a ser visible amb tot el seu contingut.
+r.post('/clubs/:id/amaga', (req, res) => {
+  db.prepare('UPDATE clubs SET verified = 0 WHERE id = ?').run(req.params.id);
+  log(req.session.user.id, 'club_amagat', 'club', req.params.id);
+  res.redirect('/admin/clubs?' + new URLSearchParams({ estat: req.query.estat || 'tots', q: req.query.q || '' }).toString());
+});
+
 // Aprovar / rebutjar torneig
 r.post('/tornejos/:id/aprova', (req, res) => {
   db.prepare(`UPDATE tournaments SET status = 'published', published_at = datetime('now'), reject_reason = '' WHERE id = ?`)
