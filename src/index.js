@@ -27,6 +27,10 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.brand = BRAND;
   res.locals.appUrl = process.env.APP_URL || 'https://padelvalles.com';
+  // URL pública d'un logo de club: /fitxers serveix data/uploads/, així que
+  // cal treure el prefix 'uploads/' que es guarda a logo_path (el cartell SVG
+  // el necessita per llegir el fitxer del disc).
+  res.locals.logoUrl = (p) => '/fitxers/' + String(p || '').replace(/^(data\/)?uploads\//, '');
   // Invitacions pendents: insígnia visible des de qualsevol pàgina
   let invitacionsPendents = 0;
   if (req.session.user) {
