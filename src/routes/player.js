@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { requireLogin } from '../middleware.js';
 import { MODALITATS, NIVELLS, nomNivell } from '../brand.js';
+import { afegirALlistaBrevo, treureDeLlistaBrevo } from '../mail.js';
 
 const r = Router();
 
@@ -83,6 +84,16 @@ r.post('/elmeucompte', requireLogin, (req, res) => {
     .run(nom.trim().slice(0, 80), nivellValid(nivell), netejaTelefon(telefon), req.session.user.id);
   req.session.user.name = nom.trim().slice(0, 80);
   res.redirect('/elmeucompte?guardat=1');
+});
+
+// Alta/baixa del butlletí (llista de Brevo)
+r.post('/elmeucompte/butlleti', requireLogin, (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const alta = req.body.accio === 'alta' ? 1 : 0;
+  db.prepare('UPDATE users SET newsletter = ? WHERE id = ?').run(alta, user.id);
+  if (alta) afegirALlistaBrevo(user.email, user.name);
+  else treureDeLlistaBrevo(user.email);
+  res.redirect('/elmeucompte?butlleti=ok');
 });
 
 // Canvi de contrasenya

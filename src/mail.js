@@ -81,6 +81,22 @@ export async function afegirALlistaBrevo(email, nom) {
   }
 }
 
+export async function treureDeLlistaBrevo(email) {
+  if (!BREVO_API_KEY) { console.log(`[brevo] sense clau: no es treu ${email} de la llista`); return; }
+  try {
+    const listId = await idLlistaBrevo();
+    const r = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts/remove`, {
+      method: 'POST',
+      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ emails: [email] }),
+    });
+    if (!r.ok) console.error('[brevo] no s’ha pogut treure de la llista:', r.status, await r.text());
+    else console.log(`[brevo] ${email} tret de la llista padelvalles`);
+  } catch (e) {
+    console.error('[brevo] error traient de la llista:', e.message);
+  }
+}
+
 // --- Fase 2: inscripcions ---
 
 function esc(s) { return String(s || '').replace(/</g, '&lt;'); }

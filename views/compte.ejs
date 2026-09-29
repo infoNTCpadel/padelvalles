@@ -36,6 +36,20 @@
   <button class="boto" type="submit">Desa els canvis</button>
 </form>
 
+<form class="formulari" action="/elmeucompte/butlleti" method="post">
+  <h2>Butlletí</h2>
+  <% if (q.butlleti) { %><div class="flash ok">Preferència guardada.</div><% } %>
+  <% if (user.newsletter) { %>
+    <p>Estàs apuntat al butlletí: reps novetats i tornejos per email.</p>
+    <input type="hidden" name="accio" value="baixa">
+    <button class="boto secundari" type="submit">Dona'm de baixa</button>
+  <% } else { %>
+    <p>No reps el butlletí. Apunta-t'hi per rebre novetats i tornejos per email.</p>
+    <input type="hidden" name="accio" value="alta">
+    <button class="boto" type="submit">Apunta'm al butlletí</button>
+  <% } %>
+</form>
+
 <form class="formulari" action="/elmeucompte/contrasenya" method="post">
   <h2>Canvia la contrasenya</h2>
   <% if (q.guardat) { %><div class="flash ok">Dades guardades.</div><% } %>
