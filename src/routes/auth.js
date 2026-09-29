@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import db from '../db.js';
-import { sendVerificationEmail, sendPasswordReset } from '../mail.js';
+import { sendVerificationEmail, sendPasswordReset, afegirALlistaBrevo } from '../mail.js';
 import { permet } from '../lib/rateLimit.js';
 import { NIVELLS } from '../brand.js';
 
@@ -40,8 +40,9 @@ r.post('/registre', (req, res) => {
     return res.render('registre', { titol: "Registre't", error: 'Massa registres des d\u2019aquesta connexió. Torna-ho a provar demà.', NIVELLS, next });
   }
   const hash = bcrypt.hashSync(contrasenya, 10);
-  const info = db.prepare('INSERT INTO users (email, password_hash, name, level, phone) VALUES (?, ?, ?, ?, ?)')
-    .run(em, hash, nom.trim(), nivellValid(nivell), netejaTelefon(telefon));
+  const butlleti = req.body.butlleti === 'on' ? 1 : 0;
+  const info = db.prepare('INSERT INTO users (email, password_hash, name, level, phone, newsletter) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(em, hash, nom.trim(), nivellValid(nivell), netejaTelefon(telefon), butlleti);
   const token = crypto.randomBytes(24).toString('hex');
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(info.lastInsertRowid, token);
   sendVerificationEmail(em, nom.trim(), token);
@@ -92,6 +93,9 @@ r.get('/verifica/:token', (req, res) => {
   db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(tok.user_id);
   db.prepare('DELETE FROM email_tokens WHERE user_id = ?').run(tok.user_id);
   if (req.session.user && req.session.user.id === tok.user_id) req.session.user.email_verified = 1;
+  // Alta a la llista de Brevo: només si ho ha consentit i amb l'email ja verificat
+  const nou = db.prepare('SELECT email, name, newsletter FROM users WHERE id = ?').get(tok.user_id);
+  if (nou && nou.newsletter) afegirALlistaBrevo(nou.email, nou.name);
   res.redirect('/elmeucompte?verificat=1');
 });
 

@@ -43,6 +43,44 @@ export async function sendVerificationEmail(email, nom, token) {
   }
 }
 
+// --- Llista de Brevo: alta automàtica dels usuaris que ho han consentit ---
+// La llista es busca pel nom ('padelvalles'); es pot fixar l'ID amb BREVO_LIST_ID.
+let llistaIdCache = null;
+async function idLlistaBrevo() {
+  if (process.env.BREVO_LIST_ID) return Number(process.env.BREVO_LIST_ID);
+  if (llistaIdCache) return llistaIdCache;
+  const r = await fetch('https://api.brevo.com/v3/contacts/lists?limit=50', {
+    headers: { 'api-key': BREVO_API_KEY, accept: 'application/json' },
+  });
+  if (!r.ok) throw new Error('llistes: HTTP ' + r.status);
+  const dades = await r.json();
+  const llista = (dades.lists || []).find(l => String(l.name || '').toLowerCase() === 'padelvalles');
+  if (!llista) throw new Error('llista "padelvalles" no trobada a Brevo');
+  llistaIdCache = llista.id;
+  return llista.id;
+}
+
+export async function afegirALlistaBrevo(email, nom) {
+  if (!BREVO_API_KEY) { console.log(`[brevo] sense clau: no s'afegeix ${email} a la llista`); return; }
+  try {
+    const listId = await idLlistaBrevo();
+    const r = await fetch('https://api.brevo.com/v3/contacts', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({
+        email,
+        attributes: { NOMBRE: nom || '' },
+        listIds: [listId],
+        updateEnabled: true,
+      }),
+    });
+    if (!r.ok) console.error('[brevo] no s’ha pogut afegir a la llista:', r.status, await r.text());
+    else console.log(`[brevo] ${email} afegit a la llista padelvalles`);
+  } catch (e) {
+    console.error('[brevo] error afegint a la llista:', e.message);
+  }
+}
+
 // --- Fase 2: inscripcions ---
 
 function esc(s) { return String(s || '').replace(/</g, '&lt;'); }

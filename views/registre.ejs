@@ -12,6 +12,7 @@
     <select name="nivell"><option value="">-- Tria --</option><% for (const n of NIVELLS) { %><option value="<%= n.id %>" title="<%= n.descripcio %>"><%= n.nom %> (<%= n.rang %>)</option><% } %></select>
     <p class="meta">Passa el cursor per cada nivell per veure la descripció.</p>
   </div>
+  <div class="camp"><label style="display:flex;gap:.5rem;align-items:flex-start;font-weight:normal"><input type="checkbox" name="butlleti" style="margin-top:.25rem"> Vull rebre novetats i tornejos de PadelVallès per email.</label></div>
   <button class="boto" type="submit">Crea el compte</button>
 </form>
 <p>Ja tens compte? <a href="/entra">Entra</a></p>

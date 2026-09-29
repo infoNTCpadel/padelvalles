@@ -186,6 +186,7 @@ for (const [taula, columna, def] of [
   ['tournament_categories', 'max_pairs', `INTEGER`],
   ['clubs', 'claim_token', `TEXT DEFAULT ''`],
   ['tournaments', 'mostra_inscrits', `INTEGER NOT NULL DEFAULT 1`],
+  ['users', 'newsletter', `INTEGER NOT NULL DEFAULT 0`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
