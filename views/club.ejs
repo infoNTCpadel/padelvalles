@@ -1,21 +1,33 @@
-<p><a href="/clubs">← Torna als clubs</a></p>
-<% if (club.logo_path) { %><div class="logo-club"><img src="<%= logoUrl(club.logo_path) %>" alt="Logo del <%= club.name %>"></div><% } %>
-<h1><%= club.name %><%- club.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h1>
-<div class="meta">📍 <%= club.town %> · <%= COMARQUES[club.comarca] %><% if (club.address) { %> · <%= club.address %><% } %></div>
-<% if (club.description) { %><p><%= club.description %></p><% } %>
-<div class="fila">
-  <% if (club.website) { %><a class="boto secundari menut" href="<%= club.website %>" target="_blank" rel="nofollow noopener">Web del club</a><% } %>
-  <% if (club.phone) { %><span class="meta">📞 <%= club.phone %></span><% } %>
-  <% if (user) { %>
-    <% if (segueix) { %>
-      <form class="enlinia" action="/club/<%= club.id %>/no-segueix" method="post"><button class="boto secundari menut">Deixa de seguir</button></form>
-    <% } else { %>
-      <form class="enlinia" action="/club/<%= club.id %>/segueix" method="post"><button class="boto menut">+ Segueix aquest club</button></form>
-    <% } %>
+<p><a class="torna" href="/clubs">← Torna als clubs</a></p>
+
+<div class="club-cap">
+  <% if (club.logo_path) { %>
+    <div class="logo-club"><img src="<%= logoUrl(club.logo_path) %>" alt="Logo del <%= club.name %>"></div>
+  <% } else { %>
+    <div class="club-icona" aria-hidden="true"><%= club.name.trim().charAt(0).toUpperCase() %></div>
   <% } %>
+  <div>
+    <h1><%= club.name %><%- club.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h1>
+    <div class="meta">📍 <%= club.town %> · <%= COMARQUES[club.comarca] %><% if (club.address) { %> · <%= club.address %><% } %></div>
+    <% if (club.courts) { %><div class="meta"><%= club.courts %> pistes</div><% } %>
+    <% if (club.description) { %><p class="descripcio"><%= club.description %></p><% } %>
+    <div class="club-accions">
+      <% if (club.website) { %><a class="boto secundari menut" href="<%= club.website %>" target="_blank" rel="nofollow noopener">Web del club</a><% } %>
+      <% if (user) { %>
+        <% if (segueix) { %>
+          <form class="enlinia" action="/club/<%= club.id %>/no-segueix" method="post"><button class="boto secundari menut">Deixa de seguir</button></form>
+        <% } else { %>
+          <form class="enlinia" action="/club/<%= club.id %>/segueix" method="post"><button class="boto menut">+ Segueix aquest club</button></form>
+        <% } %>
+      <% } %>
+    </div>
+    <% if (club.phone) { %><div class="meta" style="margin-top:.5rem">📞 <%= club.phone %></div><% } %>
+  </div>
 </div>
 
-<h2 class="seccio">Propers tornejos d'aquest club</h2>
+<div class="seccio-cap">
+  <h2>Propers tornejos d'aquest club</h2>
+</div>
 <% if (!tornejos.length) { %><p>Aquest club no té tornejos publicats properament.</p><% } %>
 <div class="graella">
   <% for (const t of tornejos) { %>
@@ -24,6 +36,7 @@
       <div class="cos">
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
         <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
+        <a class="targeta-accio" href="/torneig/<%= t.id %>">Més informació →</a>
       </div>
     </article>
   <% } %>

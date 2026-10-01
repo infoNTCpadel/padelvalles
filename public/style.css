@@ -262,3 +262,84 @@ table.llista th { background: var(--bg); color: #fff; }
   .hero-fons, .pilota { animation: none; }
   .boto, .targeta { transition: none; }
 }
+
+/* ============================================================
+   Redisseny 2026-10 · fase 2: llistats i fitxes
+   ============================================================ */
+
+/* --- Capçalera de pàgina (banda) --- */
+.banda-pagina { position: relative; width: 100vw; margin-left: calc(50% - 50vw);
+  background: linear-gradient(120deg, var(--bg2), var(--bg) 60%, #8E2A44);
+  color: #fff; overflow: hidden; margin-bottom: 1.6rem; }
+.banda-pagina::after { content: ""; position: absolute; right: -70px; top: -70px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 112, 58, .35), transparent 70%); }
+.banda-pagina .contenidor { position: relative; padding-top: 2.4rem; padding-bottom: 2.2rem; }
+.banda-pagina h1 { margin: 0 0 .4rem; font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 800; }
+.banda-pagina p { margin: 0; color: #F7EFE3; opacity: .9; max-width: 640px; }
+.torna { display: inline-block; margin: 1.2rem 0 .4rem; color: var(--bg); font-weight: 600; text-decoration: none; }
+.torna:hover { color: var(--accent); }
+
+/* --- Filtres moderns --- */
+.filtres { background: #fff; border-radius: var(--radi); box-shadow: var(--ombra);
+  padding: 1.1rem; margin: 0 0 1.6rem; display: grid; gap: .7rem;
+  grid-template-columns: 1.8fr 1fr 1.3fr 1fr 1fr auto; align-items: end; }
+.filtres .camp { margin: 0; }
+.filtres .camp label { font-size: .78rem; text-transform: uppercase; letter-spacing: .6px; color: #6B6257; }
+.filtres input, .filtres select { width: 100%; padding: .6rem .7rem; border: 1px solid var(--vora);
+  border-radius: 10px; font-size: .95rem; background: #FFFDF8; }
+.filtres input:focus, .filtres select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+@media (max-width: 860px) { .filtres { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .filtres { grid-template-columns: 1fr; } }
+
+/* --- Fitxa de torneig --- */
+.banda-torneig { position: relative; width: 100vw; margin-left: calc(50% - 50vw);
+  background: linear-gradient(115deg, #4A0E1E 0%, var(--bg2) 45%, var(--bg) 100%);
+  color: #fff; overflow: hidden; }
+.banda-torneig .contenidor { position: relative; display: flex; gap: 1.4rem; align-items: center;
+  padding-top: 2.6rem; padding-bottom: 2.4rem; }
+.data-gran { flex: none; background: #fff; border-radius: 18px; text-align: center;
+  padding: .8rem 1.2rem; box-shadow: 0 14px 34px rgba(0, 0, 0, .3); line-height: 1.05; }
+.data-gran .dia { display: block; font-family: "Poppins", sans-serif; font-weight: 800;
+  font-size: 2.2rem; color: var(--bg2); }
+.data-gran .mes { display: block; font-size: .75rem; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+.banda-torneig h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 800; text-wrap: balance; }
+.banda-torneig .meta { color: #F7EFE3; }
+.banda-torneig .meta a { color: #FFD9BE; font-weight: 600; }
+.etiquetes { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.etiqueta-clara { background: rgba(255, 255, 255, .16); color: #fff; border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px; padding: .25rem .8rem; font-size: .82rem; font-weight: 600; }
+
+.fitxa-nova { display: grid; grid-template-columns: 1fr 340px; gap: 1.6rem;
+  margin: 1.8rem 0 2.5rem; align-items: start; }
+@media (max-width: 900px) { .fitxa-nova { grid-template-columns: 1fr; } }
+.fitxa-lateral { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 1rem; }
+@media (max-width: 900px) { .fitxa-lateral { position: static; } }
+.targeta-lateral { background: #fff; border-radius: var(--radi); box-shadow: var(--ombra);
+  padding: 1.3rem; border: 1px solid rgba(231, 220, 200, .7); }
+.targeta-lateral h3 { margin: 0 0 .7rem; font-size: 1.05rem; }
+.targeta-lateral img.cartell { width: 100%; border-radius: 10px; margin-bottom: .8rem; }
+.info-reixeta { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin: 0 0 1.4rem; }
+.info-casella { background: #fff; border-radius: 12px; padding: .9rem 1rem;
+  box-shadow: var(--ombra); border: 1px solid rgba(231, 220, 200, .7); }
+.info-casella .k { font-size: .75rem; text-transform: uppercase; letter-spacing: .8px;
+  color: #6B6257; font-weight: 700; margin-bottom: .25rem; }
+.info-casella .v { font-weight: 600; }
+.info-casella .v a { color: var(--bg); }
+.avis { background: #FEF3C7; border: 1px solid #F5D98B; color: #92400E; border-radius: 12px;
+  padding: .8rem 1rem; margin: 0 0 1.2rem; font-weight: 500; }
+.llista-neta { list-style: none; margin: 0 0 1.4rem; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.llista-neta li { background: #fff; border-radius: 12px; padding: .8rem 1rem; box-shadow: var(--ombra);
+  border: 1px solid rgba(231, 220, 200, .7); }
+
+/* --- Fitxa de club --- */
+.club-cap { display: flex; gap: 1.4rem; align-items: center; background: #fff;
+  border-radius: var(--radi); box-shadow: var(--ombra); padding: 1.6rem;
+  margin: 1.2rem 0 1.8rem; border: 1px solid rgba(231, 220, 200, .7); flex-wrap: wrap; }
+.club-cap .logo-club { width: 110px; height: 110px; margin: 0; flex: none;
+  box-shadow: var(--ombra); }
+.club-cap .club-icona { width: 110px; height: 110px; font-size: 2.6rem; flex: none; }
+.club-cap h1 { margin: 0 0 .3rem; font-size: clamp(1.5rem, 3.4vw, 2.1rem); }
+.club-cap .meta { margin-bottom: .6rem; }
+.club-cap .descripcio { margin: .6rem 0 0; color: #4a443c; max-width: 640px; }
+.club-accions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }

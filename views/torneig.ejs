@@ -1,29 +1,41 @@
-<p><a href="/tornejos">← Torna als tornejos</a></p>
+<% const MESOS = ['GEN','FEB','MAR','ABR','MAI','JUN','JUL','AGO','SET','OCT','NOV','DES']; %>
+<% const _d = String(t.starts_at || '').slice(8, 10); const _m = MESOS[Number(String(t.starts_at || '').slice(5, 7)) - 1] || ''; %>
+<p><a class="torna" href="/tornejos">← Torna als tornejos</a></p>
 <% if (typeof avis !== 'undefined' && avis === 'enviat') { %><div class="exit">Gràcies, hem rebut el teu avís i el revisarem.</div><% } %>
 <% if (typeof missatge !== 'undefined' && missatge) { %><div class="exit"><%= missatge %></div><% } %>
 <% if (typeof errorMsg !== 'undefined' && errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
 
-<div class="fitxa">
-  <% if (user) { %><div><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>"></div><% } %>
+<div class="banda-torneig">
+  <div class="contenidor">
+    <% if (_d) { %><div class="data-gran" aria-hidden="true"><span class="dia"><%= _d %></span><span class="mes"><%= _m %></span></div><% } %>
+    <div>
+      <h1><%= t.name %></h1>
+      <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> · <%= t.club_poble %></div>
+      <div class="etiquetes">
+        <span class="etiqueta-clara"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span>
+        <% if (typeof estat !== 'undefined') { %><span class="etiqueta-clara"><%= estat.etiqueta %></span><% } %>
+        <% for (const c of t.categories) { %><span class="etiqueta-clara"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></span><% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fitxa-nova">
   <div>
-    <h1><%= t.name %></h1>
-    <p><span class="etiqueta"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span>
-      <% if (typeof estat !== 'undefined') { %> <span class="estat <%= estat.clau %>"><%= estat.etiqueta %></span><% } %></p>
     <% if (typeof estat !== 'undefined' && estat.clau !== 'oberta') { %>
-      <div class="avis"><%= estat.clau === 'finalitzat' ? 'Aquest torneig ja ha finalitzat.' : estat.clau === 'enjoc' ? 'Aquest torneig ja està en joc.' : 'Les inscripcions d\u2019aquest torneig estan tancades.' %></div>
+      <div class="avis"><%= estat.clau === 'finalitzat' ? 'Aquest torneig ja ha finalitzat.' : estat.clau === 'enjoc' ? 'Aquest torneig ja està en joc.' : 'Les inscripcions d’aquest torneig estan tancades.' %></div>
     <% } %>
-    <dl class="dades">
-      <dt>Dates</dt><dd>📅 <%= t.starts_at %> – <%= t.ends_at %></dd>
-      <dt>Club</dt><dd>📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> (<%= t.club_poble %>)</dd>
-      <% if (t.categories.length) { %>
-        <dt>Categories</dt>
-        <dd><% for (const c of t.categories) { %><span class="etiqueta"><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></span><% } %></dd>
-      <% } %>
-      <% if (user) { %>
-        <% if (t.price_text) { %><dt>Preu</dt><dd>🎟️ <%= t.price_text %></dd><% } %>
-        <% if (t.description) { %><dt>Informació</dt><dd><%= t.description %></dd><% } %>
-      <% } %>
-    </dl>
+
+    <div class="info-reixeta">
+      <div class="info-casella"><div class="k">Dates</div><div class="v">📅 <%= t.starts_at %> – <%= t.ends_at %></div></div>
+      <div class="info-casella"><div class="k">Club</div><div class="v">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></div></div>
+      <% if (user && t.price_text) { %><div class="info-casella"><div class="k">Preu</div><div class="v">🎟️ <%= t.price_text %></div></div><% } %>
+      <% if (t.categories.length) { %><div class="info-casella"><div class="k">Categories</div><div class="v"><%= t.categories.length %></div></div><% } %>
+    </div>
+
+    <% if (user && t.description) { %>
+      <div class="info-casella" style="margin-bottom:1.4rem"><div class="k">Informació</div><div class="v" style="font-weight:normal"><%= t.description %></div></div>
+    <% } %>
 
     <% if (user) { %>
       <h2>Com m'hi inscriva?</h2>
@@ -36,30 +48,11 @@
         <% if (t.registration_info) { %><p><%= t.registration_info %></p><% } %>
         <% if (!t.registration_url && !t.registration_info) { %><p>Contacta amb el club per inscriure-t'hi.</p><% } %>
       <% } %>
-
-      <div class="fila" style="margin-top:1rem">
-        <% if (interessat) { %>
-          <form class="enlinia" action="/torneig/<%= t.id %>/no-interessa" method="post"><button class="boto secundari menut">★ Ja no m'interessa</button></form>
-        <% } else { %>
-          <form class="enlinia" action="/torneig/<%= t.id %>/interessa" method="post"><button class="boto menut">☆ M'interessa</button></form>
-        <% } %>
-      </div>
-    <% } else { %>
-      <div class="registre-cta">
-        <h2>Vols veure'n tots els detalls?</h2>
-        <p>El cartell oficial, el preu, la informació completa i l'enllaç d'inscripció són només per a usuaris registrats.</p>
-        <p><a class="boto" href="/registre?next=/torneig/<%= t.id %>">Registra't gratis</a>
-        <a class="boto secundari" href="/entra?next=/torneig/<%= t.id %>">Ja tinc compte</a></p>
-      </div>
     <% } %>
-
-    <div class="fila" style="margin-top:1rem">
-      <a class="boto secundari menut" href="https://wa.me/?text=<%= encodeURIComponent(shareText + ' ' + shareUrl) %>" target="_blank" rel="noopener">↗ Comparteix per WhatsApp</a>
-    </div>
 
     <% if (typeof inscritsPerCat !== 'undefined' && t.categories.length) { %>
       <h2>Inscrits</h2>
-      <ul>
+      <ul class="llista-neta">
       <% for (const c of t.categories) { const info = inscritsPerCat[c.id] || { n: 0, max: null, parelles: [] }; %>
         <li><strong><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></strong>:
           <%= info.n %><%= info.max ? '/' + info.max : '' %> parelles
@@ -80,4 +73,33 @@
       </form>
     </details>
   </div>
+
+  <aside class="fitxa-lateral">
+    <% if (user) { %>
+      <div class="targeta-lateral">
+        <h3>Cartell oficial</h3>
+        <img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>">
+      </div>
+      <div class="targeta-lateral">
+        <h3>Segueix el torneig</h3>
+        <% if (interessat) { %>
+          <form class="enlinia" action="/torneig/<%= t.id %>/no-interessa" method="post"><button class="boto secundari menut">★ Ja no m'interessa</button></form>
+        <% } else { %>
+          <form class="enlinia" action="/torneig/<%= t.id %>/interessa" method="post"><button class="boto menut">☆ M'interessa</button></form>
+        <% } %>
+        <p style="margin:.8rem 0 0"><a class="boto secundari menut" href="https://wa.me/?text=<%= encodeURIComponent(shareText + ' ' + shareUrl) %>" target="_blank" rel="noopener">↗ Comparteix per WhatsApp</a></p>
+      </div>
+    <% } else { %>
+      <div class="targeta-lateral registre-cta" style="border:2px solid var(--accent); text-align:center">
+        <h3>Vols veure'n tots els detalls?</h3>
+        <p>El cartell oficial, el preu, la informació completa i l'enllaç d'inscripció són només per a usuaris registrats.</p>
+        <p><a class="boto" href="/registre?next=/torneig/<%= t.id %>">Registra't gratis</a></p>
+        <p><a href="/entra?next=/torneig/<%= t.id %>">Ja tinc compte</a></p>
+      </div>
+      <div class="targeta-lateral">
+        <h3>Comparteix</h3>
+        <p><a class="boto secundari menut" href="https://wa.me/?text=<%= encodeURIComponent(shareText + ' ' + shareUrl) %>" target="_blank" rel="noopener">↗ Comparteix per WhatsApp</a></p>
+      </div>
+    <% } %>
+  </aside>
 </div>
