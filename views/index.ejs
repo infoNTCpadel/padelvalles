@@ -1,51 +1,75 @@
-<section class="hero">
-  <h1>Tots els <span class="accent">tornejos de pàdel</span> del Vallès, en un sol lloc</h1>
-  <p><%= brand.tagline %>. Registra't gratis, segueix els teus clubs i no et perdis cap torneig del Vallès Occidental i Oriental.</p>
-  <form class="cercador" action="/tornejos" method="get">
-    <input type="search" name="q" placeholder="Cerca un torneig, un club, un municipi...">
-    <select name="comarca">
-      <option value="">Totes les comarques</option>
-      <% for (const [k, v] of Object.entries(COMARQUES)) { %>
-        <option value="<%= k %>"><%= v %></option>
-      <% } %>
-    </select>
-    <button class="boto" type="submit">Cerca</button>
-  </form>
+<section class="hero-nou">
+  <div class="hero-fons" aria-hidden="true"></div>
+  <div class="hero-vel" aria-hidden="true"></div>
+  <div class="pilota" aria-hidden="true"></div>
+  <div class="hero-contingut">
+    <p class="hero-kicker">Vallès Occidental · Vallès Oriental</p>
+    <h1>Tots els <span class="accent">tornejos de pàdel</span> del Vallès, en un sol lloc</h1>
+    <p class="hero-sub"><%= brand.tagline %>. Registra't gratis, segueix els teus clubs i no et perdis cap torneig.</p>
+    <form class="cercador-hero" action="/tornejos" method="get" role="search">
+      <input type="search" name="q" placeholder="Cerca un torneig, un club, un municipi..." aria-label="Cerca tornejos">
+      <select name="comarca" aria-label="Comarca">
+        <option value="">Totes les comarques</option>
+        <% for (const [k, v] of Object.entries(COMARQUES)) { %>
+          <option value="<%= k %>"><%= v %></option>
+        <% } %>
+      </select>
+      <button class="boto" type="submit">Cerca</button>
+    </form>
+    <div class="hero-stats">
+      <div><strong><%= totalTornejos %></strong><span>tornejos actius</span></div>
+      <div><strong><%= totalClubs %></strong><span>clubs al directori</span></div>
+      <div><strong>2</strong><span>comarques</span></div>
+    </div>
+  </div>
 </section>
 
-<h2 class="seccio">Propers tornejos</h2>
+<% const MESOS = ['GEN','FEB','MAR','ABR','MAI','JUN','JUL','AGO','SET','OCT','NOV','DES']; %>
+<div class="seccio-cap">
+  <h2>Propers tornejos</h2>
+  <a href="/tornejos">Veure tots →</a>
+</div>
 <% if (!propers.length) { %>
   <p>Encara no hi ha tornejos publicats. Torna aviat!</p>
 <% } %>
 <div class="graella">
   <% for (const t of propers) { %>
-    <article class="targeta">
+    <% const d = String(t.starts_at || '').slice(8, 10); const m = MESOS[Number(String(t.starts_at || '').slice(5, 7)) - 1] || ''; %>
+    <article class="targeta targeta-torneig">
       <a class="targeta-cap" href="/torneig/<%= t.id %>"><img src="/logo.png" alt="PadelVallès"><span>PADELVALLÈS</span></a>
+      <% if (d) { %><div class="targeta-data" aria-hidden="true"><span class="dia"><%= d %></span><span class="mes"><%= m %></span></div><% } %>
       <div class="cos">
         <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
         <% if (typeof estatTorneig !== 'undefined') { const e = estatTorneig(t); %><div><span class="estat <%= e.clau %>"><%= e.etiqueta %></span></div><% } %>
-        <div class="meta">📅 <%= t.starts_at %> · 📍 <%= t.club_nom %><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> (<%= t.club_poble %>)</div>
+        <div class="meta">📍 <%= t.club_nom %><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> · <%= t.club_poble %></div>
+        <a class="targeta-accio" href="/torneig/<%= t.id %>">Més informació →</a>
       </div>
     </article>
   <% } %>
 </div>
-<p><a class="boto secundari" href="/tornejos">Veure tots els tornejos</a></p>
 
-<h2 class="seccio">Clubs del Vallès <span class="meta">(<%= totalClubs %>)</span></h2>
+<div class="seccio-cap">
+  <h2>Clubs del Vallès <span class="meta">(<%= totalClubs %>)</span></h2>
+  <a href="/clubs">Veure tots →</a>
+</div>
 <div class="graella">
   <% for (const c of clubs) { %>
-    <article class="targeta">
+    <article class="targeta targeta-club">
       <div class="cos">
-        <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
-        <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
+        <div class="club-icona" aria-hidden="true"><%= c.name.trim().charAt(0).toUpperCase() %></div>
+        <div>
+          <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
+          <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
+        </div>
       </div>
     </article>
   <% } %>
 </div>
-<p><a href="/clubs">Veure tots els clubs →</a></p>
 
-<section class="hero" style="margin-top:2.5rem">
-  <h2>Tens un club al Vallès?</h2>
-  <p>Publica els teus tornejos a PadelVallès i arriba a tots els jugadors de les dues comarques. Revisem cada torneig abans de publicar-lo.</p>
-  <p><a class="boto" href="/club/sollicita">Sol·licita el compte del teu club</a></p>
+<section class="cta-banda">
+  <div class="contenidor">
+    <h2>Tens un club al Vallès?</h2>
+    <p>Publica els teus tornejos a PadelVallès i arriba a tots els jugadors de les dues comarques. Revisem cada torneig abans de publicar-lo.</p>
+    <p><a class="boto" href="/club/sollicita">Sol·licita el compte del teu club</a></p>
+  </div>
 </section>

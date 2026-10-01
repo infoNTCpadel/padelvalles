@@ -27,7 +27,8 @@ r.get('/', (req, res) => {
     ORDER BY t.starts_at ASC LIMIT 6`).all(avui);
   const clubs = db.prepare(`SELECT * FROM clubs WHERE verified = 1 ORDER BY name LIMIT 8`).all();
   const totalClubs = db.prepare(`SELECT COUNT(*) AS n FROM clubs WHERE verified = 1`).get().n;
-  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, COMARQUES, estatTorneig });
+  const totalTornejos = db.prepare(`SELECT COUNT(*) AS n FROM tournaments t JOIN clubs c ON c.id = t.club_id WHERE t.status = 'published' AND t.ends_at >= ? AND c.verified = 1`).get(avui).n;
+  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, totalTornejos, COMARQUES, estatTorneig });
 });
 
 // Llistat de tornejos amb filtres (inclou els finalitzats dels últims 60 dies com a historial)

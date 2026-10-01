@@ -113,3 +113,152 @@ table.llista th { background: var(--bg); color: #fff; }
 .verificat { font-size: .85em; vertical-align: baseline; }
 .logo-club { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; border: 2px solid var(--vora); background: #fff; margin-bottom: .75rem; }
 .logo-club img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ============================================================
+   Redisseny 2026-10 · capa visual moderna (fase 1: capçalera + inici)
+   No es toca el CSS anterior: només s'afegeix i es refina.
+   ============================================================ */
+:root {
+  --radi: 16px;
+  --ombra: 0 10px 30px rgba(43, 43, 41, .10);
+  --ombra-hover: 0 18px 44px rgba(43, 43, 41, .16);
+  --trans: .22s ease;
+}
+
+/* --- Capçalera fixa amb vidre --- */
+.cap { position: sticky; top: 0; z-index: 60; background: rgba(122, 32, 54, .96);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: 0 2px 18px rgba(0, 0, 0, .22); }
+.marca img { box-shadow: 0 0 0 2px rgba(255, 255, 255, .25); }
+.nav a { position: relative; padding: .3rem .1rem; font-weight: 500; }
+.nav a::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
+  background: var(--accent); border-radius: 2px; transition: width var(--trans); }
+.nav a:hover::after { width: 100%; }
+.nav-toggle, .nav-boto { display: none; }
+
+/* --- Botons moderns --- */
+.boto { background: linear-gradient(135deg, #F07F45, var(--accent)); border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(232, 112, 58, .35); transition: transform var(--trans), box-shadow var(--trans); }
+.boto:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(232, 112, 58, .45); color: #fff; }
+.boto.secundari { background: linear-gradient(135deg, var(--bg), var(--bg2)); box-shadow: 0 6px 18px rgba(122, 32, 54, .3); }
+.boto.perill { background: linear-gradient(135deg, #D34A38, #A93226); }
+
+/* --- Hero nou a pantalla completa --- */
+.hero-nou { position: relative; width: 100vw; margin-left: calc(50% - 50vw);
+  overflow: hidden; color: #fff; isolation: isolate; }
+.hero-fons { position: absolute; inset: -6%; z-index: -3;
+  background: url("/hero.jpg") center 65% / cover no-repeat;
+  animation: kenburns 36s ease-in-out infinite alternate; }
+.hero-vel { position: absolute; inset: 0; z-index: -2;
+  background: linear-gradient(100deg, rgba(70, 14, 28, .94) 15%, rgba(94, 23, 40, .62) 52%, rgba(232, 112, 58, .18) 100%); }
+.hero-contingut { position: relative; max-width: 1080px; margin: 0 auto; padding: 5.5rem 1rem 4.5rem; }
+.hero-kicker { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: #FFD9BE; border: 1px solid rgba(255, 217, 190, .45);
+  border-radius: 999px; padding: .35rem 1rem; margin: 0 0 1.1rem; }
+.hero-nou h1 { margin: 0 0 .8rem; font-size: clamp(2rem, 5.2vw, 3.4rem); line-height: 1.12;
+  font-weight: 800; text-wrap: balance; }
+.hero-nou h1 .accent { color: var(--accent); }
+.hero-sub { color: #F7EFE3; font-size: 1.1rem; max-width: 620px; margin: 0 0 1.6rem; opacity: .92; }
+
+/* Pilota de pàdel flotant (decorativa) */
+.pilota { position: absolute; z-index: -1; width: 92px; height: 92px; border-radius: 50%;
+  right: 8%; top: 22%;
+  background:
+    radial-gradient(circle at 32% 30%, #FFE9A8 0 18%, transparent 19%),
+    radial-gradient(circle at 50% 50%, #F5C518 0 58%, #D9A91F 100%);
+  box-shadow: inset -10px -12px 24px rgba(120, 70, 0, .35), 0 18px 40px rgba(0, 0, 0, .35);
+  animation: flota 7s ease-in-out infinite; opacity: .9; }
+.pilota::before, .pilota::after { content: ""; position: absolute; inset: 6px; border-radius: 50%;
+  border: 3px solid transparent; }
+.pilota::before { border-top-color: rgba(255, 255, 255, .85); transform: rotate(-24deg); }
+.pilota::after { border-bottom-color: rgba(255, 255, 255, .85); transform: rotate(-24deg); }
+@keyframes flota { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-26px) rotate(10deg); } }
+@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.14); } }
+
+/* Cercador del hero */
+.cercador-hero { display: flex; gap: .5rem; background: rgba(255, 255, 255, .97);
+  border-radius: 16px; padding: .5rem; max-width: 680px; box-shadow: 0 18px 44px rgba(0, 0, 0, .3); }
+.cercador-hero input { flex: 2; border: 0; background: transparent; font-size: 1rem; padding: .7rem .9rem; min-width: 0; }
+.cercador-hero select { flex: 1; border: 0; background: transparent; font-size: .95rem; min-width: 0; }
+.cercador-hero input:focus, .cercador-hero select:focus { outline: 2px solid var(--accent); border-radius: 10px; }
+.cercador-hero .boto { border-radius: 12px; white-space: nowrap; }
+
+/* Estadístiques del hero */
+.hero-stats { display: flex; gap: 2.4rem; margin-top: 2.2rem; flex-wrap: wrap; }
+.hero-stats div { display: flex; flex-direction: column; }
+.hero-stats strong { font-family: "Poppins", sans-serif; font-size: 1.9rem; font-weight: 800; color: #fff; }
+.hero-stats span { font-size: .85rem; color: #F7EFE3; opacity: .8; }
+
+/* --- Capçaleres de secció --- */
+.seccio-cap { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  margin: 2.6rem 0 1rem; flex-wrap: wrap; }
+.seccio-cap h2 { margin: 0; font-size: 1.5rem; }
+.seccio-cap a { font-weight: 600; color: var(--bg); text-decoration: none; }
+.seccio-cap a:hover { color: var(--accent); }
+
+/* --- Targetes modernes --- */
+.targeta { border-radius: var(--radi); box-shadow: var(--ombra); border: 1px solid rgba(231, 220, 200, .7);
+  transition: transform var(--trans), box-shadow var(--trans); }
+.targeta:hover { transform: translateY(-5px); box-shadow: var(--ombra-hover); }
+.targeta-cap { border-radius: var(--radi) var(--radi) 0 0; }
+.targeta .cos { padding: 1.1rem 1.1rem 1.2rem; gap: .5rem; }
+.targeta-torneig { position: relative; }
+.targeta-data { position: absolute; top: .9rem; right: .9rem; background: #fff; border-radius: 12px;
+  box-shadow: var(--ombra); text-align: center; padding: .4rem .7rem; line-height: 1.1; }
+.targeta-data .dia { display: block; font-family: "Poppins", sans-serif; font-weight: 800;
+  font-size: 1.25rem; color: var(--bg2); }
+.targeta-data .mes { display: block; font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); }
+.targeta h3 a:hover { color: var(--bg); }
+.targeta-accio { margin-top: .4rem; font-weight: 700; color: var(--accent); text-decoration: none; font-size: .92rem; }
+.targeta-accio:hover { color: var(--bg); }
+
+/* Targeta de club amb icona */
+.targeta-club .cos { flex-direction: row; align-items: center; gap: .9rem; }
+.club-icona { flex: none; width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--bg), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Poppins", sans-serif; font-weight: 800; color: #fff; font-size: 1.3rem; }
+
+/* --- Banda CTA clubs --- */
+.cta-banda { position: relative; width: 100vw; margin-left: calc(50% - 50vw); overflow: hidden;
+  background: linear-gradient(120deg, var(--accent), #C8502A); color: #fff; margin-top: 3rem; }
+.cta-banda .contenidor { padding-top: 3rem; padding-bottom: 3rem; text-align: center; }
+.cta-banda h2 { margin: 0 0 .6rem; font-size: 1.8rem; }
+.cta-banda p { max-width: 620px; margin: 0 auto 1.4rem; opacity: .95; }
+.cta-banda .boto { background: #fff; color: var(--bg2); box-shadow: 0 10px 26px rgba(0, 0, 0, .25); }
+.cta-banda .boto:hover { color: var(--bg2); }
+
+/* --- Peu renovat --- */
+.peu { background: #3D0F1D; padding: 2.2rem 0 1.6rem; }
+.peu strong { font-family: "Poppins", sans-serif; }
+.peu a:hover { color: var(--accent); }
+
+/* --- Formulari una mica més amable --- */
+.formulari { border-radius: var(--radi); box-shadow: var(--ombra); }
+.camp input:focus, .camp select:focus, .camp textarea:focus {
+  outline: 2px solid var(--accent); border-color: var(--accent); }
+
+/* --- Mòbil --- */
+@media (max-width: 860px) {
+  .nav-boto { display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; font-size: 1.4rem; color: #fff; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .35); border-radius: 10px; user-select: none; }
+  .cap-flex { position: relative; }
+  .nav { display: none; position: absolute; top: calc(100% + .6rem); right: 1rem; left: 1rem;
+    flex-direction: column; align-items: stretch; gap: .2rem;
+    background: #fff; border-radius: 14px; box-shadow: 0 18px 44px rgba(0, 0, 0, .3); padding: .7rem; }
+  .nav a { color: var(--ink); padding: .65rem .8rem; border-radius: 8px; font-weight: 600; }
+  .nav a:hover { background: #F7EFE3; color: var(--bg); }
+  .nav a::after { display: none; }
+  .nav .enlinia { padding: .3rem .8rem; }
+  .nav-toggle:checked ~ .nav { display: flex; }
+  .hero-contingut { padding: 3.6rem 1rem 3rem; }
+  .pilota { width: 60px; height: 60px; right: 6%; top: 12%; }
+  .cercador-hero { flex-direction: column; }
+  .cercador-hero .boto { width: 100%; }
+  .hero-stats { gap: 1.4rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-fons, .pilota { animation: none; }
+  .boto, .targeta { transition: none; }
+}
