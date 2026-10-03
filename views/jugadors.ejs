@@ -1,0 +1,28 @@
+<div class="banda-pagina">
+  <div class="contenidor">
+    <h1>Jugadors</h1>
+    <p>La comunitat de PadelVallès: qui juga, organitza i entrena als tornejos del Vallès.</p>
+  </div>
+</div>
+
+<form class="filtres" action="/jugadors" method="get" role="search" style="grid-template-columns: 2fr auto">
+  <div class="camp"><label>Cerca</label><input type="search" name="q" placeholder="Cerca per nom..." value="<%= q %>"></div>
+  <div class="camp"><label>&nbsp;</label><button class="boto" type="submit">Cerca</button></div>
+</form>
+
+<% if (!jugadors.length) { %>
+  <p>No hi ha jugadors amb aquest nom.</p>
+<% } %>
+<div class="graella">
+  <% for (const j of jugadors) { %>
+    <article class="targeta targeta-club">
+      <div class="cos">
+        <div class="club-icona" aria-hidden="true"><%= j.nom.trim().charAt(0).toUpperCase() %></div>
+        <div>
+          <h3><%= j.nom %></h3>
+          <div><span class="etiqueta rol-<%= j.rolClau %>"><%= j.rol %></span><% if (j.nivell) { %> <span class="meta"><%= j.nivell %></span><% } %></div>
+        </div>
+      </div>
+    </article>
+  <% } %>
+</div>

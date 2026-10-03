@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { cartellSVG } from '../poster.js';
-import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig } from '../brand.js';
+import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig, nomNivell } from '../brand.js';
 import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
 
 const r = Router();
@@ -160,6 +160,23 @@ r.get('/clubs', (req, res) => {
   sql += ' ORDER BY town, name';
   const clubs = db.prepare(sql).all(...p);
   res.render('clubs', { titol: 'Clubs', clubs, comarca, q, COMARQUES });
+});
+
+// Directori de jugadors: nom + rol (+ nivell), sense cap altra dada personal
+const ROLS_JUGADORS = { player: 'Jugador', club: 'Club', monitor: 'Monitor', admin: 'Equip PadelVallès' };
+r.get('/jugadors', (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 60);
+  let sql = `SELECT name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor','admin')`;
+  const p = [];
+  if (q) { sql += ' AND name LIKE ?'; p.push(`%${q}%`); }
+  sql += ' ORDER BY name';
+  const jugadors = db.prepare(sql).all(...p).map(u => ({
+    nom: u.name,
+    rol: ROLS_JUGADORS[u.role] || 'Jugador',
+    rolClau: u.role,
+    nivell: u.level ? nomNivell(u.level) : ''
+  }));
+  res.render('jugadors', { titol: 'Jugadors', jugadors, q });
 });
 
 // Fitxa del club

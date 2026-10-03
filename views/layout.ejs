@@ -30,6 +30,7 @@
       <a href="/">Inici</a>
       <a href="/tornejos">Tornejos</a>
       <a href="/clubs">Clubs</a>
+      <a href="/jugadors">Jugadors</a>
       <% if (user) { %>
         <% if (typeof tePanell !== 'undefined' && tePanell) { %><a href="/club/panel">Panell del club</a><% } %>
         <% if (user.role === 'admin') { %><a href="/admin">Admin</a><% } %>

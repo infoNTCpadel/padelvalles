@@ -343,3 +343,9 @@ table.llista th { background: var(--bg); color: #fff; }
 .club-cap .meta { margin-bottom: .6rem; }
 .club-cap .descripcio { margin: .6rem 0 0; color: #4a443c; max-width: 640px; }
 .club-accions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+
+/* Directori de jugadors */
+.etiqueta.rol-player { background: #E8F0FE; color: #1A56DB; }
+.etiqueta.rol-club { background: #F7EFE3; color: #7A2036; }
+.etiqueta.rol-monitor { background: #E6F4EA; color: #137333; }
+.etiqueta.rol-admin { background: #2B2B29; color: #fff; }
