@@ -129,3 +129,22 @@ actualitzaQuota();
   <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="5" maxlength="2000"><%= t ? (t.description || t.descripcio || '') : '' %></textarea></div>
   <button class="boto" type="submit">Envia a revisió</button>
 </form>
+
+<% if (t && t.id && potCartell) { %>
+  <h2 style="margin-top:2rem">Cartell del club</h2>
+  <% if (cartellMissatge) { %><div class="exit"><%= cartellMissatge %></div><% } %>
+  <% if (cartellErrorMsg) { %><div class="error"><%= cartellErrorMsg %></div><% } %>
+  <p class="meta">Puja el cartell original del torneig (PNG, JPG o WebP, màx. 2 MB). Es mostrarà a la fitxa del torneig al costat del cartell oficial de PadelVallès. Només se'n guarda un: si en puges un de nou, substitueix l'anterior.</p>
+  <% if (t.poster_path) { %>
+    <div style="margin-bottom:.8rem"><img src="<%= logoUrl(t.poster_path) %>" alt="Cartell actual" style="max-height:220px;border-radius:12px;box-shadow:var(--ombra)"></div>
+    <form action="/club/torneig/<%= t.id %>/cartell/esborra" method="post" class="enlinia" onsubmit="return confirm('Esborrar el cartell del club?')">
+      <button class="boto secundari menut" type="submit">Esborra el cartell</button>
+    </form>
+  <% } %>
+  <form action="/club/torneig/<%= t.id %>/cartell" method="post" enctype="multipart/form-data" class="formulari" style="margin-top:.8rem">
+    <div class="camp"><label><%= t.poster_path ? 'Substitueix el cartell' : 'Puja el cartell' %></label>
+      <input type="file" name="cartell" accept="image/png,image/jpeg,image/webp" required>
+    </div>
+    <button class="boto secundari" type="submit">Puja el cartell</button>
+  </form>
+<% } %>

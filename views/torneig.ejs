@@ -77,7 +77,12 @@
   <aside class="fitxa-lateral">
     <% if (user) { %>
       <div class="targeta-lateral">
-        <h3>Cartell oficial</h3>
+        <h3>Cartells</h3>
+        <% if (t.poster_path) { %>
+          <div class="k" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#6B6257;font-weight:700;margin-bottom:.25rem">Cartell del club</div>
+          <img class="cartell" src="<%= logoUrl(t.poster_path) %>" alt="Cartell original: <%= t.name %>" style="margin-bottom:.8rem">
+        <% } %>
+        <div class="k" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#6B6257;font-weight:700;margin-bottom:.25rem">Cartell PadelVallès</div>
         <img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell oficial: <%= t.name %>">
       </div>
       <div class="targeta-lateral">

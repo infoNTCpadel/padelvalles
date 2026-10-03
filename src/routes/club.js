@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import fs from 'node:fs';
 import path from 'node:path';
 import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
@@ -144,7 +145,7 @@ r.get('/club/torneig/nou', nomesGestor, (req, res) => {
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
   res.render('club-torneig-form', {
     titol: 'Nou torneig', t: null, clubs, MODALITATS, TIPUS_TORNEIG, quotes, teInscrits: 0,
-    filesCategories: filesCategories(null, null),
+    filesCategories: filesCategories(null, null), potCartell: false, cartellMissatge: null, cartellErrorMsg: null,
     error: pendents >= 3 ? 'Tens 3 tornejos pendents de revisió. Espera que els aprovem abans de crear-ne més.' : null
   });
 });
@@ -246,7 +247,8 @@ r.post('/club/torneig/nou', nomesGestor, (req, res) => {
     const quotes = {};
     for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
     res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG,
-      quotes, teInscrits: 0, filesCategories: filesCategories(null, req.body), error: e.message });
+      quotes, teInscrits: 0, filesCategories: filesCategories(null, req.body), error: e.message,
+      potCartell: false, cartellMissatge: null, cartellErrorMsg: null });
   }
 });
 
@@ -260,8 +262,15 @@ r.get('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id, t.id);
   const teInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
     WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(t.id).n;
+  const club = db.prepare('SELECT claimed FROM clubs WHERE id = ?').get(t.club_id);
+  const potCartell = esAdmin || !!club?.claimed;
+  let cartellMissatge = null, cartellErrorMsg = null;
+  if (req.query.cartell === 'ok') cartellMissatge = 'Cartell pujat correctament.';
+  if (req.query.cartell === 'esborrat') cartellMissatge = 'Cartell esborrat.';
+  if (req.query.cartell_error) cartellErrorMsg = String(req.query.cartell_error);
   res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, TIPUS_TORNEIG,
-    quotes, teInscrits, filesCategories: filesCategories(t, null), error: null });
+    quotes, teInscrits, filesCategories: filesCategories(t, null), error: null,
+    potCartell, cartellMissatge, cartellErrorMsg });
 });
 
 r.post('/club/torneig/:id/edita', nomesGestor, (req, res) => {
@@ -270,6 +279,69 @@ r.post('/club/torneig/:id/edita', nomesGestor, (req, res) => {
     res.redirect('/club/panel?enviat=1');
   } catch (e) {
     return res.status(400).send(esc(e.message));
+  }
+});
+
+// --- Cartell original del club (un per torneig, al costat del cartell oficial SVG) ---
+// Només clubs reclamats (o l'admin). El fitxer anterior s'esborra en substituir-lo.
+function tipusImatge(buf) {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return '.jpg';
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return '.png';
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return '.webp';
+  return null;
+}
+
+function esborraFitxerPujat(rel) {
+  const base = path.basename(String(rel || ''));
+  if (!base || base === '.' || base.includes('..')) return;
+  try { fs.unlinkSync(path.join(process.cwd(), 'data', 'uploads', base)); } catch {}
+}
+
+function cartellError(res, id, codi) {
+  return res.redirect(`/club/torneig/${id}/edita?cartell_error=${codi}`);
+}
+
+r.post('/club/torneig/:id/cartell', nomesGestor, (req, res) => {
+  pujada.single('cartell')(req, res, (err) => {
+    const id = Number(req.params.id);
+    try {
+      if (err) throw new Error(err.code === 'LIMIT_FILE_SIZE'
+        ? 'El fitxer supera els 2 MB.'
+        : 'El fitxer ha de ser una imatge PNG, JPG o WebP.');
+      const esAdmin = req.session.user.role === 'admin';
+      const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+      if (!t || !potGestionar(req.session.user.id, t.club_id, esAdmin)) throw new Error('Torneig no trobat.');
+      const club = db.prepare('SELECT claimed FROM clubs WHERE id = ?').get(t.club_id);
+      if (!esAdmin && !club?.claimed) throw new Error('Només els clubs reclamats poden pujar el cartell.');
+      if (!req.file) throw new Error('Tria un fitxer d\'imatge.');
+      const ext = tipusImatge(fs.readFileSync(req.file.path));
+      if (!ext) { esborraFitxerPujat(req.file.filename); throw new Error('El fitxer no és una imatge vàlida.'); }
+      const nouNom = req.file.filename + ext;
+      fs.renameSync(req.file.path, path.join(process.cwd(), 'data', 'uploads', nouNom));
+      esborraFitxerPujat(t.poster_path);
+      db.prepare('UPDATE tournaments SET poster_path = ? WHERE id = ?').run('uploads/' + nouNom, id);
+      res.redirect(`/club/torneig/${id}/edita?cartell=ok`);
+    } catch (e) {
+      if (req.file) esborraFitxerPujat(req.file.filename);
+      cartellError(res, req.params.id, encodeURIComponent(e.message));
+    }
+  });
+});
+
+r.post('/club/torneig/:id/cartell/esborra', nomesGestor, (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const esAdmin = req.session.user.role === 'admin';
+    const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+    if (!t || !potGestionar(req.session.user.id, t.club_id, esAdmin)) throw new Error('Torneig no trobat.');
+    const club = db.prepare('SELECT claimed FROM clubs WHERE id = ?').get(t.club_id);
+    if (!esAdmin && !club?.claimed) throw new Error('Només els clubs reclamats poden gestionar el cartell.');
+    esborraFitxerPujat(t.poster_path);
+    db.prepare('UPDATE tournaments SET poster_path = ? WHERE id = ?').run('', id);
+    res.redirect(`/club/torneig/${id}/edita?cartell=esborrat`);
+  } catch (e) {
+    cartellError(res, req.params.id, encodeURIComponent(e.message));
   }
 });
 
