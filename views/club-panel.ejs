@@ -2,6 +2,25 @@
 <% if (typeof esMonitor !== 'undefined' && esMonitor) { %>
 <p class="avis">Has entrat com a <strong>monitor</strong>: pots veure els inscrits i fer altes i baixes dels tornejos dels clubs que t'han autoritzat.</p>
 <% } %>
+<% if (typeof validat !== 'undefined' && validat) { %><div class="exit">Torneig validat: ara passa a revisió de l'administrador.</div><% } %>
+<% if (typeof rebutjat !== 'undefined' && rebutjat) { %><div class="exit">Torneig rebutjat: l'organitzador n'ha estat avisat.</div><% } %>
+<% if (typeof pendentsOrg !== 'undefined' && pendentsOrg && pendentsOrg.length && (typeof esMonitor === 'undefined' || !esMonitor)) { %>
+<h2 class="seccio">Tornejos d'organitzadors pendents de validar (<%= pendentsOrg.length %>)</h2>
+<p class="meta">Aquests organitzadors volen jugar un torneig a les teves instal·lacions. Valida'ls només si hi estàs d'acord: fins que no els validis no es publicaran.</p>
+<% for (const t of pendentsOrg) { %>
+  <div class="dades" style="margin-bottom:.8rem">
+    <strong><%= t.name %></strong> · organitza <strong><%= t.org_nom %></strong> · <%= t.starts_at %> – <%= t.ends_at %>
+    <% if (t.price_text) { %><div class="meta">🎟️ <%= t.price_text %></div><% } %>
+    <% if (t.description) { %><div class="meta"><%= t.description %></div><% } %>
+    <div class="fila" style="margin-top:.5rem">
+      <form class="enlinia" action="/club/torneig/<%= t.id %>/valida" method="post"><button class="boto menut">Valida</button></form>
+      <form class="enlinia" action="/club/torneig/<%= t.id %>/rebutja" method="post">
+        <input name="motiu" placeholder="Motiu del rebuig (el veurà l'organitzador)" style="width:18rem" required> <button class="boto perill menut">Rebutja</button>
+      </form>
+    </div>
+  </div>
+<% } %>
+<% } %>
 <div class="fila">
   <% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a class="boto" href="/club/torneig/nou">+ Nou torneig</a><% } %>
   <% for (const c of clubs) { %><% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a class="boto secundari menut" href="/club/perfil/<%= c.id %>">Fitxa: <%= c.name %></a><% } %><% } %>
@@ -17,7 +36,7 @@
       <td><%= t.name %></td>
       <td><%= t.club_nom %></td>
       <td><%= t.starts_at %></td>
-      <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status %></span>
+      <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' || t.status === 'pending_club' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status === 'pending_club' ? 'pendent del club' : t.status %></span>
         <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
       </td>
       <td><% if (typeof esMonitor === 'undefined' || !esMonitor) { %><a href="/club/torneig/<%= t.id %>/edita">Edita</a> · <% } %><a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %><% if ((t.registration_mode || 'externa') === 'padelvalles') { %> · <a href="/club/torneig/<%= t.id %>/inscrits"><strong>Inscrits</strong></a><% } %>

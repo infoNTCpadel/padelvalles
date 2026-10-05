@@ -67,6 +67,11 @@
 <% } else { %>
   <p><a href="/club/sollicita">Tens un club? Sol·licita el teu compte de club</a></p>
 <% } %>
+<% if (typeof elMeuOrganitzador !== 'undefined' && elMeuOrganitzador) { %>
+  <p><a class="boto secundari" href="/organitzador/panel">Anar al panell de l'organitzador (<%= elMeuOrganitzador.name %>)</a></p>
+<% } else { %>
+  <p><a href="/organitzador/sollicita">Organitzes tornejos? Sol·licita el teu perfil d'organitzador</a></p>
+<% } %>
 
 <h2 class="seccio">Les meves inscripcions</h2>
 <% if (invitacionsEnviades.length) { %>

@@ -1,5 +1,7 @@
 <h1>Inscrits: <%= t.name %></h1>
-<p><a href="/club/panel">← Panell del club</a> · <a href="/club/torneig/<%= t.id %>/inscrits.csv">⬇ Descarrega CSV</a></p>
+<% const base = typeof baseRuta !== 'undefined' && baseRuta ? baseRuta : '/club'; %>
+<% const nomPanell = base === '/organitzador' ? "Panell de l'organitzador" : 'Panell del club'; %>
+<p><a href="<%= base %>/panel">← <%= nomPanell %></a> · <a href="<%= base %>/torneig/<%= t.id %>/inscrits.csv">⬇ Descarrega CSV</a></p>
 <% if (t.registration_deadline) { %><p class="meta">Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
 <p class="meta">Els jugadors es poden donar de baixa ells mateixos fins a <%= t.unregister_hours ?? 48 %> hores abans de l'inici. El pagament es fa fora de la plataforma: marca aquí qui ha pagat.</p>
 
@@ -7,7 +9,7 @@
 <h2>Afegeix una parella</h2>
 <% if (alta) { %><div class="exit">Parella afegida correctament.</div><% } %>
 <% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
-<form class="formulari" action="/club/torneig/<%= t.id %>/inscrits/nova" method="post">
+<form class="formulari" action="<%= base %>/torneig/<%= t.id %>/inscrits/nova" method="post">
   <div class="fila">
     <div class="camp"><label>Categoria</label>
       <select name="categoria" required>
@@ -53,12 +55,12 @@
         <td><%= i.nom1 %> / <%= i.nom2 %></td>
         <td class="meta"><%= i.email1 %><% if (i.tel1) { %> · 📞 <%= i.tel1 %><% } %><br><%= i.email2 %><% if (i.tel2) { %> · 📞 <%= i.tel2 %><% } %></td>
         <td>
-          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/pagat" method="post">
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/pagat" method="post">
             <button class="boto <%= i.paid ? '' : 'secundari' %> menut"><%= i.paid ? '✓ Pagat' : 'Marca pagat' %></button>
           </form>
         </td>
         <td>
-          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post"
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post"
             onsubmit="return confirm('Vols donar de baixa aquesta parella? Si hi ha llista d\u2019espera, la primera parella pujarà automàticament.')">
             <button class="boto secundari menut">Treu</button>
           </form>
@@ -77,7 +79,7 @@
           <td><%= idx + 1 %></td>
           <td><%= i.nom1 %> / <%= i.nom2 %></td>
           <td>
-            <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
+            <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
               <button class="boto secundari menut">Treu</button>
             </form>
           </td>
@@ -91,7 +93,7 @@
     <ul>
       <% for (const i of c.pending) { %>
         <li><%= i.nom1 %> ha convidat <%= i.nom2 %> <span class="meta">(esperant resposta)</span>
-          <form class="enlinia" action="/club/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
             <button class="boto secundari menut">Cancel·la</button>
           </form>
         </li>

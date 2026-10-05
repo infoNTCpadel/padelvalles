@@ -6,15 +6,23 @@ import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
-import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat } from '../mail.js';
+import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub } from '../mail.js';
 
 const r = Router();
 const nomesClub = [requireLogin, requireRole('club', 'admin', 'monitor'), requireVerified];
 // Gestió plena del club (crear/editar/duplicar tornejos, perfil): monitors exclosos
 const nomesGestor = [requireLogin, requireRole('club', 'admin'), requireVerified];
 
+// Carpeta de pujades: respecta DATA_DIR (proves amb còpia de la BD)
+export function dirPujades() {
+  const base = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const dir = path.join(base, 'uploads');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 const pujada = multer({
-  dest: path.join(process.cwd(), 'data', 'uploads'),
+  dest: dirPujades(),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = ['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype);
@@ -113,7 +121,14 @@ r.get('/club/panel', nomesClub, (req, res) => {
     SELECT t.*, c.name AS club_nom FROM tournaments t JOIN clubs c ON c.id = t.club_id
     WHERE t.club_id IN (${ids.map(() => '?').join(',')})
     ORDER BY t.starts_at DESC`).all(...ids) : [];
-  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor });
+  // Tornejos d'organitzadors pendents que el club validi (només gestors, no monitors)
+  const pendentsOrg = (!esMonitor && ids.length) ? db.prepare(`
+    SELECT t.*, o.name AS org_nom FROM tournaments t
+    JOIN organizers o ON o.id = t.organizer_id
+    WHERE t.club_id IN (${ids.map(() => '?').join(',')}) AND t.status = 'pending_club'
+    ORDER BY t.created_at ASC`).all(...ids) : [];
+  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor, pendentsOrg,
+    validat: req.query.validat || null, rebutjat: req.query.rebutjat || null });
 });
 
 // Formulari de torneig
@@ -282,6 +297,52 @@ r.post('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   }
 });
 
+// --- Validació de tornejos d'organitzadors pel club seu ---
+// El club valida DINS la plataforma que ha concedit permís a l'organitzador:
+// el torneig passa a la cua de revisió de l'admin ('pending').
+function agafaTorneigPendentOrg(req, res) {
+  const esAdmin = req.session.user.role === 'admin';
+  const t = db.prepare(`SELECT * FROM tournaments WHERE id = ? AND status = 'pending_club'`).get(req.params.id);
+  if (!t || !t.organizer_id || !potGestionar(req.session.user.id, t.club_id, esAdmin)) {
+    res.status(404).render('404', { titol: 'No trobat' });
+    return null;
+  }
+  return t;
+}
+
+function avisaOrganitzadorValidacio(t, validat, motiu = '') {
+  try {
+    const org = db.prepare(`
+      SELECT o.name AS org_nom, u.name AS nom, u.email AS email
+      FROM organizers o JOIN users u ON u.id = o.user_id WHERE o.id = ?`).get(t.organizer_id);
+    const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(t.club_id);
+    if (org?.email) sendTorneigValidatClub(org.email, org.nom, t.name, club?.name || '', validat, motiu);
+  } catch (e) { console.error('[club] avís organitzador:', e.message); }
+}
+
+r.post('/club/torneig/:id/valida', nomesGestor, (req, res) => {
+  const t = agafaTorneigPendentOrg(req, res);
+  if (!t) return;
+  db.prepare(`UPDATE tournaments SET status = 'pending', reject_reason = '' WHERE id = ?`).run(t.id);
+  db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
+              VALUES (?, 'torneig_validat_club', 'tournament', ?, ?)`)
+    .run(req.session.user.id, t.id, 'club_id=' + t.club_id);
+  avisaOrganitzadorValidacio(t, true);
+  res.redirect('/club/panel?validat=1');
+});
+
+r.post('/club/torneig/:id/rebutja', nomesGestor, (req, res) => {
+  const t = agafaTorneigPendentOrg(req, res);
+  if (!t) return;
+  const motiu = String(req.body.motiu || 'El club no ha validat aquest torneig.').slice(0, 500);
+  db.prepare(`UPDATE tournaments SET status = 'rejected', reject_reason = ? WHERE id = ?`).run(motiu, t.id);
+  db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
+              VALUES (?, 'torneig_rebutjat_club', 'tournament', ?, ?)`)
+    .run(req.session.user.id, t.id, motiu);
+  avisaOrganitzadorValidacio(t, false, motiu);
+  res.redirect('/club/panel?rebutjat=1');
+});
+
 // --- Cartell original del club (un per torneig, al costat del cartell oficial SVG) ---
 // Només clubs reclamats (o l'admin). El fitxer anterior s'esborra en substituir-lo.
 function tipusImatge(buf) {
@@ -295,7 +356,7 @@ function tipusImatge(buf) {
 function esborraFitxerPujat(rel) {
   const base = path.basename(String(rel || ''));
   if (!base || base === '.' || base.includes('..')) return;
-  try { fs.unlinkSync(path.join(process.cwd(), 'data', 'uploads', base)); } catch {}
+  try { fs.unlinkSync(path.join(dirPujades(), base)); } catch {}
 }
 
 function cartellError(res, id, codi) {
@@ -633,3 +694,7 @@ r.post('/reclama/:token', requireLogin, requireVerified, (req, res) => {
 });
 
 export default r;
+
+// Helpers reutilitzats pel mòdul d'organitzadors
+export { inscritsDe, potGestionar, esMonitorDe, potVeureInscrits, clubsDe, filesCategories };
+export { pujada, tipusImatge, esborraFitxerPujat };

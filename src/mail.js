@@ -257,3 +257,49 @@ export function sendParellaAfegidaClub(email, nom, torneigNom, categoria, enEspe
       <p>Pots veure la teva inscripció a <a href="${APP_URL}/elmeucompte">El meu compte</a>.</p>`,
   });
 }
+
+// --- Organitzadors independents ---
+export function sendOrganitzadorResolt(email, nom, orgNom, aprovada, motiu = '') {
+  return envia({
+    to: email, name: nom, tag: 'organitzador',
+    subject: aprovada ? `El teu perfil d'organitzador «${orgNom}» ha estat aprovat` : `Sol·licitud d'organitzador no aprovada`,
+    html: aprovada
+      ? `<p>Hola ${esc(nom)},</p>
+        <p>El teu perfil d'organitzador <strong>${esc(orgNom)}</strong> ha estat <strong>aprovat</strong>.</p>
+        <p>Ja pots entrar al <a href="${APP_URL}/organitzador/panel">panell de l'organitzador</a> i crear-hi els teus tornejos.
+        Recorda que cada torneig l'ha de validar el club seu abans que el publiquem.</p>`
+      : `<p>Hola ${esc(nom)},</p>
+        <p>La teva sol·licitud de perfil d'organitzador <strong>${esc(orgNom)}</strong> no ha estat aprovada.</p>
+        ${motiu ? `<p>Motiu: ${esc(motiu)}</p>` : ''}
+        <p>Si creus que és un error, contacta amb nosaltres responent aquest correu.</p>`,
+  });
+}
+
+export function sendTorneigPendentValidacio(email, nom, clubNom, torneigNom, orgNom) {
+  if (!email) return Promise.resolve();
+  return envia({
+    to: email, name: nom, tag: 'validació seu',
+    subject: `«${orgNom}» vol organitzar «${torneigNom}» al teu club`,
+    html: `<p>Hola ${esc(nom)},</p>
+      <p>L'organitzador <strong>${esc(orgNom)}</strong> ha proposat el torneig <strong>${esc(torneigNom)}</strong>
+      per jugar-se a <strong>${esc(clubNom)}</strong>.</p>
+      <p>Si hi estàs d'acord, valida'l des del <a href="${APP_URL}/club/panel">panell del club</a>
+      (secció «Tornejos d'organitzadors pendents de validar»). El torneig no es publicarà fins que tu el validis i l'administrador l'aprovi.</p>
+      <p>Si no coneixes aquest organitzador o no hi estàs d'acord, rebutja'l des del mateix panell.</p>`,
+  });
+}
+
+export function sendTorneigValidatClub(email, nom, torneigNom, clubNom, validat, motiu = '') {
+  return envia({
+    to: email, name: nom, tag: 'validació seu',
+    subject: validat ? `El club «${clubNom}» ha validat el teu torneig «${torneigNom}»` : `El club «${clubNom}» no ha validat «${torneigNom}»`,
+    html: validat
+      ? `<p>Hola ${esc(nom)},</p>
+        <p>El club <strong>${esc(clubNom)}</strong> ha <strong>validat</strong> el teu torneig <strong>${esc(torneigNom)}</strong>.</p>
+        <p>Ara passa a revisió de l'administrador: el publicarem en quant l'aprovi.</p>`
+      : `<p>Hola ${esc(nom)},</p>
+        <p>El club <strong>${esc(clubNom)}</strong> <strong>no ha validat</strong> el teu torneig <strong>${esc(torneigNom)}</strong>.</p>
+        ${motiu ? `<p>Motiu: ${esc(motiu)}</p>` : ''}
+        <p>Pots parlar amb el club i tornar a proposar el torneig quan ho tingueu aclarit.</p>`,
+  });
+}

@@ -41,6 +41,7 @@
       <a href="/jugadors">Jugadors</a>
       <% if (user) { %>
         <% if (typeof tePanell !== 'undefined' && tePanell) { %><a href="/club/panel">Panell del club</a><% } %>
+        <% if (typeof tePanellOrg !== 'undefined' && tePanellOrg) { %><a href="/organitzador/panel">Panell de l'organitzador</a><% } %>
         <% if (user.role === 'admin') { %><a href="/admin">Admin</a><% } %>
         <a class="qui-ses" href="/elmeucompte" title="El meu compte">👤 <span class="qui-nom"><%= user.name %></span><% if (typeof invitacionsPendents !== 'undefined' && invitacionsPendents > 0) { %> <span class="insignia comptador"><%= invitacionsPendents %></span><% } %></a>
         <form class="enlinia" action="/surt" method="post"><button class="boto menut" type="submit">Surt</button></form>

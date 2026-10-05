@@ -1,0 +1,25 @@
+<h1>Panell de l'organitzador</h1>
+<p class="meta">Organitzes com a <strong><%= org.name %></strong> · <a href="/organitzador/perfil">Edita el perfil</a> · <a href="/organitzador/<%= org.id %>">Veure la pàgina pública</a></p>
+<div class="fila">
+  <a class="boto" href="/organitzador/torneig/nou">+ Nou torneig</a>
+</div>
+<% if (enviat) { %><div class="exit">Torneig enviat: ara l'ha de validar el club seu i després l'aprovarem nosaltres.</div><% } %>
+
+<h2 class="seccio">Els meus tornejos</h2>
+<% if (!tornejos.length) { %><p>Encara no has creat cap torneig.</p><% } %>
+<table class="llista">
+  <tr><th>Torneig</th><th>Club seu</th><th>Dates</th><th>Estat</th><th></th></tr>
+  <% for (const t of tornejos) { %>
+    <tr>
+      <td><%= t.name %></td>
+      <td><%= t.club_nom %></td>
+      <td><%= t.starts_at %></td>
+      <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' || t.status === 'pending_club' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status === 'pending_club' ? 'pendent del club' : t.status %></span>
+        <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
+      </td>
+      <td><a href="/organitzador/torneig/<%= t.id %>/edita">Edita</a> · <a href="/torneig/<%= t.id %>/cartell.svg" target="_blank" rel="noopener">Cartell</a><% if (t.status === 'published') { %> · <a href="/torneig/<%= t.id %>">Veure</a><% } %><% if ((t.registration_mode || 'externa') === 'padelvalles') { %> · <a href="/organitzador/torneig/<%= t.id %>/inscrits"><strong>Inscrits</strong></a><% } %>
+        <form class="enlinia" action="/organitzador/torneig/<%= t.id %>/duplica" method="post" onsubmit="return confirm('Vols duplicar aquest torneig? Es copiaran les dades i les categories, sense dates ni inscrits.')"><button class="boto secundari menut" type="submit">Duplica</button></form></td>
+    </tr>
+  <% } %>
+</table>
+<p class="meta">Els tornejos nous queden <strong>pendents que el club seu els validi</strong>: quan ho faci, els revisem i els publiquem.</p>

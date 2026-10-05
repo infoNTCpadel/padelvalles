@@ -1,0 +1,35 @@
+<h1>Sol·licita el perfil d'organitzador</h1>
+<p>Si organitzes tornejos o esdeveniments de pàdel (encara que no siguin al teu club), amb el perfil d'organitzador podràs publicar-los a PadelVallès. Cada torneig l'haurà de validar el club on es jugui abans que el publiquem.</p>
+<% if (ok) { %><div class="exit">Sol·licitud enviada. La revisarem i t'avisarem per email quan t'haguem donat accés.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<% if (meva) { %>
+  <h2>La teva sol·licitud</h2>
+  <table class="llista">
+    <tr><th>Organitzador</th><th>Estat</th><th>Data</th></tr>
+    <tr>
+      <td><%= meva.name %></td>
+      <td>
+        <% if (meva.status === 'pending') { %><span class="etiqueta pendent">Pendent de revisió</span>
+        <% } else if (meva.status === 'approved') { %><span class="etiqueta ok">Aprovada</span>
+        <% } else { %><span class="etiqueta">Rebutjada</span><% if (meva.reject_reason) { %><br><small><%= meva.reject_reason %></small><% } %><% } %>
+      </td>
+      <td><span class="meta"><%= (meva.created_at || '').slice(0, 10) %></span></td>
+    </tr>
+  </table>
+<% } %>
+<% if (!meva || meva.status === 'rejected') { %>
+<form class="formulari" action="/organitzador/sollicita" method="post">
+  <div class="camp"><label>Nom de l'organitzador</label>
+    <input name="nom" maxlength="120" required placeholder="P. ex.: Tombola Events" value="<%= meva ? meva.name : '' %>">
+    <span class="ajuda">El nom públic amb què apareixeran els teus tornejos.</span>
+  </div>
+  <div class="camp"><label>Descripció</label>
+    <textarea name="descripcio" rows="4" maxlength="1000" placeholder="Què organitzes? Tornejos d'un dia, americanes, lligues curtes..."><%= meva ? meva.description : '' %></textarea>
+  </div>
+  <div class="camp"><label>Web o Instagram (opcional)</label>
+    <input name="web" maxlength="200" placeholder="https://..." value="<%= meva ? meva.web : '' %>">
+    <span class="ajuda">Ens ajuda a verificar que organitzes esdeveniments reals.</span>
+  </div>
+  <button class="boto" type="submit">Envia la sol·licitud</button>
+</form>
+<% } %>

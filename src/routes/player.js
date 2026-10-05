@@ -32,6 +32,7 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
   const elsMeusClubs = user.role === 'club'
     ? db.prepare(`SELECT c.* FROM club_users cu JOIN clubs c ON c.id = cu.club_id WHERE cu.user_id = ?`).all(user.id)
     : [];
+  const elMeuOrganitzador = db.prepare(`SELECT * FROM organizers WHERE user_id = ?`).get(user.id) || null;
   // Fase 2: les meves inscripcions i invitacions
   const inscripcions = db.prepare(`
     SELECT r.*, t.name AS torneig_nom, t.starts_at, t.ends_at, c.name AS club_nom,
@@ -73,7 +74,7 @@ r.get('/elmeucompte', requireLogin, (req, res) => {
     JOIN tournaments t ON t.id = ps.tournament_id
     WHERE ps.user_id = ? AND ps.status = 'open' AND t.status = 'published'
     ORDER BY t.starts_at ASC`).all(user.id);
-  res.render('compte', { titol: 'El meu compte', user, interessos, clubs, elsMeusClubs, NIVELLS,
+  res.render('compte', { titol: 'El meu compte', user, interessos, clubs, elsMeusClubs, elMeuOrganitzador, NIVELLS,
     inscripcions, invitacionsRebudes, invitacionsEnviades, invitacionsRebutjades, anuncis, MODALITATS,
     avisa: req.query.avisa || '', q: req.query });
 });

@@ -10,6 +10,7 @@
     <% if (_d) { %><div class="data-gran" aria-hidden="true"><span class="dia"><%= _d %></span><span class="mes"><%= _m %></span></div><% } %>
     <div>
       <h1><%= t.name %></h1>
+      <% if (t.org_nom) { %><div class="meta">🎪 Organitza: <a href="/organitzador/<%= t.org_id %>"><%= t.org_nom %></a></div><% } %>
       <div class="meta">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %> · <%= t.club_poble %></div>
       <div class="etiquetes">
         <span class="etiqueta-clara"><%= TIPUS_TORNEIG[t.tipus] || TIPUS_TORNEIG.open %></span>
@@ -29,6 +30,7 @@
     <div class="info-reixeta">
       <div class="info-casella"><div class="k">Dates</div><div class="v">📅 <%= t.starts_at %> – <%= t.ends_at %></div></div>
       <div class="info-casella"><div class="k">Club</div><div class="v">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></div></div>
+      <% if (t.org_nom) { %><div class="info-casella"><div class="k">Organitza</div><div class="v">🎪 <a href="/organitzador/<%= t.org_id %>"><%= t.org_nom %></a></div></div><% } %>
       <% if (user && t.price_text) { %><div class="info-casella"><div class="k">Preu</div><div class="v">🎟️ <%= t.price_text %></div></div><% } %>
       <% if (t.categories.length) { %><div class="info-casella"><div class="k">Categories</div><div class="v"><%= t.categories.length %></div></div><% } %>
     </div>
@@ -79,7 +81,7 @@
       <div class="targeta-lateral">
         <h3>Cartells</h3>
         <% if (t.poster_path) { %>
-          <div class="k" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#6B6257;font-weight:700;margin-bottom:.25rem">Cartell del club</div>
+          <div class="k" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#6B6257;font-weight:700;margin-bottom:.25rem"><%= t.org_nom ? 'Cartell de l\u2019organitzador' : 'Cartell del club' %></div>
           <img class="cartell" src="<%= logoUrl(t.poster_path) %>" alt="Cartell original: <%= t.name %>" style="margin-bottom:.8rem">
         <% } %>
         <div class="k" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#6B6257;font-weight:700;margin-bottom:.25rem">Cartell PadelVallès</div>

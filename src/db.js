@@ -169,6 +169,23 @@ CREATE TABLE IF NOT EXISTS club_claims (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   decided_at TEXT
 );
+-- Organitzadors independents: perfil separat del de jugador (una persona pot
+-- ser jugadora i organitzadora alhora). L'admin n'aprova el compte; els seus
+-- tornejos trien un club seu, que els valida dins la plataforma.
+CREATE TABLE IF NOT EXISTS organizers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  logo_path TEXT DEFAULT '',
+  web TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  reject_reason TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_organizers_user ON organizers(user_id);
+CREATE INDEX IF NOT EXISTS idx_organizers_status ON organizers(status);
 -- Estat d'execució de les tasques programades internes
 CREATE TABLE IF NOT EXISTS cron_state (
   clau TEXT PRIMARY KEY,
@@ -188,6 +205,7 @@ for (const [taula, columna, def] of [
   ['tournaments', 'mostra_inscrits', `INTEGER NOT NULL DEFAULT 1`],
   ['users', 'newsletter', `INTEGER NOT NULL DEFAULT 0`],
   ['tournaments', 'poster_path', `TEXT DEFAULT ''`],
+  ['tournaments', 'organizer_id', `INTEGER REFERENCES organizers(id)`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);

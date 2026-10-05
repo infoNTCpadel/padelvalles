@@ -1,0 +1,138 @@
+<h1><%= t && t.id ? 'Edita el torneig' : 'Nou torneig' %></h1>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<p class="meta">Omple les dades i nosaltres generem el cartell oficial amb la imatge de PadelVallès. El torneig es publicarà quan el <strong>club seu el validi</strong> i nosaltres l'aprovem.</p>
+<form class="formulari" action="<%= t && t.id ? '/organitzador/torneig/' + t.id + '/edita' : '/organitzador/torneig/nou' %>" method="post">
+  <div class="camp"><label>Club seu (on es juga el torneig)</label>
+    <select name="club_id" required>
+      <% for (const c of seus) { %><option value="<%= c.id %>" <%= t && String(t.club_id) === String(c.id) ? 'selected' : '' %>><%= c.name %> (<%= c.town %>)</option><% } %>
+    </select>
+    <span class="ajuda">El club haurà de validar el torneig des del seu panell abans que el publiquem.</span>
+  </div>
+  <div class="camp"><label>Nom del torneig</label><input name="nom" required maxlength="140" value="<%= t ? (t.name || t.nom || '') : '' %>" placeholder="P. ex.: Open de Tardor"></div>
+  <div class="fila">
+    <div class="camp"><label>Data d'inici</label><input type="date" name="inici" required value="<%= t ? (t.starts_at || t.inici || '') : '' %>"></div>
+    <div class="camp"><label>Data de fi</label><input type="date" name="fi" value="<%= t ? (t.ends_at || t.fi || '') : '' %>"></div>
+  </div>
+  <div class="camp"><label>Tipus de torneig</label>
+    <select name="tipus">
+      <% for (const [k, v] of Object.entries(TIPUS_TORNEIG)) { %>
+        <option value="<%= k %>" <%= (t && (t.tipus || 'open')) === k ? 'selected' : '' %>><%= v %></option>
+      <% } %>
+    </select>
+    <span class="ajuda">Es mostra al cartell del torneig.</span>
+  </div>
+  <div class="camp"><label>Categories</label>
+    <% if (teInscrits > 0) { %>
+      <p class="ajuda">Aquest torneig ja té <%= teInscrits %> inscripcions: no es poden canviar les categories, però sí les places.</p>
+      <% for (const cat of (t.categories || [])) { %>
+        <div class="fila">
+          <span><strong><%= MODALITATS[cat.modality] || cat.modality %></strong><%= cat.level ? ' · ' + cat.level : '' %></span>
+          <label>Places <input name="places_<%= cat.id %>" type="number" min="1" max="500" style="width:5rem" placeholder="∞" value="<%= cat.max_pairs || '' %>"></label>
+        </div>
+      <% } %>
+    <% } else { %>
+      <p class="ajuda">Afegeix tantes categories com calgui: p. ex. «Masculí · 1a categoria», «Masculí · 2a categoria», «Femení · 1a categoria»...</p>
+      <div id="categories">
+        <% for (const f of filesCategories) { %>
+          <div class="fila cat-fila" style="align-items:flex-end">
+            <div class="camp"><label>Modalitat</label>
+              <select name="cat_modalitat">
+                <% for (const [k, v] of Object.entries(MODALITATS)) { %>
+                  <option value="<%= k %>" <%= f.modality === k ? 'selected' : '' %>><%= v %></option>
+                <% } %>
+              </select>
+            </div>
+            <div class="camp"><label>Categoria</label>
+              <input name="cat_nivell" maxlength="60" placeholder="P. ex.: 1a categoria" value="<%= f.level || '' %>" style="width:10rem">
+            </div>
+            <div class="camp"><label>Places</label>
+              <input name="cat_places" type="number" min="1" max="500" placeholder="∞" title="Places per categoria (buit = sense límit)" value="<%= f.max_pairs ?? '' %>" style="width:5.5rem">
+            </div>
+            <div class="camp"><button type="button" class="boto secundari menut treu-cat">Treu</button></div>
+          </div>
+        <% } %>
+      </div>
+      <button type="button" id="afegeixCat" class="boto secundari menut">＋ Afegeix categoria</button>
+<script>
+(function () {
+  const MODS = <%- JSON.stringify(MODALITATS) %>;
+  const contenidor = document.getElementById('categories');
+  function fila() {
+    const div = document.createElement('div');
+    div.className = 'fila cat-fila';
+    div.style.alignItems = 'flex-end';
+    const opcions = Object.entries(MODS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+    div.innerHTML =
+      '<div class="camp"><label>Modalitat</label><select name="cat_modalitat">' + opcions + '</select></div>' +
+      '<div class="camp"><label>Categoria</label><input name="cat_nivell" maxlength="60" placeholder="P. ex.: 1a categoria" style="width:10rem"></div>' +
+      '<div class="camp"><label>Places</label><input name="cat_places" type="number" min="1" max="500" placeholder="∞" title="Places per categoria (buit = sense límit)" style="width:5.5rem"></div>' +
+      '<div class="camp"><button type="button" class="boto secundari menut treu-cat">Treu</button></div>';
+    return div;
+  }
+  document.getElementById('afegeixCat').addEventListener('click', () => contenidor.appendChild(fila()));
+  contenidor.addEventListener('click', (e) => {
+    if (e.target.classList.contains('treu-cat')) {
+      const files = contenidor.querySelectorAll('.cat-fila');
+      if (files.length > 1) e.target.closest('.cat-fila').remove();
+    }
+  });
+})();
+</script>
+    <% } %>
+  </div>
+  <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
+  <div class="camp"><label>On es fan les inscripcions?</label>
+    <select name="mode_inscripcio" id="modeInscripcio">
+      <option value="externa" <%= t && (t.registration_mode || t.mode_inscripcio || 'externa') === 'externa' ? 'selected' : '' %>>Enllaç extern (web, WhatsApp...)</option>
+      <option value="padelvalles" <%= t && (t.registration_mode || t.mode_inscripcio) === 'padelvalles' ? 'selected' : '' %>>A PadelVallès</option>
+    </select>
+  </div>
+  <div id="campsInscripcio" style="display:none">
+    <div class="fila">
+      <div class="camp"><label>Tancament d'inscripcions</label>
+        <input type="date" name="data_limit" value="<%= t ? (t.registration_deadline || t.data_limit || '') : '' %>">
+        <span class="ajuda">Buit = fins al dia abans del torneig.</span>
+      </div>
+      <div class="camp"><label>Els jugadors es poden donar de baixa fins a</label>
+        <div><input type="number" name="hores_baixa" min="0" max="720" style="width:5rem" value="<%= t ? (t.unregister_hours ?? t.hores_baixa ?? 48) : 48 %>"> hores abans de l'inici</div>
+      </div>
+    </div>
+    <div class="camp"><label><input type="checkbox" name="mostra_inscrits" value="1"<%= !t || t.mostra_inscrits ? ' checked' : '' %>> Mostra públicament els noms dels inscrits</label>
+      <span class="ajuda">El nombre d'inscrits per categoria sempre és visible; els noms, només si ho actives.</span>
+    </div>
+  </div>
+<script>
+(function () {
+  const selMode = document.getElementById('modeInscripcio');
+  const camps = document.getElementById('campsInscripcio');
+  function actualitza() { camps.style.display = selMode.value === 'padelvalles' ? '' : 'none'; }
+  selMode.addEventListener('change', actualitza);
+  actualitza();
+})();
+</script>
+  <div class="camp"><label>Com s'hi inscriu la gent?</label>
+    <input name="via" maxlength="300" value="<%= t ? (t.registration_info || t.via || '') : '' %>" placeholder="P. ex.: WhatsApp al 600 123 456">
+  </div>
+  <div class="camp"><label>Enllaç d'inscripció (opcional)</label><input name="url" type="url" maxlength="300" value="<%= t ? (t.registration_url || t.url || '') : '' %>" placeholder="https://..."></div>
+  <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="5" maxlength="2000"><%= t ? (t.description || t.descripcio || '') : '' %></textarea></div>
+  <button class="boto" type="submit">Envia al club per validar</button>
+</form>
+
+<% if (t && t.id) { %>
+  <h2 style="margin-top:2rem">Cartell de l'organitzador</h2>
+  <% if (cartellMissatge) { %><div class="exit"><%= cartellMissatge %></div><% } %>
+  <% if (cartellErrorMsg) { %><div class="error"><%= cartellErrorMsg %></div><% } %>
+  <p class="meta">Puja el cartell original del torneig (PNG, JPG o WebP, màx. 2 MB). Es mostrarà a la fitxa del torneig al costat del cartell oficial de PadelVallès. Només se'n guarda un: si en puges un de nou, substitueix l'anterior.</p>
+  <% if (t.poster_path) { %>
+    <div style="margin-bottom:.8rem"><img src="<%= logoUrl(t.poster_path) %>" alt="Cartell actual" style="max-height:220px;border-radius:12px;box-shadow:var(--ombra)"></div>
+    <form action="/organitzador/torneig/<%= t.id %>/cartell/esborra" method="post" class="enlinia" onsubmit="return confirm('Esborrar el cartell?')">
+      <button class="boto secundari menut" type="submit">Esborra el cartell</button>
+    </form>
+  <% } %>
+  <form action="/organitzador/torneig/<%= t.id %>/cartell" method="post" enctype="multipart/form-data" class="formulari" style="margin-top:.8rem">
+    <div class="camp"><label><%= t.poster_path ? 'Substitueix el cartell' : 'Puja el cartell' %></label>
+      <input type="file" name="cartell" accept="image/png,image/jpeg,image/webp" required>
+    </div>
+    <button class="boto secundari" type="submit">Puja el cartell</button>
+  </form>
+<% } %>

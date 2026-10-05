@@ -1,0 +1,21 @@
+<h1>Perfil de l'organitzador</h1>
+<p class="meta">Aquestes dades es mostren a la teva pàgina pública d'organitzador.</p>
+<% if (ok) { %><div class="exit">Perfil actualitzat.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/organitzador/perfil" method="post" enctype="multipart/form-data">
+  <div class="camp"><label>Nom de l'organitzador</label>
+    <input name="nom" maxlength="120" required value="<%= org.name %>">
+  </div>
+  <div class="camp"><label>Descripció</label>
+    <textarea name="descripcio" rows="4" maxlength="1000"><%= org.description %></textarea>
+  </div>
+  <div class="camp"><label>Web o Instagram</label>
+    <input name="web" maxlength="200" value="<%= org.web %>" placeholder="https://...">
+  </div>
+  <div class="camp"><label>Logo</label>
+    <% if (org.logo_path) { %><div style="margin-bottom:.5rem"><img src="<%= logoUrl(org.logo_path) %>" alt="Logo actual" style="max-height:90px;border-radius:12px"></div><% } %>
+    <input type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+    <span class="ajuda">PNG, JPG o WebP, màx. 2 MB. Si en puges un de nou, substitueix l'anterior.</span>
+  </div>
+  <button class="boto" type="submit">Desa el perfil</button>
+</form>

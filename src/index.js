@@ -50,7 +50,15 @@ app.use((req, res, next) => {
       } catch { /* taula encara no creada */ }
     }
   }
-  res.locals.tePanell = tePanell;
+  // Panell de l'organitzador: usuaris amb perfil d'organitzador aprovat
+  let tePanellOrg = false;
+  if (req.session.user) {
+    try {
+      tePanellOrg = !!db.prepare(`SELECT 1 FROM organizers WHERE user_id = ? AND status = 'approved' LIMIT 1`)
+        .get(req.session.user.id);
+    } catch { /* taula encara no creada */ }
+  }
+  res.locals.tePanellOrg = tePanellOrg;
   next();
 });
 
@@ -73,11 +81,13 @@ import playerRoutes from './routes/player.js';
 import clubRoutes from './routes/club.js';
 import adminRoutes from './routes/admin.js';
 import inscripcioRoutes from './routes/inscripcions.js';
+import organitzadorRoutes from './routes/organitzador.js';
 import { arrencaProgramador } from './lib/programador.js';
 
 app.use('/', authRoutes);
 app.use('/', playerRoutes);
 app.use('/', clubRoutes);
+app.use('/', organitzadorRoutes);
 app.use('/', inscripcioRoutes);
 app.use('/admin', adminRoutes);
 // public l'últim: té rutes genèriques com /club/:id que no han de

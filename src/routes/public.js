@@ -8,8 +8,10 @@ const r = Router();
 
 function getTorneig(id) {
   const t = db.prepare(`
-    SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path, c.claimed AS club_claimed
+    SELECT t.*, c.name AS club_nom, c.town AS club_poble, c.comarca, c.logo_path, c.claimed AS club_claimed,
+      o.id AS org_id, o.name AS org_nom
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
+    LEFT JOIN organizers o ON o.id = t.organizer_id
     WHERE t.id = ? AND c.verified = 1`).get(id);
   if (!t) return null;
   t.categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
@@ -197,6 +199,21 @@ r.get('/club/:id', (req, res) => {
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/club/${club.id}` });
 });
 
+// Fitxa pública de l'organitzador
+r.get('/organitzador/:id', (req, res) => {
+  const org = db.prepare(`SELECT * FROM organizers WHERE id = ? AND status = 'approved'`).get(req.params.id);
+  if (!org) return res.status(404).render('404', { titol: 'Organitzador no trobat' });
+  const avui = new Date().toISOString().slice(0, 10);
+  const tornejos = db.prepare(`
+    SELECT t.*, c.name AS club_nom, c.town AS club_poble
+    FROM tournaments t JOIN clubs c ON c.id = t.club_id
+    WHERE t.organizer_id = ? AND t.status = 'published' AND t.ends_at >= ? AND c.verified = 1
+    ORDER BY t.starts_at ASC`).all(org.id, avui);
+  res.render('organitzador', { titol: org.name, org, tornejos,
+    metaDescription: `${org.name}: organitzador independent de tornejos de pàdel al Vallès. Consulta els seus tornejos a PadelVallès.`,
+    canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/organitzador/${org.id}` });
+});
+
 // SEO: sitemap.xml amb tornejos publicats i clubs verificats
 r.get('/sitemap.xml', (req, res) => {
   const base = process.env.APP_URL || 'https://padelvalles.com';
@@ -209,6 +226,8 @@ r.get('/sitemap.xml', (req, res) => {
   for (const t of tornejos) urls.push({ loc: `${base}/torneig/${t.id}`, changefreq: 'weekly', priority: '0.9', lastmod: String(t.lm || '').slice(0, 10) });
   const clubs = db.prepare('SELECT id FROM clubs WHERE verified = 1 ORDER BY name').all();
   for (const c of clubs) urls.push({ loc: `${base}/club/${c.id}`, changefreq: 'weekly', priority: '0.7' });
+  const orgs = db.prepare(`SELECT id FROM organizers WHERE status = 'approved' ORDER BY name`).all();
+  for (const o of orgs) urls.push({ loc: `${base}/organitzador/${o.id}`, changefreq: 'weekly', priority: '0.7' });
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u => `  <url><loc>${u.loc}</loc>` +
       (u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : '') +

@@ -1,17 +1,17 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import multer from 'multer';
-import path from 'node:path';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
 import { COMARQUES } from '../brand.js';
-import { sendClaimResolta } from '../mail.js';
+import { dirPujades } from './club.js';
+import { sendClaimResolta, sendOrganitzadorResolt } from '../mail.js';
 
 const r = Router();
 r.use(requireRole('admin'));
 
 const pujada = multer({
-  dest: path.join(process.cwd(), 'data', 'uploads'),
+  dest: dirPujades(),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = ['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype);
@@ -32,9 +32,10 @@ r.get('/', (req, res) => {
     LEFT JOIN users u ON u.id = cu.user_id
     WHERE c.verified = 0 ORDER BY c.created_at`).all();
   const tornejosPendents = db.prepare(`
-    SELECT t.*, c.name AS club_nom, c.town AS club_poble, u.name AS qui
+    SELECT t.*, c.name AS club_nom, c.town AS club_poble, u.name AS qui, o.name AS org_nom
     FROM tournaments t JOIN clubs c ON c.id = t.club_id
     LEFT JOIN users u ON u.id = t.created_by
+    LEFT JOIN organizers o ON o.id = t.organizer_id
     WHERE t.status = 'pending' ORDER BY t.created_at`).all();
   const avisos = db.prepare(`
     SELECT r.*, t.name AS torneig_nom FROM reports r
@@ -45,7 +46,11 @@ r.get('/', (req, res) => {
     tornejos: db.prepare(`SELECT COUNT(*) n FROM tournaments WHERE status = 'published'`).get().n,
     usuaris: db.prepare(`SELECT COUNT(*) n FROM users`).get().n
   };
-  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats });
+  const organitzadorsPendents = db.prepare(`
+    SELECT o.*, u.name AS qui, u.email AS qui_email
+    FROM organizers o JOIN users u ON u.id = o.user_id
+    WHERE o.status = 'pending' ORDER BY o.created_at`).all();
+  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats, organitzadorsPendents });
 });
 
 // Aprovar / rebutjar club
@@ -100,6 +105,29 @@ r.post('/tornejos/:id/publica', (req, res) => {
     .run(req.params.id);
   log(req.session.user.id, 'torneig_republicat', 'tournament', req.params.id);
   res.redirect('/admin/tornejos');
+});
+
+// Aprovar / rebutjar un perfil d'organitzador
+r.post('/organitzadors/:id/aprova', (req, res) => {
+  const org = db.prepare(`SELECT * FROM organizers WHERE id = ? AND status = 'pending'`).get(req.params.id);
+  if (!org) return res.redirect('/admin');
+  db.prepare(`UPDATE organizers SET status = 'approved', decided_at = datetime('now') WHERE id = ?`).run(org.id);
+  const usuari = db.prepare('SELECT name, email FROM users WHERE id = ?').get(org.user_id);
+  log(req.session.user.id, 'organitzador_aprovat', 'organizer', org.id, usuari.email);
+  sendOrganitzadorResolt(usuari.email, usuari.name, org.name, true);
+  res.redirect('/admin');
+});
+
+r.post('/organitzadors/:id/rebutja', (req, res) => {
+  const org = db.prepare(`SELECT * FROM organizers WHERE id = ? AND status = 'pending'`).get(req.params.id);
+  if (!org) return res.redirect('/admin');
+  const motiu = String(req.body.motiu || 'No compleix els criteris.').slice(0, 500);
+  db.prepare(`UPDATE organizers SET status = 'rejected', reject_reason = ?, decided_at = datetime('now') WHERE id = ?`)
+    .run(motiu, org.id);
+  const usuari = db.prepare('SELECT name, email FROM users WHERE id = ?').get(org.user_id);
+  log(req.session.user.id, 'organitzador_rebutjat', 'organizer', org.id, usuari.email);
+  sendOrganitzadorResolt(usuari.email, usuari.name, org.name, false, motiu);
+  res.redirect('/admin');
 });
 
 // Tancar un avís

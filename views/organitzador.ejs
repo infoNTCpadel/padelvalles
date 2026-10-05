@@ -1,0 +1,35 @@
+<p><a class="torna" href="/tornejos">← Torna als tornejos</a></p>
+
+<div class="club-cap">
+  <% if (org.logo_path) { %>
+    <div class="logo-club"><img src="<%= logoUrl(org.logo_path) %>" alt="Logo de <%= org.name %>"></div>
+  <% } else { %>
+    <div class="club-icona" aria-hidden="true"><%= org.name.trim().charAt(0).toUpperCase() %></div>
+  <% } %>
+  <div>
+    <h1><%= org.name %></h1>
+    <div class="meta">🎪 Organitzador independent</div>
+    <% if (org.description) { %><p class="descripcio"><%= org.description %></p><% } %>
+    <div class="club-accions">
+      <% if (org.web) { %><a class="boto secundari menut" href="<%= org.web %>" target="_blank" rel="nofollow noopener">Web / Instagram</a><% } %>
+    </div>
+  </div>
+</div>
+
+<div class="seccio-cap">
+  <h2>Propers tornejos d'aquest organitzador</h2>
+</div>
+<% if (!tornejos.length) { %><p>Aquest organitzador no té tornejos publicats properament.</p><% } %>
+<div class="graella">
+  <% for (const t of tornejos) { %>
+    <article class="targeta">
+      <a href="/torneig/<%= t.id %>"><img class="cartell" src="/torneig/<%= t.id %>/cartell.svg" alt="Cartell: <%= t.name %>" loading="lazy"></a>
+      <div class="cos">
+        <h3><a href="/torneig/<%= t.id %>"><%= t.name %></a></h3>
+        <div class="meta">📅 <%= t.starts_at %> – <%= t.ends_at %></div>
+        <div class="meta">📍 <%= t.club_nom %> (<%= t.club_poble %>)</div>
+        <a class="targeta-accio" href="/torneig/<%= t.id %>">Més informació →</a>
+      </div>
+    </article>
+  <% } %>
+</div>
