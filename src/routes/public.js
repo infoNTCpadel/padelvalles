@@ -3,6 +3,7 @@ import db from '../db.js';
 import { cartellSVG } from '../poster.js';
 import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig, nomNivell } from '../brand.js';
 import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
+import { competicionsDe, FORMATS } from '../lib/competicions.js';
 
 const r = Router();
 
@@ -137,9 +138,11 @@ r.get('/torneig/:id', (req, res) => {
     }
   }
   const estat = estatTorneig(t);
+  const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('torneig', { titol: t.name, t, interessat, MODALITATS, TIPUS_TORNEIG, avis: req.query.avis,
     missatge: MISS[req.query.avis] || null, errorMsg: req.query.error || null,
     modePV, oberta, lesMeves, places, cercadors, elMeuAnunci, inscritsPerCat, estat,
+    competicionsPerCat, FORMATS,
     metaDescription, canonical, ogImage, shareText, shareUrl: canonical });
 });
 

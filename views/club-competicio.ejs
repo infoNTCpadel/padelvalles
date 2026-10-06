@@ -1,0 +1,53 @@
+<h1>🏆 <%= comp.name %></h1>
+<p class="meta"><%= t.name %><% if (etiquetaCat) { %> · <%= etiquetaCat %><% } %> · <%= FORMATS[comp.format].nom %> · Estat: <%= ESTATS_COMPETICIO[comp.status] %><% if (comp.fee_text) { %> · Quota: <%= comp.fee_text %><% } %></p>
+<p><a href="<%= base %>/torneig/<%= t.id %>/inscrits">← Inscrits del torneig</a></p>
+<% if (creada) { %><div class="exit">Competició creada. S'han importat les parelles amb inscripció confirmada.</div><% } %>
+<% if (sinc !== null && sinc !== undefined) { %><div class="exit">Sincronització feta: <%= sinc %> parelles noves importades.</div><% } %>
+<% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
+
+<h2>Participants (<%= actius.length %>)</h2>
+<form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/sincronitza" method="post">
+  <button class="boto secundari">Sincronitza noves inscripcions</button>
+</form>
+<p class="ajuda">Si s'han confirmat més parelles després de crear la competició, importa-les aquí. La llista d'espera no s'importa.</p>
+
+<% if (!participants.length) { %>
+  <p class="meta">Encara no hi ha participants.</p>
+<% } else { %>
+<table class="llista">
+  <tr><th>Cap de sèrie</th><th>Parella</th><th>Pagat</th><th>Estat</th><th></th></tr>
+  <% for (const p of participants) { %>
+    <tr>
+      <td>
+        <% if (p.status === 'active') { %>
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/participants/<%= p.id %>/seed" method="post">
+            <input type="number" name="seed" min="1" max="512" value="<%= p.seed || '' %>" placeholder="—" style="width:4rem">
+            <button class="boto secundari menut">Desa</button>
+          </form>
+        <% } else { %>—<% } %>
+      </td>
+      <td><%= p.player1_name %> / <%= p.player2_name %></td>
+      <td>
+        <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/participants/<%= p.id %>/pagat" method="post">
+          <button class="boto <%= p.paid ? '' : 'secundari' %> menut"><%= p.paid ? '✓ Pagat' : 'Marca pagat' %></button>
+        </form>
+      </td>
+      <td class="meta"><%= p.status === 'active' ? 'Activa' : 'De baixa' %></td>
+      <td>
+        <% if (p.status === 'active') { %>
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/participants/<%= p.id %>/treu" method="post"
+            onsubmit="return confirm('Vols donar de baixa aquesta parella de la competició?')">
+            <button class="boto secundari menut">Treu</button>
+          </form>
+        <% } else { %>
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/participants/<%= p.id %>/reactiva" method="post">
+            <button class="boto secundari menut">Reactiva</button>
+          </form>
+        <% } %>
+      </td>
+    </tr>
+  <% } %>
+</table>
+<% } %>
+
+<p class="ajuda">La generació del quadre d'eliminatòria arribarà a la Fase 2a: amb els caps de sèrie assignats aquí es farà el sorteig.</p>

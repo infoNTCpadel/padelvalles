@@ -6,6 +6,8 @@ import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO } from '../lib/competicions.js';
+import { rutesCompeticio } from './competicions.js';
 import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub } from '../mail.js';
 
 const r = Router();
@@ -452,9 +454,31 @@ function agafaTorneigInscrits(req, res) {
 r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
   const t = agafaTorneigInscrits(req, res);
   if (!t) return;
+  const esAdmin = req.session.user.role === 'admin';
+  const esGestor = potGestionar(req.session.user.id, t.club_id, esAdmin);
+  const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
-    alta: req.query.alta || null, errorMsg: req.query.error || null });
+    alta: req.query.alta || null, errorMsg: req.query.error || null,
+    competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor });
 });
+
+// --- Competicions (Fase 1): crear i gestionar des de les inscripcions ---
+function agafaTorneigComp(req, res) {
+  const esAdmin = req.session.user.role === 'admin';
+  const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.tid);
+  if (!t || !potGestionar(req.session.user.id, t.club_id, esAdmin)) {
+    res.status(404).render('404', { titol: 'No trobat' });
+    return null;
+  }
+  return t;
+}
+r.use(rutesCompeticio({
+  base: '/club',
+  middlewares: nomesClub,
+  agafaTorneig: agafaTorneigComp,
+  esGestor: (req, t) => potGestionar(req.session.user.id, t.club_id, req.session.user.role === 'admin'),
+  getOrganitzador: null,
+}));
 
 // Duplicar un torneig (mateixes dades i categories, sense dates ni inscrits)
 r.post('/club/torneig/:id/duplica', nomesGestor, (req, res) => {

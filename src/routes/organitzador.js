@@ -4,6 +4,8 @@ import { requireLogin, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { inscritsDe, pujada, tipusImatge, esborraFitxerPujat, filesCategories, dirPujades } from './club.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO } from '../lib/competicions.js';
+import { rutesCompeticio } from './competicions.js';
 import { sendTorneigPendentValidacio } from '../mail.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -315,9 +317,29 @@ r.post('/organitzador/torneig/:id/cartell/esborra', nomesOrg, (req, res) => {
 r.get('/organitzador/torneig/:id/inscrits', nomesOrg, (req, res) => {
   const t = agafaTorneigOrg(req, res);
   if (!t) return;
+  const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
-    alta: req.query.alta || null, errorMsg: req.query.error || null, baseRuta: '/organitzador' });
+    alta: req.query.alta || null, errorMsg: req.query.error || null, baseRuta: '/organitzador',
+    competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor: true });
 });
+
+// --- Competicions (Fase 1): crear i gestionar des de les inscripcions ---
+function agafaTorneigCompOrg(req, res) {
+  const t = db.prepare('SELECT * FROM tournaments WHERE id = ? AND organizer_id = ?')
+    .get(req.params.tid, req.organitzador.id);
+  if (!t) {
+    res.status(404).render('404', { titol: 'No trobat' });
+    return null;
+  }
+  return t;
+}
+r.use(rutesCompeticio({
+  base: '/organitzador',
+  middlewares: nomesOrg,
+  agafaTorneig: agafaTorneigCompOrg,
+  esGestor: () => true,
+  getOrganitzador: (req) => req.organitzador,
+}));
 
 r.post('/organitzador/torneig/:id/inscrits/nova', nomesOrg, (req, res) => {
   const t = agafaTorneigOrg(req, res);

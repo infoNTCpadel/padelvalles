@@ -58,6 +58,8 @@
       <% for (const c of t.categories) { const info = inscritsPerCat[c.id] || { n: 0, max: null, parelles: [] }; %>
         <li><strong><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></strong>:
           <%= info.n %><%= info.max ? '/' + info.max : '' %> parelles
+          <% const comp = (typeof competicionsPerCat !== 'undefined' && competicionsPerCat[c.id]) || null; %>
+          <% if (comp) { %><br><span class="etiqueta-clara">🏆 <%= FORMATS[comp.format].nom %> · <%= comp.n_actius %> participants</span><% } %>
           <% if (user && info.parelles.length) { %><br><span class="meta"><%= info.parelles.map(p => p.player1_name + ' / ' + p.player2_name).join(' · ') %></span><% } %>
         </li>
       <% } %>

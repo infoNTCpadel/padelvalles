@@ -311,6 +311,8 @@ CREATE INDEX IF NOT EXISTS idx_teams_comp ON teams(competition_id);
 CREATE INDEX IF NOT EXISTS idx_match_comp ON matches(competition_id, stage);
 CREATE INDEX IF NOT EXISTS idx_match_bracket ON matches(competition_id, bracket_round, bracket_slot);
 CREATE INDEX IF NOT EXISTS idx_audit_comp ON competition_audit(competition_id);
+-- 1 categoria = 1 competició (els NULL permeten competicions sense torneig, p. ex. creades per l'admin)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_comp_unic ON competitions(tournament_id, category_id);
 `);
 
 // Migracions idempotents per a BDs ja creades

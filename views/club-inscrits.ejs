@@ -43,6 +43,14 @@
 <% for (const c of categories) { %>
   <h2><%= c.etiqueta %><% if (c.max_pairs) { %> <small class="meta">(<%= c.nInscrits %>/<%= c.max_pairs %> places)</small><% } else { %> <small class="meta">(<%= c.nInscrits %> inscrits)</small><% } %></h2>
 
+  <% const comp = (typeof competicionsPerCat !== 'undefined' && competicionsPerCat[c.id]) || null; %>
+  <% if (comp) { %>
+    <p>🏆 <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>"><strong><%= comp.name %></strong></a>
+    <span class="meta">· <%= FORMATS[comp.format].nom %> · <%= comp.n_actius %> participants · <%= ESTATS_COMPETICIO[comp.status] %></span></p>
+  <% } else if ((typeof esGestor !== 'undefined' ? esGestor : true) && (t.registration_mode || 'externa') === 'padelvalles') { %>
+    <p><a class="boto secundari menut" href="<%= base %>/torneig/<%= t.id %>/competicio/nova?categoria=<%= c.id %>">+ Crea la competició</a></p>
+  <% } %>
+
   <% if (!c.registered.length && !c.waitlist.length && !c.pending.length) { %>
     <p class="meta">Encara no hi ha inscripcions en aquesta categoria.</p>
   <% } %>

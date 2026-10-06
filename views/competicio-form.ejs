@@ -1,0 +1,37 @@
+<h1>Nova competició: <%= t.name %></h1>
+<p><a href="<%= base %>/torneig/<%= t.id %>/inscrits">← Inscrits del torneig</a></p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="<%= base %>/torneig/<%= t.id %>/competicio/nova" method="post">
+  <div class="fila">
+    <div class="camp"><label>Categoria</label>
+      <select name="categoria" required>
+        <% for (const c of categories) { %>
+          <option value="<%= c.id %>" <%= String(c.id) === String(sel) ? 'selected' : '' %>><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></option>
+        <% } %>
+      </select>
+    </div>
+    <div class="camp"><label>Nom de la competició</label>
+      <input name="nom" maxlength="120" placeholder="Es genera sol si ho deixes en blanc">
+    </div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>Format</label>
+      <% for (const clau of Object.keys(FORMATS)) { const f = FORMATS[clau]; %>
+        <label style="display:block;margin-bottom:.4rem">
+          <input type="radio" name="format" value="<%= clau %>" <%= f.actiu ? '' : 'disabled' %> <%= clau === 'eliminatoria' && f.actiu ? 'checked' : '' %>>
+          <strong><%= f.nom %></strong> <span class="meta"><%= f.descripcio %></span>
+        </label>
+      <% } %>
+    </div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>Quota (text)</label>
+      <input name="quota_text" maxlength="80" value="<%= t.price_text || '' %>" placeholder="p. ex. 20 € per parella">
+    </div>
+    <div class="camp"><label>Quota (€, opcional)</label>
+      <input name="quota_import" type="number" min="0" step="0.01" placeholder="0">
+    </div>
+  </div>
+  <p class="ajuda">Es convertiran en participants totes les parelles amb inscripció confirmada d'aquesta categoria. La llista d'espera i les invitacions pendents no s'importen.</p>
+  <button class="boto" type="submit">Crea la competició</button>
+</form>
