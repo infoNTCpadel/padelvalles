@@ -47,8 +47,14 @@ ADMIN_EMAIL=admin@padelvalles.com
 ADMIN_PASSWORD=<la que triïs tu>
 ```
 
-La base de dades `data/padelvalles.db` ja ve al repo amb els 100 clubs
-i els 2 tornejos carregats.
+La base de dades `data/padelvalles.db` **no** ve al repo (està ignorada
+des de la Fase 0): es crea sola en arrencar, amb totes les taules.
+Per carregar els 100 clubs i els tornejos inicials, un cop el contenidor
+estigui en marxa executa:
+
+```bash
+docker compose exec padelvalles node src/seed.js
+```
 
 ## 3. Comprovar la xarxa de Traefik
 
