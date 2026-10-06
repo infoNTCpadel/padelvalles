@@ -192,6 +192,125 @@ CREATE TABLE IF NOT EXISTS cron_state (
   valor TEXT DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Fase 0 (mòdul de competicions): separar "torneig" (escaparate: cartell, dates,
+-- inscripcions) de "competició" (jugable: format, quadres/grups, partits, classificació).
+-- 1 categoria (modalitat + nivell) = 1 competició, amb selector de format per categoria.
+-- Formats: 'eliminatoria' | 'rr_playoff' | 'americana' | 'equips' (+ futurs, motor enchufable).
+-- Qui la pot crear: club | organizer (amb permís del club) | padelvalles (admin, pot saltar el permís).
+CREATE TABLE IF NOT EXISTS competitions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER REFERENCES tournaments(id) ON DELETE CASCADE,
+  category_id INTEGER REFERENCES tournament_categories(id) ON DELETE SET NULL,
+  created_by_type TEXT NOT NULL DEFAULT 'club',   -- club | organizer | padelvalles
+  club_id INTEGER REFERENCES clubs(id) ON DELETE SET NULL,
+  organizer_id INTEGER REFERENCES organizers(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  format TEXT NOT NULL DEFAULT 'eliminatoria',
+  status TEXT NOT NULL DEFAULT 'draft',           -- draft | inscripcio | en_joc | finalitzada
+  fee_text TEXT DEFAULT '',                       -- quota marcada des del principi (decisió 5)
+  fee_amount REAL NOT NULL DEFAULT 0,
+  config TEXT NOT NULL DEFAULT '{}',              -- JSON: mida de grups, caps de sèrie, punts...
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Participants d'una competició: parella (pair), equip (team) o jugador individual (player, americana)
+CREATE TABLE IF NOT EXISTS competition_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'pair',              -- pair | team | player
+  player1_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  player2_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  player1_name TEXT DEFAULT '',
+  player2_name TEXT DEFAULT '',
+  team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending',         -- pending | active | withdrawn
+  paid INTEGER NOT NULL DEFAULT 0,
+  seed INTEGER,                                   -- cap de sèrie (NULL = sense)
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Equips (competició d'equips): el club el gestiona o delega en un capità
+CREATE TABLE IF NOT EXISTS teams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  club_id INTEGER REFERENCES clubs(id) ON DELETE SET NULL,
+  captain_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  paid INTEGER NOT NULL DEFAULT 0,                -- quota per equip
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS team_players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  player_name TEXT DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Grups de la fase de lliga
+CREATE TABLE IF NOT EXISTS comp_groups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  name TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id INTEGER NOT NULL REFERENCES comp_groups(id) ON DELETE CASCADE,
+  entry_id INTEGER NOT NULL REFERENCES competition_entries(id) ON DELETE CASCADE,
+  PRIMARY KEY (group_id, entry_id)
+);
+-- Partits de la competició (disseny basat en la taula matches de la lliga social:
+-- validació a 24 h, sets, STB, W.O.). tie_id = rubber dins d'un tie d'equips.
+CREATE TABLE IF NOT EXISTS matches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  stage TEXT NOT NULL DEFAULT 'groups',           -- groups | bracket | americana
+  round_no INTEGER,
+  group_id INTEGER REFERENCES comp_groups(id) ON DELETE SET NULL,
+  bracket_round TEXT,                             -- R128 | R64 | R32 | R16 | QF | SF | F
+  bracket_slot INTEGER,
+  seed_a INTEGER,
+  seed_b INTEGER,
+  entry_a_id INTEGER REFERENCES competition_entries(id) ON DELETE SET NULL,
+  entry_b_id INTEGER REFERENCES competition_entries(id) ON DELETE SET NULL,
+  tie_id INTEGER REFERENCES matches(id) ON DELETE SET NULL,
+  s1a INTEGER, s1b INTEGER,
+  s2a INTEGER, s2b INTEGER,
+  s3a INTEGER, s3b INTEGER,
+  stb_a INTEGER, stb_b INTEGER,
+  winner_id INTEGER REFERENCES competition_entries(id) ON DELETE SET NULL,
+  wo_winner_id INTEGER REFERENCES competition_entries(id) ON DELETE SET NULL,
+  unplayed INTEGER NOT NULL DEFAULT 0,
+  submitted_by INTEGER REFERENCES competition_entries(id) ON DELETE SET NULL,
+  submitted_at TEXT,
+  validation TEXT NOT NULL DEFAULT 'none',       -- none | pending | validated | disputed | auto
+  validation_deadline TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  scheduled_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Punts per jugador i partit (americana)
+CREATE TABLE IF NOT EXISTS match_points (
+  match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  entry_id INTEGER NOT NULL REFERENCES competition_entries(id) ON DELETE CASCADE,
+  player_slot TEXT NOT NULL DEFAULT '',           -- a1 | a2 | b1 | b2
+  points INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (match_id, entry_id, player_slot)
+);
+-- Auditoria: qui genera quadres/grups i qui puja cada resultat
+CREATE TABLE IF NOT EXISTS competition_audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,                           -- crear | generar_quadre | generar_grups | resultat | ...
+  detail TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_comp_torneig ON competitions(tournament_id, status);
+CREATE INDEX IF NOT EXISTS idx_comp_format ON competitions(format, status);
+CREATE INDEX IF NOT EXISTS idx_entry_comp ON competition_entries(competition_id, status);
+CREATE INDEX IF NOT EXISTS idx_teams_comp ON teams(competition_id);
+CREATE INDEX IF NOT EXISTS idx_match_comp ON matches(competition_id, stage);
+CREATE INDEX IF NOT EXISTS idx_match_bracket ON matches(competition_id, bracket_round, bracket_slot);
+CREATE INDEX IF NOT EXISTS idx_audit_comp ON competition_audit(competition_id);
 `);
 
 // Migracions idempotents per a BDs ja creades
