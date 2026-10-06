@@ -458,7 +458,7 @@ r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
   const esGestor = potGestionar(req.session.user.id, t.club_id, esAdmin);
   const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
-    alta: req.query.alta || null, errorMsg: req.query.error || null,
+    alta: req.query.alta || null, errorMsg: req.query.error || null, creades: req.query.creades || null,
     competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor });
 });
 

@@ -119,6 +119,52 @@ export function creaCompeticio({ tournament_id, category_id, format, name, fee_t
   });
 }
 
+// Crea les competicions de totes les categories indicades en UNA sola transacció.
+// - Omet les categories que ja en tenen una (no duplica).
+// - Crea també les categories sense inscrits (competició buida en estat 'inscripcio').
+// - Importa les parelles amb inscripció confirmada de cada categoria.
+// items: [{ category_id, format }]
+export function creaCompeticionsBulk({ tournament_id, items, fee_text, fee_amount, creador, actorId }) {
+  if (!creador) throw new Error('No tens permís per crear competicions en aquest torneig.');
+  const cats = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(tournament_id);
+  if (!cats.length) throw new Error('Aquest torneig no té categories.');
+  const perId = Object.fromEntries(cats.map(c => [c.id, c]));
+  const existents = new Set(db.prepare('SELECT category_id FROM competitions WHERE tournament_id = ?')
+    .all(tournament_id).map(r => r.category_id));
+  const valids = [];
+  for (const it of items || []) {
+    const catId = Number(it.category_id);
+    const format = String(it.format || 'eliminatoria');
+    const cat = perId[catId];
+    if (!cat || existents.has(catId)) continue;
+    if (!FORMATS[format] || !FORMATS[format].actiu) {
+      throw new Error(`Format no disponible per a «${MODALITATS[cat.modality] || cat.modality}».`);
+    }
+    valids.push({ cat, format });
+  }
+  if (!valids.length) throw new Error('No hi ha cap categoria pendent: totes ja tenen competició.');
+  const quotaText = String(fee_text || '').slice(0, 80);
+  const quotaImport = Math.max(0, Number(fee_amount) || 0);
+  return transaccio(() => {
+    const creades = [];
+    for (const { cat, format } of valids) {
+      const nom = `${MODALITATS[cat.modality] || cat.modality}${cat.level ? ' · ' + cat.level : ''} — ${FORMATS[format].nom}`;
+      const comp = db.prepare(`INSERT INTO competitions
+        (tournament_id, category_id, created_by_type, club_id, organizer_id, name, format, status, fee_text, fee_amount)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'inscripcio', ?, ?)`).run(
+        tournament_id, cat.id, creador.tipus, creador.club_id, creador.organizer_id,
+        nom, format, quotaText, quotaImport);
+      const cid = comp.lastInsertRowid;
+      const n = importaInscrits(cid, cat.id);
+      db.prepare(`INSERT INTO competition_audit (competition_id, actor_id, action, detail)
+                  VALUES (?, ?, 'crear', ?)`)
+        .run(cid, actorId || null, `format=${format}; categoria=${cat.id}; importades=${n}; bulk=1`);
+      creades.push({ id: cid, category_id: cat.id, importades: n });
+    }
+    return { creades };
+  });
+}
+
 export function agafaCompeticio(competitionId, torneigId) {
   return db.prepare('SELECT * FROM competitions WHERE id = ? AND tournament_id = ?')
     .get(competitionId, torneigId) || null;

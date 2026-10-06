@@ -14,7 +14,7 @@ import db from '../db.js';
 import { MODALITATS } from '../brand.js';
 import {
   FORMATS, ESTATS_COMPETICIO, resolCreador, competicionsDe, creaCompeticio,
-  importaInscrits, agafaCompeticio, participantsDe, fixaSeed,
+  creaCompeticionsBulk, importaInscrits, agafaCompeticio, participantsDe, fixaSeed,
   canviaEstatParticipant, commutaPagatParticipant,
 } from '../lib/competicions.js';
 
@@ -81,6 +81,49 @@ export function rutesCompeticio(cfg) {
       });
       res.redirect(`${base}/torneig/${t.id}/competicio/${id}?creada=1`);
     } catch (e) { refer(e.message); }
+  });
+
+  // --- Crear TOTES les competicions del torneig d'una vegada ---
+  // Una per categoria (fins i tot les sense inscrits), amb les parelles ja importades.
+  function dadesBulk(t) {
+    const categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
+    const { perCat } = competicionsDe(t.id);
+    const counts = {};
+    const q = db.prepare(`SELECT COUNT(*) n FROM registrations WHERE category_id = ? AND status = 'registered'`);
+    for (const c of categories) counts[c.id] = q.get(c.id).n;
+    return { categories, perCat, counts };
+  }
+
+  r.get(`${base}/torneig/:tid/competicions/nova`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    if (!nomesPV(t)) return res.status(400).send('Aquest torneig no té la inscripció a PadelVallès.');
+    res.render('competicions-form', {
+      titol: 'Crea les competicions', t, base, ...dadesBulk(t), FORMATS, MODALITATS, error: null,
+    });
+  });
+
+  r.post(`${base}/torneig/:tid/competicions/nova`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    const creador = exigeixCreador(req, res, t);
+    if (!creador) return;
+    try {
+      if (!nomesPV(t)) throw new Error('Aquest torneig no té la inscripció a PadelVallès.');
+      const formats = req.body.formats || {};
+      const items = Object.entries(formats).map(([category_id, format]) => ({ category_id, format }));
+      const { creades } = creaCompeticionsBulk({
+        tournament_id: t.id, items,
+        fee_text: req.body.quota_text, fee_amount: req.body.quota_import,
+        creador, actorId: req.session.user.id,
+      });
+      res.redirect(`${base}/torneig/${t.id}/inscrits?creades=${creades.length}`);
+    } catch (e) {
+      res.render('competicions-form', {
+        titol: 'Crea les competicions', t, base, ...dadesBulk(t), FORMATS, MODALITATS, error: e.message,
+      });
+    }
   });
 
   // --- Gestionar la competició: participants ---

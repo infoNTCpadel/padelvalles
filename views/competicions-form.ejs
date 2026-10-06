@@ -1,0 +1,42 @@
+<h1>🏆 Crea les competicions: <%= t.name %></h1>
+<p><a href="<%= base %>/torneig/<%= t.id %>/inscrits">← Inscrits del torneig</a></p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<% const pendents = categories.filter(c => !perCat[c.id]); %>
+<% if (!categories.length) { %>
+  <p class="meta">Aquest torneig no té categories.</p>
+<% } else if (!pendents.length) { %>
+  <p class="meta">Totes les categories ja tenen la seva competició creada.</p>
+<% } else { %>
+<form class="formulari" action="<%= base %>/torneig/<%= t.id %>/competicions/nova" method="post">
+  <table class="llista">
+    <tr><th>Categoria</th><th>Inscrits confirmats</th><th>Format</th></tr>
+    <% for (const c of categories) { const comp = perCat[c.id]; %>
+      <tr>
+        <td><strong><%= MODALITATS[c.modality] %><%= c.level ? ' · ' + c.level : '' %></strong></td>
+        <td class="meta"><%= counts[c.id] || 0 %> parelles</td>
+        <td>
+          <% if (comp) { %>
+            <span class="meta">✓ <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>"><%= comp.name %></a></span>
+          <% } else { %>
+            <select name="formats[<%= c.id %>]">
+              <% for (const clau of Object.keys(FORMATS)) { const f = FORMATS[clau]; %>
+                <option value="<%= clau %>" <%= f.actiu ? '' : 'disabled' %> <%= clau === 'eliminatoria' ? 'selected' : '' %>><%= f.nom %><%= f.actiu ? '' : ' (properament)' %></option>
+              <% } %>
+            </select>
+          <% } %>
+        </td>
+      </tr>
+    <% } %>
+  </table>
+  <div class="fila">
+    <div class="camp"><label>Quota (text, per a totes)</label>
+      <input name="quota_text" maxlength="80" value="<%= t.price_text || '' %>" placeholder="p. ex. 20 € per parella">
+    </div>
+    <div class="camp"><label>Quota (€, opcional)</label>
+      <input name="quota_import" type="number" min="0" step="0.01" placeholder="0">
+    </div>
+  </div>
+  <p class="ajuda">Es crearà una competició per categoria —fins i tot les que encara no tenen parelles— i s'hi importaran les parelles amb inscripció confirmada. La llista d'espera no s'importa.</p>
+  <button class="boto" type="submit">Crea <%= pendents.length %> <%= pendents.length === 1 ? 'competició' : 'competicions' %></button>
+</form>
+<% } %>

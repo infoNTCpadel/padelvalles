@@ -319,8 +319,8 @@ r.get('/organitzador/torneig/:id/inscrits', nomesOrg, (req, res) => {
   if (!t) return;
   const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
-    alta: req.query.alta || null, errorMsg: req.query.error || null, baseRuta: '/organitzador',
-    competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor: true });
+    alta: req.query.alta || null, errorMsg: req.query.error || null, creades: req.query.creades || null,
+    baseRuta: '/organitzador', competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor: true });
 });
 
 // --- Competicions (Fase 1): crear i gestionar des de les inscripcions ---
