@@ -147,7 +147,7 @@ table.llista th { background: var(--bg); color: #fff; }
 .hero-nou { position: relative; width: 100vw; margin-left: calc(50% - 50vw);
   overflow: hidden; color: #fff; isolation: isolate; }
 .hero-fons { position: absolute; inset: -6%; z-index: -3;
-  background: url("/hero.jpg") center 65% / cover no-repeat;
+  background: url("/hero.webp") center 65% / cover no-repeat;
   animation: kenburns 36s ease-in-out infinite alternate; }
 .hero-vel { position: absolute; inset: 0; z-index: -2;
   background: linear-gradient(100deg, rgba(70, 14, 28, .94) 15%, rgba(94, 23, 40, .62) 52%, rgba(232, 112, 58, .18) 100%); }
