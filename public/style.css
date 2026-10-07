@@ -349,3 +349,14 @@ table.llista th { background: var(--bg); color: #fff; }
 .etiqueta.rol-club { background: #F7EFE3; color: #7A2036; }
 .etiqueta.rol-monitor { background: #E6F4EA; color: #137333; }
 .etiqueta.rol-admin { background: #2B2B29; color: #fff; }
+
+/* --- Banda de consentiment de cookies --- */
+.banda-cookies { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 90;
+  background: #fff; border-radius: var(--radi); box-shadow: 0 8px 30px rgba(43, 43, 41, .25);
+  border: 1px solid rgba(231, 220, 200, .9); padding: 1rem 1.2rem;
+  display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.banda-cookies p { margin: 0; font-size: .92rem; max-width: 46rem; }
+.banda-cookies .fila { margin: 0; }
+@media (max-width: 640px) {
+  .banda-cookies { left: .6rem; right: .6rem; bottom: .6rem; }
+}

@@ -13,25 +13,73 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="<%= titol %> · <%= brand.name %>">
 <% if (typeof metaDescription !== 'undefined' && metaDescription) { %><meta property="og:description" content="<%= metaDescription %>"><% } %>
-<% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
+<% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } else { %><meta property="og:image" content="https://padelvalles.com/logo.png"><% } %>
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-N52QWW172K"></script>
+<!-- Google Analytics: només es carrega si l'usuari accepta les cookies d'anàlisi -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-N52QWW172K');
+(function () {
+  var CLAU = 'pv-consentiment';
+  function carregaGA() {
+    if (window.__gaCarregat) return;
+    window.__gaCarregat = true;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-N52QWW172K';
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', 'G-N52QWW172K');
+  }
+  window.pvAcceptaCookies = function () {
+    try { localStorage.setItem(CLAU, '1'); } catch (e) {}
+    var b = document.getElementById('banda-cookies');
+    if (b) b.style.display = 'none';
+    carregaGA();
+  };
+  window.pvRebutjaCookies = function () {
+    try { localStorage.setItem(CLAU, '0'); } catch (e) {}
+    var b = document.getElementById('banda-cookies');
+    if (b) b.style.display = 'none';
+  };
+  function mostraSiCal() {
+    try {
+      var v = localStorage.getItem(CLAU);
+      if (v === '1') { carregaGA(); return; }
+      if (v === '0') return;
+    } catch (e) {}
+    var b = document.getElementById('banda-cookies');
+    if (b) b.style.display = '';
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mostraSiCal);
+  } else {
+    mostraSiCal();
+  }
+  // Estat de càrrega: deshabilita el botó en enviar qualsevol formulari
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (!f || f.dataset.senseCarrega) return;
+    var boto = f.querySelector('button[type="submit"], input[type="submit"]');
+    if (boto && !boto.disabled) {
+      boto.disabled = true;
+      if (boto.tagName === 'BUTTON') {
+        boto.dataset.textOriginal = boto.textContent;
+        boto.textContent = 'Enviant…';
+      }
+    }
+  });
+})();
 </script>
 </head>
 <body>
 <header class="cap">
   <div class="contenidor cap-flex">
-    <a class="marca" href="/"><img src="/logo.png" alt="PadelVallès"><span class="marca-logo">PadelVallès</span></a>
+    <a class="marca" href="/"><img src="/logo.webp" alt="PadelVallès"><span class="marca-logo">PadelVallès</span></a>
     <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
     <label for="nav-toggle" class="nav-boto" aria-label="Obre el menú">☰</label>
     <nav class="nav">
@@ -58,8 +106,16 @@
 <footer class="peu">
   <div class="contenidor peu-flex">
     <span><strong>PadelVallès</strong> · <%= brand.tagline %></span>
+    <span><a href="mailto:info@padelvalles.com">info@padelvalles.com</a></span>
     <span><a href="/avis-legal">Avís legal</a> · <a href="/privacitat">Privacitat</a> · <a href="/cookies">Cookies</a></span>
   </div>
 </footer>
+<div id="banda-cookies" class="banda-cookies" style="display:none" role="dialog" aria-label="Consentiment de cookies">
+  <p>Fem servir cookies tècniques (necessàries) i, si les acceptes, cookies d'anàlisi de Google Analytics per millorar el web. <a href="/cookies">Més informació</a></p>
+  <div class="fila">
+    <button class="boto menut" type="button" onclick="pvAcceptaCookies()">Accepta</button>
+    <button class="boto secundari menut" type="button" onclick="pvRebutjaCookies()">Rebutja</button>
+  </div>
+</div>
 </body>
 </html>
