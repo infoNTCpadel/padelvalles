@@ -154,6 +154,55 @@ r.post('/avisos/:id/tanca', (req, res) => {
   res.redirect('/admin');
 });
 
+// Serveis per club: l'admin atorga crèdits (nº de torneos) o quota anual per servei
+import { autoritzacionsDe, resumDrets } from '../lib/autoritzacions.js';
+
+r.get('/clubs/:id/serveis', (req, res) => {
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
+  if (!club) return res.status(404).render('404', { titol: 'No trobat' });
+  const autoritzacions = autoritzacionsDe(club.id);
+  const tornejosPagament = db.prepare(`
+    SELECT id, name, servei, starts_at, status FROM tournaments
+    WHERE club_id = ? AND servei IN ('inscripcions','torneig')
+    ORDER BY starts_at DESC LIMIT 50`).all(club.id);
+  const sollicitud = db.prepare(`SELECT * FROM servei_sollicituds
+    WHERE club_id = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1`).get(club.id);
+  res.render('admin/club-serveis', {
+    titol: `Serveis: ${club.name}`, club, autoritzacions, tornejosPagament,
+    resum: resumDrets(club.id), sollicitud: sollicitud || null, error: null, ok: req.query.ok || null,
+  });
+});
+
+r.post('/clubs/:id/serveis', (req, res) => {
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
+  if (!club) return res.status(404).render('404', { titol: 'No trobat' });
+  const servei = req.body.servei === 'torneig' ? 'torneig' : 'inscripcions';
+  const modalitat = req.body.modalitat === 'anual' ? 'anual' : 'credits';
+  const quantitat = Math.max(1, Math.min(1000, parseInt(req.body.quantitat, 10) || 0));
+  let validFins = String(req.body.valid_fins || '').slice(0, 10);
+  if (modalitat === 'anual' && !/^\d{4}-\d{2}-\d{2}$/.test(validFins)) {
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    validFins = d.toISOString().slice(0, 10);
+  }
+  if (modalitat === 'credits' && !quantitat) {
+    return res.redirect(`/admin/clubs/${club.id}/serveis`);
+  }
+  const notes = String(req.body.notes || '').trim().slice(0, 300);
+  db.prepare(`INSERT INTO club_serveis (club_id, servei, modalitat, quantitat, valid_fins, notes)
+              VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(club.id, servei, modalitat, modalitat === 'credits' ? quantitat : 0,
+         modalitat === 'anual' ? validFins : '', notes);
+  log(req.session.user.id, 'servei_atorgat', 'club', club.id, `${servei} ${modalitat}`);
+  res.redirect(`/admin/clubs/${club.id}/serveis?ok=1`);
+});
+
+r.post('/clubs/:id/serveis/:sid/toggle', (req, res) => {
+  db.prepare(`UPDATE club_serveis SET actiu = 1 - actiu WHERE id = ? AND club_id = ?`)
+    .run(req.params.sid, req.params.id);
+  log(req.session.user.id, 'servei_toggle', 'club', req.params.id, `autorització ${req.params.sid}`);
+  res.redirect(`/admin/clubs/${req.params.id}/serveis`);
+});
+
 // Llistats
 r.get('/tornejos', (req, res) => {
   const tornejos = db.prepare(`
@@ -185,7 +234,9 @@ r.get('/clubs', (req, res) => {
     JOIN clubs c ON c.id = cc.club_id
     WHERE cc.status = 'pending'
     ORDER BY cc.created_at ASC`).all();
-  res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents, claims,
+  const resumsServeis = {};
+  for (const c of clubs) resumsServeis[c.id] = resumDrets(c.id);
+  res.render('admin/clubs', { titol: 'Clubs', clubs, estat, q, total, nPendents, claims, resumsServeis,
     reclamat: req.query.reclamat || null, creat: req.query.creat || null,
     appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
 });

@@ -1,4 +1,20 @@
 <h1>Panell del club</h1>
+<% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+<% if (typeof serveisPerClub !== 'undefined') { %>
+<div class="dades" style="margin-bottom:1rem">
+  <strong>Els teus serveis</strong>
+  <% let __teAlgun = false; %>
+  <% for (const c of clubs) { const __r = serveisPerClub[c.id]; if (!__r) continue;
+     const __ins = __r.inscripcions.ok, __tor = __r.torneig.ok; if (__ins || __tor) __teAlgun = true; %>
+    <div class="meta" style="margin-top:.3rem"><strong><%= c.name %></strong>:
+      📝 Inscripcions (<%= __r.inscripcions.detall %>) ·
+      🏆 Torneig (<%= __r.torneig.detall %>)
+    </div>
+  <% } %>
+  <% if (!__teAlgun) { %><div class="meta">Tens el <strong>🪧 Dashboard</strong> gratuït. <a href="/serveis">Descobreix els serveis de pagament</a>.</div><% } %>
+  <div class="meta" style="margin-top:.3rem"><a href="/club/serveis/sollicita">Sol·licita més serveis</a></div>
+</div>
+<% } %>
 <% if (typeof esMonitor !== 'undefined' && esMonitor) { %>
 <p class="avis">Has entrat com a <strong>monitor</strong>: pots veure els inscrits i fer altes i baixes dels tornejos dels clubs que t'han autoritzat.</p>
 <% } %>

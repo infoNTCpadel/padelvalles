@@ -1,0 +1,87 @@
+<h1>Serveis: <%= club.name %></h1>
+<p><a href="/admin/clubs">← Clubs</a></p>
+<% if (ok) { %><div class="exit">Autorització atorgada.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<% if (sollicitud) { %>
+<div class="avis">
+  <strong>📩 Sol·licitud pendent:</strong> <%= sollicitud.servei === 'torneig' ? '🏆 Torneig' : '📝 Inscripcions' %>
+  · 📞 <%= sollicitud.telefon %> · <%= (sollicitud.created_at || '').slice(0, 16).replace('T', ' ') %>
+  <% if (sollicitud.missatge) { %><br><span class="meta">💬 <%= sollicitud.missatge %></span><% } %>
+</div>
+<% } %>
+
+<h2 class="seccio">Autoritzacions actives</h2>
+<% if (!autoritzacions.length) { %><p class="meta">Aquest club no té cap autorització: només pot fer servir el Dashboard gratuït.</p><% } %>
+<table class="llista">
+  <tr><th>Servei</th><th>Modalitat</th><th>Ús</th><th>Estat</th><th>Notes</th><th></th></tr>
+  <% for (const a of autoritzacions) { %>
+    <tr>
+      <td><strong><%= a.servei === 'torneig' ? '🏆 Torneig' : '📝 Inscripcions' %></strong></td>
+      <td><%= a.modalitat === 'anual' ? 'Anual' : 'Per torneos' %></td>
+      <td class="meta">
+        <% if (a.modalitat === 'anual') { %>fins al <%= (a.valid_fins || '').split('-').reverse().join('/') %>
+        <% } else { %><%= a.usats %> / <%= a.quantitat %> torneos<% } %>
+      </td>
+      <td><% if (a.vigent && a.actiu) { %><span class="etiqueta ok">Vigent</span><% } else { %><span class="etiqueta">Inactiva</span><% } %></td>
+      <td><span class="meta"><%= a.notes || '—' %></span></td>
+      <td>
+        <form class="enlinia" action="/admin/clubs/<%= club.id %>/serveis/<%= a.id %>/toggle" method="post">
+          <button class="boto menut secundari" type="submit"><%= a.actiu ? 'Desactiva' : 'Activa' %></button>
+        </form>
+      </td>
+    </tr>
+  <% } %>
+</table>
+
+<h2 class="seccio">Atorga un servei</h2>
+<form class="formulari" action="/admin/clubs/<%= club.id %>/serveis" method="post">
+  <div class="fila">
+    <div class="camp"><label>Servei</label>
+      <select name="servei">
+        <option value="inscripcions">📝 Inscripcions</option>
+        <option value="torneig">🏆 Torneig</option>
+      </select>
+    </div>
+    <div class="camp"><label>Modalitat</label>
+      <select name="modalitat" id="modalitat">
+        <option value="credits">Per torneos (crèdits)</option>
+        <option value="anual">Quota anual</option>
+      </select>
+    </div>
+  </div>
+  <div class="fila">
+    <div class="camp" id="campQuantitat"><label>Nombre de torneos</label>
+      <input name="quantitat" type="number" min="1" max="1000" value="5" style="width:6rem">
+    </div>
+    <div class="camp" id="campValidFins" style="display:none"><label>Vàlid fins a</label>
+      <input name="valid_fins" type="date">
+    </div>
+  </div>
+  <div class="camp"><label>Notes (p. ex. "prova gratuïta", "pagat 08/10/2026")</label>
+    <input name="notes" maxlength="300" placeholder="">
+  </div>
+  <button class="boto" type="submit">Atorga</button>
+</form>
+<script>
+(function () {
+  const mod = document.getElementById('modalitat');
+  function act() {
+    const anual = mod.value === 'anual';
+    document.getElementById('campQuantitat').style.display = anual ? 'none' : '';
+    document.getElementById('campValidFins').style.display = anual ? '' : 'none';
+  }
+  mod.addEventListener('change', act); act();
+})();
+</script>
+
+<h2 class="seccio">Torneos amb servei de pagament (<%= tornejosPagament.length %>)</h2>
+<% if (!tornejosPagament.length) { %><p class="meta">Cap.</p><% } %>
+<ul class="llista-neta">
+  <% for (const t of tornejosPagament) { %>
+    <li><span class="meta"><%= t.servei === 'torneig' ? '🏆' : '📝' %></span> <%= t.name %> <span class="meta">· <%= (t.starts_at || '').slice(0, 10) %> · <%= t.status %></span></li>
+  <% } %>
+</ul>
+
+<h2 class="seccio">Resum actual</h2>
+<p class="meta">📝 Inscripcions: <strong><%= resum.inscripcions.detall %></strong> · 🏆 Torneig: <strong><%= resum.torneig.detall %></strong></p>

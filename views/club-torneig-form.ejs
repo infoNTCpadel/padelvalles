@@ -114,7 +114,31 @@ function actualitzaQuota() {
 }
 selClub.addEventListener('change', actualitzaQuota);
 document.querySelectorAll('input[name="servei"]').forEach(r => r.addEventListener('change', actualitzaQuota));
-actualitzaQuota();
+
+// Disponibilitat del servei segons el club triat (l'admin atorga crèdits o quota anual)
+const DISP = <%- JSON.stringify(typeof disponibilitatPerClub !== 'undefined' ? disponibilitatPerClub : {}) %>;
+function actualitzaDisponibilitat() {
+  const disp = DISP[selClub.value] || { inscripcions: false, torneig: false };
+  document.querySelectorAll('#graellaServeis .targeta-servei').forEach(lab => {
+    const clau = lab.dataset.servei;
+    if (clau === 'dashboard') return;
+    const radio = lab.querySelector('input[name="servei"]');
+    const nota = lab.querySelector('.nota-bloqueig');
+    if (radio.dataset.bloqueigOrdre === '1') return; // bloqueig per inscripcions: no se toca
+    const esActual = lab.dataset.esActual === '1';
+    const bloq = !disp[clau] && !esActual;
+    radio.disabled = bloq;
+    lab.classList.toggle('deshab', bloq);
+    if (nota) nota.style.display = bloq ? '' : 'none';
+    if (bloq && radio.checked) {
+      const dash = document.querySelector('input[name="servei"][value="dashboard"]');
+      if (dash && !dash.disabled) dash.checked = true;
+    }
+  });
+  actualitzaQuota();
+}
+selClub.addEventListener('change', actualitzaDisponibilitat);
+actualitzaDisponibilitat();
 </script>
   <div class="camp"><label>Com s'hi inscriu la gent?</label>
     <input name="via" maxlength="300" value="<%= t ? (t.registration_info || t.via || '') : '' %>" placeholder="P. ex.: WhatsApp al 600 123 456">

@@ -333,6 +333,23 @@ for (const [taula, columna, def] of [
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
 }
 
+// Autoritzacions de serveis per club (atorgades per l'admin).
+// - modalitat 'credits': quantitat de torneos amb aquest servei (usats = consumits)
+// - modalitat 'anual': torneos il·limitats fins a valid_fins (YYYY-MM-DD)
+db.exec(`
+CREATE TABLE IF NOT EXISTS club_serveis (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  servei TEXT NOT NULL,
+  modalitat TEXT NOT NULL DEFAULT 'credits',
+  quantitat INTEGER NOT NULL DEFAULT 0,
+  usats INTEGER NOT NULL DEFAULT 0,
+  valid_fins TEXT DEFAULT '',
+  actiu INTEGER NOT NULL DEFAULT 1,
+  notes TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+
 // Sol·licituds d'accés als serveis de pagament (només clubs confirmats).
 // La venda és personal (Mathius contacta amb preus); aquí queda el registre.
 db.exec(`

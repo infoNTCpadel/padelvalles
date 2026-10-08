@@ -62,7 +62,7 @@
 </div>
 
 <table class="llista">
-  <tr><th>Club</th><th>Contacte</th><th>Gestor</th><th>Tornejos</th><th>Estat</th><th>Accions</th></tr>
+  <tr><th>Club</th><th>Contacte</th><th>Gestor</th><th>Tornejos</th><th>Serveis</th><th>Estat</th><th>Accions</th></tr>
   <% for (const c of clubs) { %>
     <tr>
       <td><strong><%= c.name %></strong><br><span class="meta"><%= c.town %> · <%= c.comarca %></span></td>
@@ -78,6 +78,7 @@
         <% } else { %><span class="meta">—</span><% } %>
       </td>
       <td style="text-align:center"><%= c.n_tornejos %></td>
+      <td><span class="meta"><% const __rs = (typeof resumsServeis !== 'undefined' && resumsServeis[c.id]) || null; %><% if (__rs) { %>📝 <%= __rs.inscripcions.detall %><br>🏆 <%= __rs.torneig.detall %><% } else { %>—<% } %><br><a href="/admin/clubs/<%= c.id %>/serveis">Gestiona</a></span></td>
       <td><%- c.verified ? '<span class="etiqueta ok">Verificat</span>' : '<span class="etiqueta pendent">Pendent</span>' %></td>
       <td class="accions">
         <a href="/club/<%= c.id %>" target="_blank">Veure</a>

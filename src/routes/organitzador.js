@@ -5,6 +5,7 @@ import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { inscritsDe, pujada, tipusImatge, esborraFitxerPujat, filesCategories, dirPujades } from './club.js';
 import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
+import { dretsPerClubs, teDret, consumeixDret, alliberaDret } from '../lib/autoritzacions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendTorneigPendentValidacio } from '../mail.js';
 import fs from 'node:fs';
@@ -145,17 +146,20 @@ function desaTorneigOrg(req, id) {
   if (!dades.name || !dades.starts_at) throw new Error('Falten el nom o la data del torneig.');
   if (!id && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
 
+  // Tot en una transacció: si el club seu no té dret al servei, no es guarda res.
+  return transaccio(() => {
   let tid = id;
   let recreaCategories = true;
+  let serveiAntic = 'dashboard';
   if (id) {
     const actual = agafaTorneigOrgNum(req, id);
     if (!actual) throw new Error('Torneig no trobat.');
     const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
     if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
-    const serveiActual = serveiValid(actual.servei);
-    if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiActual]) {
-      throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiActual].nom} al servei ${SERVEIS[dades.servei].nom}.`);
+    serveiAntic = serveiValid(actual.servei);
+    if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiAntic]) {
+      throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiAntic].nom} al servei ${SERVEIS[dades.servei].nom}.`);
     }
     // Qualsevol edició de l'organitzador torna a validació del club seu
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
@@ -193,7 +197,16 @@ function desaTorneigOrg(req, id) {
     const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
     catMods.forEach((m, i) => ins.run(tid, m, String(catNivells[i] || '').trim().slice(0, 60), maxPairs(i)));
   }
+  // Drets del servei: es compten sobre el club seu
+  if (serveiAntic !== dades.servei) {
+    if (serveiAntic !== 'dashboard') alliberaDret(dades.club_id, serveiAntic);
+    if (dades.servei !== 'dashboard') {
+      const rc = consumeixDret(dades.club_id, dades.servei);
+      if (!rc.ok) throw new Error(`El club seu no té autorització per al servei ${SERVEIS[dades.servei].nom}.`);
+    }
+  }
   return tid;
+  });
 }
 
 function agafaTorneigOrgNum(req, id) {
@@ -217,7 +230,7 @@ function formOrg(req, res, t, error) {
   const seus = db.prepare('SELECT id, name, town FROM clubs WHERE verified = 1 ORDER BY name').all();
   res.render('organitzador-torneig-form', {
     titol: t && t.id ? 'Edita el torneig' : 'Nou torneig',
-    t, seus, MODALITATS, TIPUS_TORNEIG, SERVEIS,
+    t, seus, MODALITATS, TIPUS_TORNEIG, SERVEIS, disponibilitatPerClub: dretsPerClubs(seus.map(x => x.id)),
     filesCategories: filesCategories(t, t && t.id ? null : req.body),
     teInscrits: t && t.id ? db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(t.id).n : 0,
@@ -266,7 +279,15 @@ r.post('/organitzador/torneig/:id/edita', nomesOrg, (req, res) => {
 r.post('/organitzador/torneig/:id/duplica', nomesOrg, (req, res) => {
   const t = agafaTorneigOrg(req, res);
   if (!t) return;
-  const nou = transaccio(() => {
+  let nou;
+  try {
+  nou = transaccio(() => {
+    // Duplicar un torneig de pagament també consumeix un dret del club seu
+    const serveiDup = serveiValid(t.servei);
+    if (serveiDup !== 'dashboard') {
+      const rc = consumeixDret(t.club_id, serveiDup);
+      if (!rc.ok) throw new Error(`El club seu no té autorització per al servei ${SERVEIS[serveiDup].nom}.`);
+    }
     const q = db.prepare(`INSERT INTO tournaments
       (club_id, organizer_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
        registration_mode, servei, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
@@ -280,6 +301,9 @@ r.post('/organitzador/torneig/:id/duplica', nomesOrg, (req, res) => {
     for (const c of cats) ins.run(nouId, c.modality, c.level, c.max_pairs);
     return nouId;
   });
+  } catch (e) {
+    return res.status(400).send(`<p><a href="/organitzador/panel">← Panell</a></p><div class="error">${e.message.replace(/</g, '&lt;')}</div>`);
+  }
   const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(t.club_id);
   avisaClubSeu(t.club_id, (t.name || 'Torneig') + ' (còpia)', req.organitzador.name);
   res.redirect(`/organitzador/torneig/${nou}/edita?duplicat=1`);

@@ -1,21 +1,30 @@
 <%#
   Parcial: tria del servei del torneig (Dashboard / Inscripcions / Torneig).
-  Espera: SERVEIS, serveiActual ('dashboard' per defecte), serveiMinim
-  (el servei més baix permès; amb inscripcions no es pot baixar de servei).
+  Espera:
+    SERVEIS, serveiActual ('dashboard'), serveiMinim ('dashboard'),
+    disponibilitat: { inscripcions: bool, torneig: bool } pel club triat
+      (si falta, el JS la calcula amb disponibilitatPerClub en carregar),
+    potSollicitar: bool (enllaç de sol·licitud o text per a organitzadors)
 %>
 <%
 const __ordre = { dashboard: 0, inscripcions: 1, torneig: 2 };
 const __actual = serveiActual || 'dashboard';
 const __min = __ordre[serveiMinim] || 0;
+const __disp = (typeof disponibilitat !== 'undefined' && disponibilitat) || { inscripcions: true, torneig: true };
+const __potSol = typeof potSollicitar === 'undefined' ? true : !!potSollicitar;
 %>
 <div class="camp"><label>Quin servei vols per a aquest torneig?</label>
-  <div class="graella-serveis">
-    <% for (const clau of Object.keys(SERVEIS)) { const s = SERVEIS[clau]; const __sel = __actual === clau; const __deshab = __ordre[clau] < __min; %>
-      <label class="targeta-servei<%= __sel ? ' sel' : '' %><%= __deshab ? ' deshab' : '' %>">
-        <input type="radio" name="servei" value="<%= clau %>"<%= __sel ? ' checked' : '' %><%= __deshab ? ' disabled' : '' %>>
+  <div class="graella-serveis" id="graellaServeis">
+    <% for (const clau of Object.keys(SERVEIS)) { const s = SERVEIS[clau]; const __sel = __actual === clau;
+       const __bloqOrdre = __ordre[clau] < __min;
+       const __bloqDret = clau !== 'dashboard' && !__disp[clau] && __actual !== clau;
+       const __deshab = __bloqOrdre || __bloqDret; %>
+      <label class="targeta-servei<%= __sel ? ' sel' : '' %><%= __deshab ? ' deshab' : '' %>" data-servei="<%= clau %>"<%= __sel ? ' data-es-actual="1"' : '' %>>
+        <input type="radio" name="servei" value="<%= clau %>"<%= __sel ? ' checked' : '' %><%= __deshab ? ' disabled' : '' %><%= __bloqOrdre ? ' data-bloqueig-ordre="1"' : '' %>>
         <strong><%= s.icona %> <%= s.nom %></strong>
         <span class="preu"><%= s.preu %></span>
         <span class="meta"><%= s.descripcio %></span>
+        <% if (clau !== 'dashboard') { %><span class="ajuda nota-bloqueig" style="<%= __bloqDret ? '' : 'display:none' %>">🔒 Requereix autorització<% if (__potSol) { %> — <a href="/club/serveis/sollicita?servei=<%= clau %>" target="_blank" rel="noopener">sol·licita l'accés</a><% } else { %>: el club seu ha de tenir-la<% } %></span><% } %>
       </label>
     <% } %>
   </div>

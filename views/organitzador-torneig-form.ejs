@@ -81,7 +81,7 @@
     <% } %>
   </div>
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
-  <%- include('_servei-torneig', { SERVEIS, serveiActual: (t && t.servei) || 'dashboard', serveiMinim: (teInscrits > 0 && t && t.servei) ? t.servei : 'dashboard' }) %>
+  <%- include('_servei-torneig', { SERVEIS, serveiActual: (t && t.servei) || 'dashboard', serveiMinim: (teInscrits > 0 && t && t.servei) ? t.servei : 'dashboard', potSollicitar: false }) %>
   <div id="campsInscripcio" style="display:none">
     <div class="fila">
       <div class="camp"><label>Tancament d'inscripcions</label>
@@ -100,6 +100,7 @@
 (function () {
   const camps = document.getElementById('campsInscripcio');
   const avis = document.getElementById('avisQuota');
+  const selClub = document.querySelector('select[name="club_id"]');
   function serveiTriat() {
     const r = document.querySelector('input[name="servei"]:checked');
     return r ? r.value : 'dashboard';
@@ -108,10 +109,33 @@
     const esPV = serveiTriat() !== 'dashboard';
     camps.style.display = esPV ? '' : 'none';
     avis.style.display = esPV ? '' : 'none';
-    if (esPV) avis.innerHTML = '<strong>Servei de pagament:</strong> et contactarem amb tots els detalls quan el club validi el torneig.';
+    if (esPV) avis.innerHTML = '<strong>Servei de pagament:</strong> el club seu ha de tenir autorització; et contactarem amb els detalls quan el validi.';
+  }
+  // Disponibilitat segons el club seu triat (l'admin atorga els drets al club)
+  const DISP = <%- JSON.stringify(typeof disponibilitatPerClub !== 'undefined' ? disponibilitatPerClub : {}) %>;
+  function actualitzaDisponibilitat() {
+    const disp = DISP[selClub.value] || { inscripcions: false, torneig: false };
+    document.querySelectorAll('#graellaServeis .targeta-servei').forEach(lab => {
+      const clau = lab.dataset.servei;
+      if (clau === 'dashboard') return;
+      const radio = lab.querySelector('input[name="servei"]');
+      const nota = lab.querySelector('.nota-bloqueig');
+      if (radio.dataset.bloqueigOrdre === '1') return;
+      const esActual = lab.dataset.esActual === '1';
+      const bloq = !disp[clau] && !esActual;
+      radio.disabled = bloq;
+      lab.classList.toggle('deshab', bloq);
+      if (nota) nota.style.display = bloq ? '' : 'none';
+      if (bloq && radio.checked) {
+        const dash = document.querySelector('input[name="servei"][value="dashboard"]');
+        if (dash && !dash.disabled) dash.checked = true;
+      }
+    });
+    actualitza();
   }
   document.querySelectorAll('input[name="servei"]').forEach(r => r.addEventListener('change', actualitza));
-  actualitza();
+  selClub.addEventListener('change', actualitzaDisponibilitat);
+  actualitzaDisponibilitat();
 })();
 </script>
   <div class="camp"><label>Com s'hi inscriu la gent?</label>

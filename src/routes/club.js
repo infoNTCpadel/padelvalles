@@ -7,6 +7,7 @@ import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
+import { dretsPerClubs, teDret, consumeixDret, alliberaDret, resumDrets } from '../lib/autoritzacions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub, sendSollicitudServei } from '../mail.js';
 
@@ -200,8 +201,10 @@ r.get('/club/panel', nomesClub, (req, res) => {
     JOIN organizers o ON o.id = t.organizer_id
     WHERE t.club_id IN (${ids.map(() => '?').join(',')}) AND t.status = 'pending_club'
     ORDER BY t.created_at ASC`).all(...ids) : [];
-  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor, pendentsOrg, SERVEIS,
-    validat: req.query.validat || null, rebutjat: req.query.rebutjat || null });
+  const serveisPerClub = {};
+  for (const c of clubs) { try { serveisPerClub[c.id] = resumDrets(c.id); } catch { /* sense taula */ } }
+  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor, pendentsOrg, SERVEIS, serveisPerClub,
+    validat: req.query.validat || null, rebutjat: req.query.rebutjat || null, error: req.query.error || null });
 });
 
 // Formulari de torneig
@@ -233,6 +236,7 @@ r.get('/club/torneig/nou', nomesGestor, (req, res) => {
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
   res.render('club-torneig-form', {
     titol: 'Nou torneig', t: null, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS, quotes, teInscrits: 0,
+    disponibilitatPerClub: dretsPerClubs(clubs.map(c => c.id)),
     filesCategories: filesCategories(null, null), potCartell: false, cartellMissatge: null, cartellErrorMsg: null,
     error: pendents >= 3 ? 'Tens 3 tornejos pendents de revisió. Espera que els aprovem abans de crear-ne més.' : null
   });
@@ -279,57 +283,70 @@ function desaTorneig(req, id) {
   if (!dades.name || !dades.starts_at) throw new Error('Falten el nom o la data del torneig.');
   if (!id && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
 
-  let tid = id;
-  let recreaCategories = true;
-  if (id) {
-    const actual = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
-    if (!actual || !potGestionar(req.session.user.id, actual.club_id, esAdmin)) throw new Error('Torneig no trobat.');
-    // L'admin conserva l'estat en editar (p. ex. només canvia l'enllaç d'inscripció);
-    // el club torna a moderació.
-    const nouEstat = esAdmin ? actual.status : 'pending';
-    const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
-      WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
-    if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
-    // Amb inscripcions actives no es pot baixar de servei (p. ex. de Torneig a Dashboard)
-    const serveiActual = serveiValid(actual.servei);
-    if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiActual]) {
-      throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiActual].nom} al servei ${SERVEIS[dades.servei].nom}.`);
-    }
-    db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
-      registration_info=?, registration_url=?, registration_mode=?, servei=?, registration_deadline=?,
-      unregister_hours=?, tipus=?, mostra_inscrits=?, description=?, status=?, reject_reason='' WHERE id=?`)
-      .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei, dades.registration_deadline,
-        dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, nouEstat, id);
-    if (nInscrits > 0) {
-      // Amb inscripcions actives no es poden canviar les categories, només les places
-      recreaCategories = false;
-      for (const cat of db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(id)) {
-        const v = String(req.body['places_' + cat.id] || '').trim();
-        const nou = v === '' ? null : Math.min(500, Math.max(1, parseInt(v, 10) || 1));
-        const nReg = db.prepare(`SELECT COUNT(*) n FROM registrations
-          WHERE category_id = ? AND status = 'registered'`).get(cat.id).n;
-        if (nou !== null && nou < nReg) throw new Error(`«${MODALITATS[cat.modality]}» ja té ${nReg} parelles inscrites: no pots baixar de ${nReg} places.`);
-        db.prepare('UPDATE tournament_categories SET max_pairs = ? WHERE id = ?').run(nou, cat.id);
+  // Tot el guardat (torneig + categories + crèdits) en una transacció:
+  // si el club no té dret al servei, no es guarda res.
+  return transaccio(() => {
+    let tid = id;
+    let recreaCategories = true;
+    let serveiAntic = 'dashboard';
+    if (id) {
+      const actual = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+      if (!actual || !potGestionar(req.session.user.id, actual.club_id, esAdmin)) throw new Error('Torneig no trobat.');
+      // L'admin conserva l'estat en editar (p. ex. només canvia l'enllaç d'inscripció);
+      // el club torna a moderació.
+      const nouEstat = esAdmin ? actual.status : 'pending';
+      const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
+        WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
+      if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
+      // Amb inscripcions actives no es pot baixar de servei (p. ex. de Torneig a Dashboard)
+      serveiAntic = serveiValid(actual.servei);
+      if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiAntic]) {
+        throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiAntic].nom} al servei ${SERVEIS[dades.servei].nom}.`);
+      }
+      db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
+        registration_info=?, registration_url=?, registration_mode=?, servei=?, registration_deadline=?,
+        unregister_hours=?, tipus=?, mostra_inscrits=?, description=?, status=?, reject_reason='' WHERE id=?`)
+        .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
+          dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei, dades.registration_deadline,
+          dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, nouEstat, id);
+      if (nInscrits > 0) {
+        // Amb inscripcions actives no es poden canviar les categories, només les places
+        recreaCategories = false;
+        for (const cat of db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(id)) {
+          const v = String(req.body['places_' + cat.id] || '').trim();
+          const nou = v === '' ? null : Math.min(500, Math.max(1, parseInt(v, 10) || 1));
+          const nReg = db.prepare(`SELECT COUNT(*) n FROM registrations
+            WHERE category_id = ? AND status = 'registered'`).get(cat.id).n;
+          if (nou !== null && nou < nReg) throw new Error(`«${MODALITATS[cat.modality]}» ja té ${nReg} parelles inscrites: no pots baixar de ${nReg} places.`);
+          db.prepare('UPDATE tournament_categories SET max_pairs = ? WHERE id = ?').run(nou, cat.id);
+        }
+      } else {
+        db.prepare('DELETE FROM tournament_categories WHERE tournament_id = ?').run(id);
       }
     } else {
-      db.prepare('DELETE FROM tournament_categories WHERE tournament_id = ?').run(id);
+      const info = db.prepare(`INSERT INTO tournaments
+        (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, servei,
+         registration_deadline, unregister_hours, tipus, mostra_inscrits, description, status, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
+        .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
+          dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei,
+          dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, req.session.user.id);
+      tid = info.lastInsertRowid;
     }
-  } else {
-    const info = db.prepare(`INSERT INTO tournaments
-      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, servei,
-       registration_deadline, unregister_hours, tipus, mostra_inscrits, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
-      .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei,
-        dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, req.session.user.id);
-    tid = info.lastInsertRowid;
-  }
-  if (recreaCategories) {
-    const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
-    catMods.forEach((m, i) => ins.run(tid, m, String(catNivells[i] || '').trim().slice(0, 60), maxPairs(i)));
-  }
-  return tid;
+    if (recreaCategories) {
+      const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');
+      catMods.forEach((m, i) => ins.run(tid, m, String(catNivells[i] || '').trim().slice(0, 60), maxPairs(i)));
+    }
+    // Drets del servei: consumir/alliberar crèdits del club
+    if (serveiAntic !== dades.servei) {
+      if (serveiAntic !== 'dashboard') alliberaDret(dades.club_id, serveiAntic);
+      if (dades.servei !== 'dashboard') {
+        const rc = consumeixDret(dades.club_id, dades.servei);
+        if (!rc.ok) throw new Error(`El club no té autorització per al servei ${SERVEIS[dades.servei].nom}. Sol·licita l'accés des de Serveis.`);
+      }
+    }
+    return tid;
+  });
 }
 
 r.post('/club/torneig/nou', nomesGestor, (req, res) => {
@@ -342,7 +359,7 @@ r.post('/club/torneig/nou', nomesGestor, (req, res) => {
     const quotes = {};
     for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
     res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS,
-      quotes, teInscrits: 0, filesCategories: filesCategories(null, req.body), error: e.message,
+      quotes, teInscrits: 0, disponibilitatPerClub: dretsPerClubs(clubs.map(c => c.id)), filesCategories: filesCategories(null, req.body), error: e.message,
       potCartell: false, cartellMissatge: null, cartellErrorMsg: null });
   }
 });
@@ -364,7 +381,7 @@ r.get('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   if (req.query.cartell === 'esborrat') cartellMissatge = 'Cartell esborrat.';
   if (req.query.cartell_error) cartellErrorMsg = String(req.query.cartell_error);
   res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS,
-    quotes, teInscrits, filesCategories: filesCategories(t, null), error: null,
+    quotes, teInscrits, disponibilitatPerClub: dretsPerClubs(clubs.map(c => c.id)), filesCategories: filesCategories(t, null), error: null,
     potCartell, cartellMissatge, cartellErrorMsg });
 });
 
@@ -562,7 +579,15 @@ r.use(rutesCompeticio({
 r.post('/club/torneig/:id/duplica', nomesGestor, (req, res) => {
   const t = agafaTorneigClub(req, res);
   if (!t) return;
-  const nou = transaccio(() => {
+  let nou;
+  try {
+  nou = transaccio(() => {
+    // Duplicar un torneig de pagament també consumeix un dret del club
+    const serveiDup = serveiValid(t.servei);
+    if (serveiDup !== 'dashboard') {
+      const rc = consumeixDret(t.club_id, serveiDup);
+      if (!rc.ok) throw new Error(`El club no té autorització per al servei ${SERVEIS[serveiDup].nom}.`);
+    }
     const r = db.prepare(`INSERT INTO tournaments
       (club_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
        registration_mode, servei, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
@@ -576,6 +601,9 @@ r.post('/club/torneig/:id/duplica', nomesGestor, (req, res) => {
     for (const c of cats) ins.run(nouId, c.modality, c.level, c.max_pairs);
     return nouId;
   });
+  } catch (e) {
+    return res.redirect('/club/panel?error=' + encodeURIComponent(e.message));
+  }
   res.redirect(`/club/torneig/${nou}/edita?duplicat=1`);
 });
 
