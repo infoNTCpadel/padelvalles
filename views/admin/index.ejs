@@ -38,6 +38,21 @@
   </div>
 <% } %>
 
+<h2 class="seccio">Sol·licituds de servei (<%= (typeof sollicitudsServei !== 'undefined' ? sollicitudsServei : []).length %>)</h2>
+<% const __sol = typeof sollicitudsServei !== 'undefined' ? sollicitudsServei : []; %>
+<% if (!__sol.length) { %><p>No n'hi ha cap.</p><% } %>
+<% for (const s of __sol) { %>
+  <div class="dades" style="margin-bottom:.8rem">
+    <strong><%= s.servei === 'torneig' ? '🏆 Torneig' : '📝 Inscripcions' %></strong> · <%= s.club_nom %>
+    <% if (s.torneig_nom) { %> · torneig «<%= s.torneig_nom %>»<% } %>
+    <div class="meta">Sol·licitat per <%= s.qui %> (<%= s.qui_email %>) · 📞 <%= s.telefon %> · <%= (s.created_at || '').slice(0, 16).replace('T', ' ') %></div>
+    <% if (s.missatge) { %><div class="meta">💬 <%= s.missatge %></div><% } %>
+    <div class="fila" style="margin-top:.5rem">
+      <form class="enlinia" action="/admin/serveis/<%= s.id %>/gestionada" method="post"><button class="boto menut">Marca com a gestionada</button></form>
+    </div>
+  </div>
+<% } %>
+
 <h2 class="seccio">Tornejos pendents de revisió (<%= tornejosPendents.length %>)</h2>
 <% if (!tornejosPendents.length) { %><p>No n'hi ha cap.</p><% } %>
 <% for (const t of tornejosPendents) { %>

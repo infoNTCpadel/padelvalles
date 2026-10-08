@@ -14,7 +14,7 @@ const __min = __ordre[serveiMinim] || 0;
       <label class="targeta-servei<%= __sel ? ' sel' : '' %><%= __deshab ? ' deshab' : '' %>">
         <input type="radio" name="servei" value="<%= clau %>"<%= __sel ? ' checked' : '' %><%= __deshab ? ' disabled' : '' %>>
         <strong><%= s.icona %> <%= s.nom %></strong>
-        <span class="preu"><%= s.preu %><% if (clau !== 'dashboard') { %> <span class="meta">· el primer gratis</span><% } %></span>
+        <span class="preu"><%= s.preu %></span>
         <span class="meta"><%= s.descripcio %></span>
       </label>
     <% } %>

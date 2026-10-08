@@ -1,0 +1,34 @@
+<h1>Sol·licita l'accés a un servei</h1>
+<p class="meta">Emplena el formulari i et contactarem personalment amb tots els detalls i preus, sense compromís.</p>
+<% if (typeof ok !== 'undefined' && ok) { %><div class="exit">Sol·licitud enviada. Et contactarem ben aviat.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/club/serveis/sollicita" method="post">
+  <div class="camp"><label>Quin servei t'interessa?</label>
+    <label class="opcio"><input type="radio" name="servei" value="inscripcions"<%= serveiTriat !== 'torneig' ? ' checked' : '' %>> <strong>📝 Inscripcions</strong> <span class="meta">— centralitzem les inscripcions del teu torneig</span></label>
+    <label class="opcio"><input type="radio" name="servei" value="torneig"<%= serveiTriat === 'torneig' ? ' checked' : '' %>> <strong>🏆 Torneig</strong> <span class="meta">— la competició sencera: inscripcions + quadres</span></label>
+  </div>
+  <div class="camp"><label>Club</label>
+    <% if (clubs.length > 1) { %>
+      <select name="club_id" required>
+        <% for (const c of clubs) { %><option value="<%= c.id %>"><%= c.name %></option><% } %>
+      </select>
+    <% } else { %>
+      <p><strong><%= clubs[0].name %></strong></p>
+      <input type="hidden" name="club_id" value="<%= clubs[0].id %>">
+    <% } %>
+  </div>
+  <div class="camp"><label>Torneig (opcional)</label>
+    <select name="tournament_id">
+      <option value="">Encara no l'he creat / és per a un futur torneig</option>
+      <% for (const t of tornejos) { %><option value="<%= t.id %>"><%= t.name %> (<%= (t.starts_at || '').slice(0, 10) %>)</option><% } %>
+    </select>
+  </div>
+  <div class="camp"><label>Telèfon de contacte</label>
+    <input name="telefon" type="tel" maxlength="20" required value="<%= telefon || '' %>" placeholder="600 123 456">
+  </div>
+  <div class="camp"><label>Missatge (opcional)</label>
+    <textarea name="missatge" rows="3" maxlength="1000" placeholder="Explica'ns què necessites..."></textarea>
+  </div>
+  <button class="boto" type="submit">Envia la sol·licitud</button>
+</form>
+<p class="meta"><a href="/serveis">← Torna als serveis</a></p>

@@ -269,7 +269,7 @@ r.get('/serveis', (req, res) => {
     } catch { /* usuari sense clubs */ }
   }
   res.render('serveis', { titol: 'Serveis per a clubs', gestionaClubs,
-    metaDescription: 'Serveis de PadelVallès per a clubs: Dashboard gratuït, Inscripcions centralitzades i gestió completa del Torneig. 19 € per torneig, el primer gratis.',
+    metaDescription: 'Serveis de PadelVallès per a clubs: Dashboard gratuït, Inscripcions centralitzades i gestió completa del Torneig. Sol·licita l\u2019accés i et contactarem.',
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/serveis` });
 });
 

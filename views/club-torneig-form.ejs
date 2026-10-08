@@ -109,11 +109,8 @@ function actualitzaQuota() {
   const esPV = serveiTriat() !== 'dashboard';
   camps.style.display = esPV ? '' : 'none';
   if (!esPV) { avis.style.display = 'none'; return; }
-  const n = QUOTES[selClub.value] || 0;
   avis.style.display = '';
-  avis.innerHTML = n === 0
-    ? '<strong>El primer torneig del club amb servei de pagament és gratuït.</strong> A partir del segon: 19 € per torneig.'
-    : '<strong>Recorda:</strong> aquest torneig té una quota de <strong>19 €</strong> (el primer amb servei de pagament és gratuït).';
+  avis.innerHTML = '<strong>Servei de pagament.</strong> <a href="/club/serveis/sollicita">Sol·licita l\u2019accés aquí</a> i et contactarem personalment amb tots els detalls.';
 }
 selClub.addEventListener('change', actualitzaQuota);
 document.querySelectorAll('input[name="servei"]').forEach(r => r.addEventListener('change', actualitzaQuota));

@@ -50,7 +50,25 @@ r.get('/', (req, res) => {
     SELECT o.*, u.name AS qui, u.email AS qui_email
     FROM organizers o JOIN users u ON u.id = o.user_id
     WHERE o.status = 'pending' ORDER BY o.created_at`).all();
-  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats, organitzadorsPendents });
+  let sollicitudsServei = [];
+  try {
+    sollicitudsServei = db.prepare(`
+      SELECT s.*, c.name AS club_nom, u.name AS qui, u.email AS qui_email, t.name AS torneig_nom
+      FROM servei_sollicituds s
+      JOIN clubs c ON c.id = s.club_id
+      JOIN users u ON u.id = s.user_id
+      LEFT JOIN tournaments t ON t.id = s.tournament_id
+      WHERE s.status = 'pending' ORDER BY s.created_at DESC`).all();
+  } catch { /* taula encara no creada */ }
+  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats, organitzadorsPendents, sollicitudsServei });
+});
+
+// Marcar una sol·licitud de servei com a gestionada
+r.post('/serveis/:id/gestionada', (req, res) => {
+  db.prepare(`UPDATE servei_sollicituds SET status = 'gestionada', gestionada_at = datetime('now')
+              WHERE id = ? AND status = 'pending'`).run(req.params.id);
+  log(req.session.user.id, 'servei_gestionat', 'servei_sollicitud', req.params.id);
+  res.redirect('/admin');
 });
 
 // Aprovar / rebutjar club

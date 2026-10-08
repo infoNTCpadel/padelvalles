@@ -333,6 +333,22 @@ for (const [taula, columna, def] of [
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
 }
 
+// Sol·licituds d'accés als serveis de pagament (només clubs confirmats).
+// La venda és personal (Mathius contacta amb preus); aquí queda el registre.
+db.exec(`
+CREATE TABLE IF NOT EXISTS servei_sollicituds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  club_id INTEGER NOT NULL REFERENCES clubs(id),
+  servei TEXT NOT NULL DEFAULT 'inscripcions',
+  tournament_id INTEGER REFERENCES tournaments(id),
+  telefon TEXT DEFAULT '',
+  missatge TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  gestionada_at TEXT
+)`);
+
 // Tornejos: servei contractat (dashboard | inscripcions | torneig).
 // Migració dels existents: els d'inscripció a PadelVallès passen a 'inscripcions',
 // excepte els que ja tenen competicions creades, que passen a 'torneig'.

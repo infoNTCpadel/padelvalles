@@ -24,7 +24,7 @@
   <article class="targeta">
     <div class="cos">
       <h2>📝 Inscripcions</h2>
-      <p><strong>19 €</strong> <span class="meta">per torneig · el primer, gratis</span></p>
+      <p class="meta">Servei de pagament, sense permanència.</p>
       <p class="meta">Oblida't del WhatsApp i l'Excel: centralitzem les inscripcions.</p>
       <ul class="llista-neta">
         <li>✓ Tot lo del Dashboard</li>
@@ -34,14 +34,14 @@
         <li>✓ Baixes automàtiques fins a 48 h abans</li>
         <li>✓ Control de pagats i exportació CSV</li>
       </ul>
-      <p><a class="boto" href="mailto:info@padelvalles.com?subject=Servei%20Inscripcions%20per%20al%20meu%20club">Sol·licita-ho</a></p>
+      <% if (__teClub) { %><p><a class="boto" href="/club/serveis/sollicita?servei=inscripcions">Sol·licita l'accés</a></p><% } else { %><p class="meta">Disponible per a clubs confirmats. <a href="/club/sollicita">Sol·licita el compte del teu club</a>.</p><% } %>
     </div>
   </article>
 
   <article class="targeta">
     <div class="cos">
       <h2>🏆 Torneig</h2>
-      <p><strong>19 €</strong> <span class="meta">per torneig · el primer, gratis</span></p>
+      <p class="meta">Servei de pagament, sense permanència.</p>
       <p class="meta">La competició sencera, de les inscripcions al quadre final.</p>
       <ul class="llista-neta">
         <li>✓ Tot lo d'Inscripcions</li>
@@ -49,10 +49,10 @@
         <li>✓ Quadres d'eliminatòria amb caps de sèrie</li>
         <li>✓ Resultats i classificacions</li>
       </ul>
-      <p><a class="boto" href="mailto:info@padelvalles.com?subject=Servei%20Torneig%20per%20al%20meu%20club">Sol·licita-ho</a></p>
+      <% if (__teClub) { %><p><a class="boto" href="/club/serveis/sollicita?servei=torneig">Sol·licita l'accés</a></p><% } else { %><p class="meta">Disponible per a clubs confirmats. <a href="/club/sollicita">Sol·licita el compte del teu club</a>.</p><% } %>
     </div>
   </article>
 </div>
 
-<p class="meta">Preus per torneig, sense permanència ni quota d'alta. El primer torneig amb Inscripcions o Torneig és gratuït: el segon i següents, 19 € cadascun.</p>
+<p class="meta">Sense permanència ni quota d'alta. Sol·licita l'accés i et contactarem personalment amb tots els detalls.</p>
 <p class="meta">Dubtes? Escriu-nos a <a href="mailto:info@padelvalles.com">info@padelvalles.com</a>.</p>

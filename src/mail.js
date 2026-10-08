@@ -303,3 +303,18 @@ export function sendTorneigValidatClub(email, nom, torneigNom, clubNom, validat,
         <p>Pots parlar amb el club i tornar a proposar el torneig quan ho tingueu aclarit.</p>`,
   });
 }
+
+export function sendSollicitudServei(email, { clubNom, qui, email: emailQui, telefon, servei, torneigNom, missatge }) {
+  return envia({
+    to: email, name: 'PadelVallès', tag: 'sol·licitud servei',
+    subject: `Nova sol·licitud de servei (${servei}): ${clubNom}`,
+    html: `<p>Hola,</p>
+      <p><strong>${esc(qui)}</strong> (${esc(emailQui)}) del club <strong>${esc(clubNom)}</strong> ha sol·licitat l'accés al servei <strong>${esc(servei)}</strong>.</p>
+      <ul>
+        <li>Telèfon: ${esc(telefon)}</li>
+        ${torneigNom ? `<li>Torneig: ${esc(torneigNom)}</li>` : ''}
+        ${missatge ? `<li>Missatge: ${esc(missatge)}</li>` : ''}
+      </ul>
+      <p>Gestiona-la des de <a href="${APP_URL}/admin">l'administració</a>.</p>`,
+  });
+}

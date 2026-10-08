@@ -108,7 +108,7 @@
     const esPV = serveiTriat() !== 'dashboard';
     camps.style.display = esPV ? '' : 'none';
     avis.style.display = esPV ? '' : 'none';
-    if (esPV) avis.innerHTML = '<strong>Servei de pagament:</strong> 19 € per torneig (el primer, gratis).';
+    if (esPV) avis.innerHTML = '<strong>Servei de pagament:</strong> et contactarem amb tots els detalls quan el club validi el torneig.';
   }
   document.querySelectorAll('input[name="servei"]').forEach(r => r.addEventListener('change', actualitza));
   actualitza();

@@ -8,7 +8,7 @@ import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
 import { rutesCompeticio } from './competicions.js';
-import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub } from '../mail.js';
+import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub, sendSollicitudServei } from '../mail.js';
 
 const r = Router();
 const nomesClub = [requireLogin, requireRole('club', 'admin', 'monitor'), requireVerified];
@@ -117,6 +117,69 @@ r.post('/club/sollicita', requireLogin, (req, res) => {
   db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
               VALUES (?, 'club_sollicitat', 'club', ?, ?)`).run(req.session.user.id, id, contacte);
   res.redirect('/club/sollicita?ok=1');
+});
+
+// Sol·licitar accés a un servei de pagament.
+// Només clubs ja registrats i confirmats (gestors): la venda és personal,
+// en Mathius contacta amb els preus. Queda registre a la BD + avís a l'admin.
+function dadesSollicitudServei(req) {
+  const esAdmin = req.session.user.role === 'admin';
+  const clubs = esAdmin
+    ? db.prepare('SELECT id, name FROM clubs ORDER BY name').all()
+    : clubsDe(req.session.user.id, req.session.user.role);
+  const ids = clubs.map(c => c.id);
+  const tornejos = ids.length ? db.prepare(`
+    SELECT t.id, t.name, t.starts_at, t.club_id FROM tournaments t
+    WHERE t.club_id IN (${ids.map(() => '?').join(',')})
+    ORDER BY t.starts_at DESC LIMIT 30`).all(...ids) : [];
+  return { clubs, tornejos };
+}
+
+r.get('/club/serveis/sollicita', nomesGestor, (req, res) => {
+  const { clubs, tornejos } = dadesSollicitudServei(req);
+  if (!clubs.length) return res.redirect('/club/sollicita');
+  res.render('club-servei-sollicita', {
+    titol: "Sol·licita l'accés a un servei", clubs, tornejos,
+    serveiTriat: req.query.servei === 'torneig' ? 'torneig' : 'inscripcions',
+    telefon: req.session.user.phone || '', error: null, ok: req.query.ok || null,
+  });
+});
+
+r.post('/club/serveis/sollicita', nomesGestor, (req, res) => {
+  const esAdmin = req.session.user.role === 'admin';
+  const { clubs, tornejos } = dadesSollicitudServei(req);
+  const mostra = (error) => res.render('club-servei-sollicita', {
+    titol: "Sol·licita l'accés a un servei", clubs, tornejos,
+    serveiTriat: req.body.servei === 'torneig' ? 'torneig' : 'inscripcions',
+    telefon: String(req.body.telefon || ''), error, ok: null,
+  });
+  const servei = req.body.servei === 'torneig' ? 'torneig' : 'inscripcions';
+  const clubId = Number(req.body.club_id);
+  if (!clubs.some(c => c.id === clubId)) return mostra('Tria un dels teus clubs.');
+  const tournamentId = Number(req.body.tournament_id) || null;
+  if (tournamentId && !tornejos.some(t => t.id === tournamentId && t.club_id === clubId)) {
+    return mostra('El torneig triat no és d\u2019aquest club.');
+  }
+  const telefon = String(req.body.telefon || '').trim().slice(0, 20);
+  if (!telefon) return mostra('Indica un telèfon de contacte.');
+  const missatge = String(req.body.missatge || '').trim().slice(0, 1000);
+  const jaPendent = db.prepare(`SELECT 1 FROM servei_sollicituds
+    WHERE club_id = ? AND servei = ? AND status = 'pending' LIMIT 1`).get(clubId, servei);
+  if (jaPendent) return mostra('Ja tens una sol·licitud pendent per a aquest servei i club.');
+  const info = db.prepare(`INSERT INTO servei_sollicituds
+    (user_id, club_id, servei, tournament_id, telefon, missatge)
+    VALUES (?, ?, ?, ?, ?, ?)`).run(req.session.user.id, clubId, servei, tournamentId, telefon, missatge);
+  db.prepare(`INSERT INTO moderation_log (actor_id, action, target_type, target_id, note)
+              VALUES (?, 'servei_sollicitat', 'servei_sollicitud', ?, ?)`)
+    .run(req.session.user.id, info.lastInsertRowid, `${servei} · club ${clubId}`);
+  // Avís a en Mathius (best-effort: si no hi ha Brevo, queda al log del servidor)
+  const clubNom = clubs.find(c => c.id === clubId)?.name || '';
+  const torneigNom = tornejos.find(t => t.id === tournamentId)?.name || '';
+  sendSollicitudServei('info@padelvalles.com', {
+    clubNom, qui: req.session.user.name, email: req.session.user.email,
+    telefon, servei: SERVEIS[servei].nom, torneigNom, missatge,
+  });
+  res.redirect('/club/serveis/sollicita?ok=1');
 });
 
 // Panell del club
