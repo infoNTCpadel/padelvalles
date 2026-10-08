@@ -80,13 +80,7 @@
     <% } %>
   </div>
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
-  <div class="camp"><label>On es fan les inscripcions?</label>
-    <select name="mode_inscripcio" id="modeInscripcio">
-      <option value="externa" <%= t && (t.registration_mode || t.mode_inscripcio || 'externa') === 'externa' ? 'selected' : '' %>>Al web del club (enllaç extern)</option>
-      <option value="padelvalles" <%= t && (t.registration_mode || t.mode_inscripcio) === 'padelvalles' ? 'selected' : '' %>>A PadelVallès</option>
-    </select>
-    <div id="avisQuota" class="avis" style="display:none;margin-top:.5rem"></div>
-  </div>
+  <%- include('_servei-torneig', { SERVEIS, serveiActual: (t && t.servei) || 'dashboard', serveiMinim: (teInscrits > 0 && t && t.servei) ? t.servei : 'dashboard' }) %>
   <div id="campsInscripcio" style="display:none">
     <div class="fila">
       <div class="camp"><label>Tancament d'inscripcions</label>
@@ -105,21 +99,24 @@
 <script>
 const QUOTES = <%- JSON.stringify(quotes || {}) %>;
 const selClub = document.querySelector('select[name="club_id"]');
-const selMode = document.getElementById('modeInscripcio');
 const avis = document.getElementById('avisQuota');
 const camps = document.getElementById('campsInscripcio');
+function serveiTriat() {
+  const r = document.querySelector('input[name="servei"]:checked');
+  return r ? r.value : 'dashboard';
+}
 function actualitzaQuota() {
-  const esPV = selMode.value === 'padelvalles';
+  const esPV = serveiTriat() !== 'dashboard';
   camps.style.display = esPV ? '' : 'none';
   if (!esPV) { avis.style.display = 'none'; return; }
   const n = QUOTES[selClub.value] || 0;
   avis.style.display = '';
   avis.innerHTML = n === 0
-    ? '<strong>El primer torneig del club amb inscripció a PadelVallès és gratuït.</strong> A partir del segon: 19 € per torneig.'
-    : '<strong>Recorda:</strong> aquest torneig té una quota de <strong>19 €</strong> (el primer amb inscripció a PadelVallès és gratuït). Consulta els <a href="/serveis">serveis per a clubs</a>.';
+    ? '<strong>El primer torneig del club amb servei de pagament és gratuït.</strong> A partir del segon: 19 € per torneig.'
+    : '<strong>Recorda:</strong> aquest torneig té una quota de <strong>19 €</strong> (el primer amb servei de pagament és gratuït).';
 }
 selClub.addEventListener('change', actualitzaQuota);
-selMode.addEventListener('change', actualitzaQuota);
+document.querySelectorAll('input[name="servei"]').forEach(r => r.addEventListener('change', actualitzaQuota));
 actualitzaQuota();
 </script>
   <div class="camp"><label>Com s'hi inscriu la gent?</label>

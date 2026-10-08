@@ -1,5 +1,9 @@
 <h1>Serveis per a clubs</h1>
 <p class="hero-sub">Tria què vols contractar per a cada torneig. Sense permanència: pagues per torneig, i el primer és gratis.</p>
+<% const __teClub = typeof gestionaClubs !== 'undefined' && gestionaClubs.length; %>
+<% if (__teClub) { %>
+<div class="exit">Ja gestiones un club a PadelVallès: <a href="/club/panel"><strong>ves al panell del club</strong></a> per crear tornejos amb aquests serveis.</div>
+<% } %>
 
 <div class="graella">
   <article class="targeta">
@@ -13,7 +17,7 @@
         <li>✓ Cartell automàtic per a cada torneig</li>
         <li>✓ Inscripcions al teu web o WhatsApp (enllaç extern)</li>
       </ul>
-      <p><a class="boto secundari" href="/club/sollicita">Sol·licita el compte del club</a></p>
+      <% if (__teClub) { %><p><a class="boto secundari" href="/club/panel">Ves al panell del club</a></p><% } else { %><p><a class="boto secundari" href="/club/sollicita">Sol·licita el compte del club</a></p><% } %>
     </div>
   </article>
 

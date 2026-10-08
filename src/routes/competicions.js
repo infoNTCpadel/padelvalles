@@ -47,6 +47,7 @@ export function rutesCompeticio(cfg) {
     if (!t) return;
     if (!exigeixCreador(req, res, t)) return;
     if (!nomesPV(t)) return res.status(400).send('Aquest torneig no té la inscripció a PadelVallès.');
+    if (t.servei !== 'torneig') return res.status(400).send('Aquest torneig no té el servei Torneig.');
     const categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
     const { perCat } = competicionsDe(t.id);
     const lliures = categories.filter(c => !perCat[c.id]);
@@ -73,6 +74,7 @@ export function rutesCompeticio(cfg) {
     };
     try {
       if (!nomesPV(t)) throw new Error('Aquest torneig no té la inscripció a PadelVallès.');
+      if (t.servei !== 'torneig') throw new Error('Aquest torneig no té el servei Torneig.');
       const { id } = creaCompeticio({
         tournament_id: t.id, category_id: Number(req.body.categoria),
         format: String(req.body.format || 'eliminatoria'), name: req.body.nom,
@@ -99,6 +101,7 @@ export function rutesCompeticio(cfg) {
     if (!t) return;
     if (!exigeixCreador(req, res, t)) return;
     if (!nomesPV(t)) return res.status(400).send('Aquest torneig no té la inscripció a PadelVallès.');
+    if (t.servei !== 'torneig') return res.status(400).send('Aquest torneig no té el servei Torneig.');
     res.render('competicions-form', {
       titol: 'Crea les competicions', t, base, ...dadesBulk(t), FORMATS, MODALITATS, error: null,
     });
@@ -111,6 +114,7 @@ export function rutesCompeticio(cfg) {
     if (!creador) return;
     try {
       if (!nomesPV(t)) throw new Error('Aquest torneig no té la inscripció a PadelVallès.');
+      if (t.servei !== 'torneig') throw new Error('Aquest torneig no té el servei Torneig.');
       const formats = req.body.formats || {};
       const items = Object.entries(formats).map(([category_id, format]) => ({ category_id, format }));
       const { creades } = creaCompeticionsBulk({

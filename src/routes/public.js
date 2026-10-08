@@ -256,8 +256,19 @@ r.post('/torneig/:id/avis', (req, res) => {
 });
 
 // Serveis per a clubs: què pot contractar cada club (Dashboard / Inscripcions / Torneig)
+// Si l'usuari ja gestiona un club, el CTA no li demana que torni a sol·licitar res:
+// l'envia al seu panell.
 r.get('/serveis', (req, res) => {
-  res.render('serveis', { titol: 'Serveis per a clubs',
+  let gestionaClubs = [];
+  if (req.session.user) {
+    try {
+      gestionaClubs = req.session.user.role === 'admin'
+        ? [{ id: 0, name: 'tots els clubs' }]
+        : db.prepare(`SELECT c.id, c.name FROM club_users cu
+            JOIN clubs c ON c.id = cu.club_id WHERE cu.user_id = ?`).all(req.session.user.id);
+    } catch { /* usuari sense clubs */ }
+  }
+  res.render('serveis', { titol: 'Serveis per a clubs', gestionaClubs,
     metaDescription: 'Serveis de PadelVallès per a clubs: Dashboard gratuït, Inscripcions centralitzades i gestió completa del Torneig. 19 € per torneig, el primer gratis.',
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/serveis` });
 });

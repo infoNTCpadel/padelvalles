@@ -7,6 +7,19 @@
 import db, { transaccio } from '../db.js';
 import { MODALITATS } from '../brand.js';
 
+// Serveis contractables per torneig (decisió de Mathius 2026-10-08):
+// - dashboard: directori + inscripció externa (gratis)
+// - inscripcions: inscripció centralitzada a PadelVallès (19 €/torneig, el primer gratis)
+// - torneig: inscripcions + gestió de competicions (19 €/torneig, el primer gratis)
+export const SERVEIS = {
+  dashboard:    { nom: 'Dashboard',    icona: '🪧', preu: 'Gratis', descripcio: 'El torneig al directori. Inscripcions al teu web o WhatsApp.' },
+  inscripcions: { nom: 'Inscripcions', icona: '📝', preu: '19 €',   descripcio: 'Centralitzem les inscripcions: llista d\u2019espera, baixes, CSV, pagats...' },
+  torneig:      { nom: 'Torneig',      icona: '🏆', preu: '19 €',   descripcio: 'Tot lo d\u2019Inscripcions + quadres, resultats i classificacions.' },
+};
+// Ordre jeràrquic: amb inscripcions actives només es pot pujar de servei, no baixar.
+export const ORDRE_SERVEI = { dashboard: 0, inscripcions: 1, torneig: 2 };
+export const serveiValid = (s) => Object.prototype.hasOwnProperty.call(SERVEIS, s) ? s : 'dashboard';
+
 export const FORMATS = {
   eliminatoria: {
     nom: 'Eliminatòria', actiu: true,

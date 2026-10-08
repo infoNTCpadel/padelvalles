@@ -6,7 +6,7 @@ import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
-import { competicionsDe, FORMATS, ESTATS_COMPETICIO } from '../lib/competicions.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub } from '../mail.js';
 
@@ -61,13 +61,21 @@ function potVeureInscrits(userId, clubId, esAdmin) {
 // Sol·licitar compte de club (qualsevol usuari registrat).
 // La sol·licitud queda PENDENT: és l'admin qui l'aprova i llavors l'usuari
 // passa a ser gestor del club. Així ningú pot autoassignar-se un club.
+// Clubs que l'usuari ja gestiona (confirmats): si en té, no cal que torni a
+// sol·licitar res — va directe al seu panell.
+function clubsGestionats(userId) {
+  return db.prepare(`SELECT c.id, c.name FROM club_users cu
+    JOIN clubs c ON c.id = cu.club_id WHERE cu.user_id = ? ORDER BY c.name`).all(userId);
+}
+
 r.get('/club/sollicita', requireLogin, (req, res) => {
   const clubs = db.prepare('SELECT id, name, town FROM clubs ORDER BY name').all();
   const meves = db.prepare(`
     SELECT cc.*, c.name AS club_nom FROM club_claims cc
     JOIN clubs c ON c.id = cc.club_id
     WHERE cc.user_id = ? ORDER BY cc.created_at DESC`).all(req.session.user.id);
-  res.render('club-sollicita', { titol: 'Sol·licita compte de club', clubs, error: null, ok: req.query.ok, meves });
+  res.render('club-sollicita', { titol: 'Sol·licita compte de club', clubs, error: null, ok: req.query.ok, meves,
+    gestionats: clubsGestionats(req.session.user.id) });
 });
 
 r.post('/club/sollicita', requireLogin, (req, res) => {
@@ -82,7 +90,7 @@ r.post('/club/sollicita', requireLogin, (req, res) => {
     JOIN clubs c ON c.id = cc.club_id
     WHERE cc.user_id = ? ORDER BY cc.created_at DESC`).all(req.session.user.id);
   const mostra = (error) => res.render('club-sollicita',
-    { titol: 'Sol·licita compte de club', clubs, error, ok: null, meves });
+    { titol: 'Sol·licita compte de club', clubs, error, ok: null, meves, gestionats: clubsGestionats(req.session.user.id) });
 
   if (!clubId && !(nouNom && nouPoble)) {
     return mostra('Tria el teu club o indica el nom i el municipi si no hi és.');
@@ -129,7 +137,7 @@ r.get('/club/panel', nomesClub, (req, res) => {
     JOIN organizers o ON o.id = t.organizer_id
     WHERE t.club_id IN (${ids.map(() => '?').join(',')}) AND t.status = 'pending_club'
     ORDER BY t.created_at ASC`).all(...ids) : [];
-  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor, pendentsOrg,
+  res.render('club-panel', { titol: 'Panell del club', clubs, tornejos, esMonitor, pendentsOrg, SERVEIS,
     validat: req.query.validat || null, rebutjat: req.query.rebutjat || null });
 });
 
@@ -161,7 +169,7 @@ r.get('/club/torneig/nou', nomesGestor, (req, res) => {
   const quotes = {};
   for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
   res.render('club-torneig-form', {
-    titol: 'Nou torneig', t: null, clubs, MODALITATS, TIPUS_TORNEIG, quotes, teInscrits: 0,
+    titol: 'Nou torneig', t: null, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS, quotes, teInscrits: 0,
     filesCategories: filesCategories(null, null), potCartell: false, cartellMissatge: null, cartellErrorMsg: null,
     error: pendents >= 3 ? 'Tens 3 tornejos pendents de revisió. Espera que els aprovem abans de crear-ne més.' : null
   });
@@ -169,7 +177,7 @@ r.get('/club/torneig/nou', nomesGestor, (req, res) => {
 
 function desaTorneig(req, id) {
   const esAdmin = req.session.user.role === 'admin';
-  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', mode_inscripcio = 'externa',
+  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', servei: serveiBody,
     data_limit = '', hores_baixa = '48', tipus = 'open', mostra_inscrits = '' } = req.body;
   const clubId = Number(club_id);
   if (!potGestionar(req.session.user.id, clubId, esAdmin)) throw new Error('No pots gestionar aquest club.');
@@ -177,7 +185,8 @@ function desaTorneig(req, id) {
   const catMods = [].concat(req.body.cat_modalitat || []).filter(m => MODALITATS[m]);
   const catNivells = [].concat(req.body.cat_nivell || []);
   const catPlaces = [].concat(req.body.cat_places || []);
-  const registration_mode = mode_inscripcio === 'padelvalles' ? 'padelvalles' : 'externa';
+  const servei = serveiValid(serveiBody);
+  const registration_mode = servei === 'dashboard' ? 'externa' : 'padelvalles';
   const deadline = String(data_limit).slice(0, 10);
   const unregisterHores = Math.max(0, Math.min(720, parseInt(hores_baixa, 10) || 0));
   const tipusT = TIPUS_TORNEIG[tipus] ? tipus : 'open';
@@ -197,6 +206,7 @@ function desaTorneig(req, id) {
     registration_info: String(via).trim().slice(0, 300),
     registration_url: String(url).trim().slice(0, 300),
     registration_mode,
+    servei,
     registration_deadline: deadline,
     unregister_hours: unregisterHores,
     tipus: tipusT,
@@ -217,11 +227,16 @@ function desaTorneig(req, id) {
     const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
     if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
+    // Amb inscripcions actives no es pot baixar de servei (p. ex. de Torneig a Dashboard)
+    const serveiActual = serveiValid(actual.servei);
+    if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiActual]) {
+      throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiActual].nom} al servei ${SERVEIS[dades.servei].nom}.`);
+    }
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
-      registration_info=?, registration_url=?, registration_mode=?, registration_deadline=?,
+      registration_info=?, registration_url=?, registration_mode=?, servei=?, registration_deadline=?,
       unregister_hours=?, tipus=?, mostra_inscrits=?, description=?, status=?, reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode, dades.registration_deadline,
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei, dades.registration_deadline,
         dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, nouEstat, id);
     if (nInscrits > 0) {
       // Amb inscripcions actives no es poden canviar les categories, només les places
@@ -239,11 +254,11 @@ function desaTorneig(req, id) {
     }
   } else {
     const info = db.prepare(`INSERT INTO tournaments
-      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode,
+      (club_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, servei,
        registration_deadline, unregister_hours, tipus, mostra_inscrits, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode,
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei,
         dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, req.session.user.id);
     tid = info.lastInsertRowid;
   }
@@ -263,7 +278,7 @@ r.post('/club/torneig/nou', nomesGestor, (req, res) => {
     const clubs = esAdmin ? db.prepare('SELECT * FROM clubs ORDER BY name').all() : clubsDe(req.session.user.id, req.session.user.role);
     const quotes = {};
     for (const c of clubs) quotes[c.id] = comptaAmbInscripcio(c.id);
-    res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG,
+    res.render('club-torneig-form', { titol: 'Nou torneig', t: req.body, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS,
       quotes, teInscrits: 0, filesCategories: filesCategories(null, req.body), error: e.message,
       potCartell: false, cartellMissatge: null, cartellErrorMsg: null });
   }
@@ -285,7 +300,7 @@ r.get('/club/torneig/:id/edita', nomesGestor, (req, res) => {
   if (req.query.cartell === 'ok') cartellMissatge = 'Cartell pujat correctament.';
   if (req.query.cartell === 'esborrat') cartellMissatge = 'Cartell esborrat.';
   if (req.query.cartell_error) cartellErrorMsg = String(req.query.cartell_error);
-  res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, TIPUS_TORNEIG,
+  res.render('club-torneig-form', { titol: 'Edita el torneig', t, clubs, MODALITATS, TIPUS_TORNEIG, SERVEIS,
     quotes, teInscrits, filesCategories: filesCategories(t, null), error: null,
     potCartell, cartellMissatge, cartellErrorMsg });
 });
@@ -487,11 +502,11 @@ r.post('/club/torneig/:id/duplica', nomesGestor, (req, res) => {
   const nou = transaccio(() => {
     const r = db.prepare(`INSERT INTO tournaments
       (club_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
-       registration_mode, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 'pending', ?, datetime('now'))`).run(
+       registration_mode, servei, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 'pending', ?, datetime('now'))`).run(
       t.club_id, (t.name || 'Torneig') + ' (còpia)', t.description || '', t.tipus || 'open',
       t.starts_at, t.ends_at, t.price_text || '', t.registration_info || '', t.registration_url || '',
-      t.registration_mode || 'externa', t.unregister_hours ?? 48, t.mostra_inscrits ?? 1, req.session.user.id);
+      t.registration_mode || 'externa', t.servei || 'dashboard', t.unregister_hours ?? 48, t.mostra_inscrits ?? 1, req.session.user.id);
     const nouId = r.lastInsertRowid;
     const cats = db.prepare('SELECT modality, level, max_pairs FROM tournament_categories WHERE tournament_id = ?').all(t.id);
     const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');

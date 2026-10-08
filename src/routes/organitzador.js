@@ -4,7 +4,7 @@ import { requireLogin, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { inscritsDe, pujada, tipusImatge, esborraFitxerPujat, filesCategories, dirPujades } from './club.js';
-import { competicionsDe, FORMATS, ESTATS_COMPETICIO } from '../lib/competicions.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendTorneigPendentValidacio } from '../mail.js';
 import fs from 'node:fs';
@@ -74,7 +74,7 @@ r.get('/organitzador/panel', nomesOrg, (req, res) => {
     SELECT t.*, c.name AS club_nom FROM tournaments t JOIN clubs c ON c.id = t.club_id
     WHERE t.organizer_id = ? ORDER BY t.starts_at DESC`).all(req.organitzador.id);
   res.render('organitzador-panel', {
-    titol: "Panell de l'organitzador", org: req.organitzador, tornejos,
+    titol: "Panell de l'organitzador", org: req.organitzador, tornejos, SERVEIS,
     enviat: req.query.enviat || null
   });
 });
@@ -107,7 +107,7 @@ r.post('/organitzador/perfil', nomesOrg, pujada.single('logo'), (req, res) => {
 // --- Crear / editar tornejos (sempre amb club seu, que els valida) ---
 function desaTorneigOrg(req, id) {
   const org = req.organitzador;
-  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', mode_inscripcio = 'externa',
+  const { club_id, nom, inici, fi, preu = '', via = '', url = '', descripcio = '', servei: serveiBody,
     data_limit = '', hores_baixa = '48', tipus = 'open', mostra_inscrits = '' } = req.body;
   const clubId = Number(club_id);
   const seu = db.prepare('SELECT * FROM clubs WHERE id = ? AND verified = 1').get(clubId);
@@ -115,7 +115,8 @@ function desaTorneigOrg(req, id) {
   const catMods = [].concat(req.body.cat_modalitat || []).filter(m => MODALITATS[m]);
   const catNivells = [].concat(req.body.cat_nivell || []);
   const catPlaces = [].concat(req.body.cat_places || []);
-  const registration_mode = mode_inscripcio === 'padelvalles' ? 'padelvalles' : 'externa';
+  const servei = serveiValid(serveiBody);
+  const registration_mode = servei === 'dashboard' ? 'externa' : 'padelvalles';
   const deadline = String(data_limit).slice(0, 10);
   const unregisterHores = Math.max(0, Math.min(720, parseInt(hores_baixa, 10) || 0));
   const tipusT = TIPUS_TORNEIG[tipus] ? tipus : 'open';
@@ -134,6 +135,7 @@ function desaTorneigOrg(req, id) {
     registration_info: String(via).trim().slice(0, 300),
     registration_url: String(url).trim().slice(0, 300),
     registration_mode,
+    servei,
     registration_deadline: deadline,
     unregister_hours: unregisterHores,
     tipus: tipusT,
@@ -151,12 +153,16 @@ function desaTorneigOrg(req, id) {
     const nInscrits = db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(id).n;
     if (nInscrits === 0 && !catMods.length) throw new Error('Afegeix com a mínim una categoria al torneig.');
+    const serveiActual = serveiValid(actual.servei);
+    if (nInscrits > 0 && ORDRE_SERVEI[dades.servei] < ORDRE_SERVEI[serveiActual]) {
+      throw new Error(`Aquest torneig ja té inscripcions: no pots baixar del servei ${SERVEIS[serveiActual].nom} al servei ${SERVEIS[dades.servei].nom}.`);
+    }
     // Qualsevol edició de l'organitzador torna a validació del club seu
     db.prepare(`UPDATE tournaments SET club_id=?, name=?, starts_at=?, ends_at=?, price_text=?,
-      registration_info=?, registration_url=?, registration_mode=?, registration_deadline=?,
+      registration_info=?, registration_url=?, registration_mode=?, servei=?, registration_deadline=?,
       unregister_hours=?, tipus=?, mostra_inscrits=?, description=?, status='pending_club', reject_reason='' WHERE id=?`)
       .run(dades.club_id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode, dades.registration_deadline,
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei, dades.registration_deadline,
         dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, id);
     if (nInscrits > 0) {
       recreaCategories = false;
@@ -174,11 +180,11 @@ function desaTorneigOrg(req, id) {
     avisaClubSeu(dades.club_id, dades.name, org.name);
   } else {
     const info = db.prepare(`INSERT INTO tournaments
-      (club_id, organizer_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode,
+      (club_id, organizer_id, name, starts_at, ends_at, price_text, registration_info, registration_url, registration_mode, servei,
        registration_deadline, unregister_hours, tipus, mostra_inscrits, description, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_club', ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_club', ?)`)
       .run(dades.club_id, org.id, dades.name, dades.starts_at, dades.ends_at, dades.price_text,
-        dades.registration_info, dades.registration_url, dades.registration_mode,
+        dades.registration_info, dades.registration_url, dades.registration_mode, dades.servei,
         dades.registration_deadline, dades.unregister_hours, dades.tipus, dades.mostra_inscrits, dades.description, req.session.user.id);
     tid = info.lastInsertRowid;
     avisaClubSeu(dades.club_id, dades.name, org.name);
@@ -211,7 +217,7 @@ function formOrg(req, res, t, error) {
   const seus = db.prepare('SELECT id, name, town FROM clubs WHERE verified = 1 ORDER BY name').all();
   res.render('organitzador-torneig-form', {
     titol: t && t.id ? 'Edita el torneig' : 'Nou torneig',
-    t, seus, MODALITATS, TIPUS_TORNEIG,
+    t, seus, MODALITATS, TIPUS_TORNEIG, SERVEIS,
     filesCategories: filesCategories(t, t && t.id ? null : req.body),
     teInscrits: t && t.id ? db.prepare(`SELECT COUNT(*) n FROM registrations
       WHERE tournament_id = ? AND status IN ('pending','registered','waitlist')`).get(t.id).n : 0,
@@ -263,11 +269,11 @@ r.post('/organitzador/torneig/:id/duplica', nomesOrg, (req, res) => {
   const nou = transaccio(() => {
     const q = db.prepare(`INSERT INTO tournaments
       (club_id, organizer_id, name, description, tipus, starts_at, ends_at, price_text, registration_info, registration_url,
-       registration_mode, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 'pending_club', ?, datetime('now'))`).run(
+       registration_mode, servei, registration_deadline, unregister_hours, mostra_inscrits, status, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 'pending_club', ?, datetime('now'))`).run(
       t.club_id, req.organitzador.id, (t.name || 'Torneig') + ' (còpia)', t.description || '', t.tipus || 'open',
       t.starts_at, t.ends_at, t.price_text || '', t.registration_info || '', t.registration_url || '',
-      t.registration_mode || 'externa', t.unregister_hours ?? 48, t.mostra_inscrits ?? 1, req.session.user.id);
+      t.registration_mode || 'externa', t.servei || 'dashboard', t.unregister_hours ?? 48, t.mostra_inscrits ?? 1, req.session.user.id);
     const nouId = q.lastInsertRowid;
     const cats = db.prepare('SELECT modality, level, max_pairs FROM tournament_categories WHERE tournament_id = ?').all(t.id);
     const ins = db.prepare('INSERT INTO tournament_categories (tournament_id, modality, level, max_pairs) VALUES (?, ?, ?, ?)');

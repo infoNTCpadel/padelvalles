@@ -30,12 +30,13 @@
 <h2 class="seccio">Els meus tornejos</h2>
 <% if (!tornejos.length) { %><p>Encara no has creat cap torneig.</p><% } %>
 <table class="llista">
-  <tr><th>Torneig</th><th>Club</th><th>Dates</th><th>Estat</th><th></th></tr>
-  <% for (const t of tornejos) { %>
+  <tr><th>Torneig</th><th>Club</th><th>Dates</th><th>Servei</th><th>Estat</th><th></th></tr>
+  <% for (const t of tornejos) { const sv = (typeof SERVEIS !== 'undefined' && SERVEIS[t.servei]) || { icona: '🪧', nom: 'Dashboard' }; %>
     <tr>
       <td><%= t.name %></td>
       <td><%= t.club_nom %></td>
       <td><%= t.starts_at %></td>
+      <td><span class="meta"><%= sv.icona %> <%= sv.nom %></span></td>
       <td><span class="insignia <%= t.status === 'published' ? 'publicat' : t.status === 'pending' || t.status === 'pending_club' ? 'pendent' : t.status === 'rejected' ? 'rebutjat' : 'esborrany' %>"><%= t.status === 'pending_club' ? 'pendent del club' : t.status %></span>
         <% if (t.status === 'rejected' && t.reject_reason) { %><br><small><%= t.reject_reason %></small><% } %>
       </td>

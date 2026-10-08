@@ -43,9 +43,11 @@
 <% const __pendentsComp = (typeof competicionsPerCat !== 'undefined' ? categories.filter(c => !competicionsPerCat[c.id]) : []); %>
 <% const __potCrearComp = (typeof esGestor !== 'undefined' ? esGestor : true) && (t.registration_mode || 'externa') === 'padelvalles'; %>
 <% if (typeof creades !== 'undefined' && creades) { %><div class="exit">S'han creat <%= creades %> competicions amb les parelles importades.</div><% } %>
-<% if (__pendentsComp.length && __potCrearComp) { %>
+<% if (__potCrearComp && (t.servei || 'dashboard') === 'torneig' && __pendentsComp.length) { %>
   <p><a class="boto" href="<%= base %>/torneig/<%= t.id %>/competicions/nova">🏆 Crea les competicions (<%= __pendentsComp.length %>)</a>
   <span class="meta">Una per categoria, amb les parelles ja importades.</span></p>
+<% } else if (__potCrearComp && (t.servei || 'dashboard') === 'inscripcions') { %>
+  <p class="ajuda">💡 Vols gestionar també els quadres, els resultats i les classificacions? <a href="/serveis">Descobreix el servei Torneig</a>.</p>
 <% } %>
 
 <% for (const c of categories) { %>

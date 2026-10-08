@@ -1,0 +1,25 @@
+<%#
+  Parcial: tria del servei del torneig (Dashboard / Inscripcions / Torneig).
+  Espera: SERVEIS, serveiActual ('dashboard' per defecte), serveiMinim
+  (el servei més baix permès; amb inscripcions no es pot baixar de servei).
+%>
+<%
+const __ordre = { dashboard: 0, inscripcions: 1, torneig: 2 };
+const __actual = serveiActual || 'dashboard';
+const __min = __ordre[serveiMinim] || 0;
+%>
+<div class="camp"><label>Quin servei vols per a aquest torneig?</label>
+  <div class="graella-serveis">
+    <% for (const clau of Object.keys(SERVEIS)) { const s = SERVEIS[clau]; const __sel = __actual === clau; const __deshab = __ordre[clau] < __min; %>
+      <label class="targeta-servei<%= __sel ? ' sel' : '' %><%= __deshab ? ' deshab' : '' %>">
+        <input type="radio" name="servei" value="<%= clau %>"<%= __sel ? ' checked' : '' %><%= __deshab ? ' disabled' : '' %>>
+        <strong><%= s.icona %> <%= s.nom %></strong>
+        <span class="preu"><%= s.preu %><% if (clau !== 'dashboard') { %> <span class="meta">· el primer gratis</span><% } %></span>
+        <span class="meta"><%= s.descripcio %></span>
+      </label>
+    <% } %>
+  </div>
+  <% if (__min > 0) { %><p class="ajuda">Aquest torneig ja té inscripcions: no es pot baixar de servei, però sí pujar (p. ex. d'Inscripcions a Torneig).</p><% } %>
+  <div id="avisQuota" class="avis" style="display:none;margin-top:.5rem"></div>
+  <p class="ajuda"><a href="/serveis" target="_blank" rel="noopener">Què inclou cada servei?</a></p>
+</div>

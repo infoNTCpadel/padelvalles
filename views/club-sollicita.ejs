@@ -1,5 +1,9 @@
 <h1>Sol·licita el compte del teu club</h1>
 <p>Amb el compte de club podràs publicar els teus tornejos. Els revisem un per un abans de publicar-los.</p>
+<% if (typeof gestionats !== 'undefined' && gestionats.length) { %>
+<div class="exit">Ja gestiones <strong><%= gestionats.map(g => g.name).join(', ') %></strong>: no cal que tornis a sol·licitar res. <a href="/club/panel"><strong>Ves al panell del club</strong></a>.<br>
+<span class="meta">Si gestiones un altre club, pots sol·licitar-lo aquí sota.</span></div>
+<% } %>
 <% if (ok) { %><div class="exit">Sol·licitud enviada. La revisarem i t'avisarem per email quan t'haguem donat accés.</div><% } %>
 <% if (error) { %><div class="error"><%= error %></div><% } %>
 <% if (meves && meves.length) { %>

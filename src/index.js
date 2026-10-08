@@ -58,6 +58,7 @@ app.use((req, res, next) => {
         .get(req.session.user.id);
     } catch { /* taula encara no creada */ }
   }
+  res.locals.tePanell = tePanell;
   res.locals.tePanellOrg = tePanellOrg;
   next();
 });

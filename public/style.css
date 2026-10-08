@@ -360,3 +360,12 @@ table.llista th { background: var(--bg); color: #fff; }
 @media (max-width: 640px) {
   .banda-cookies { left: .6rem; right: .6rem; bottom: .6rem; }
 }
+
+/* Targetes de servei (formulari de torneig) */
+.graella-serveis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.7rem; margin:.4rem 0; }
+.targeta-servei { display:block; border:2px solid var(--vora); border-radius:12px; padding:.7rem .8rem; cursor:pointer; background:var(--card); }
+.targeta-servei:hover { border-color:var(--accent); }
+.targeta-servei.sel { border-color:var(--bg); box-shadow:0 2px 8px rgba(122,32,54,.12); }
+.targeta-servei.deshab { opacity:.45; cursor:not-allowed; }
+.targeta-servei input { margin-right:.35rem; }
+.targeta-servei .preu { display:block; font-weight:700; margin:.15rem 0; }

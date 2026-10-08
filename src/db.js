@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   registration_info TEXT DEFAULT '',
   registration_url TEXT DEFAULT '',
   registration_mode TEXT NOT NULL DEFAULT 'externa',
+  servei TEXT NOT NULL DEFAULT 'dashboard',
   description TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'draft',
   reject_reason TEXT DEFAULT '',
@@ -330,6 +331,21 @@ for (const [taula, columna, def] of [
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
+}
+
+// Tornejos: servei contractat (dashboard | inscripcions | torneig).
+// Migració dels existents: els d'inscripció a PadelVallès passen a 'inscripcions',
+// excepte els que ja tenen competicions creades, que passen a 'torneig'.
+{
+  const cols = db.prepare('PRAGMA table_info(tournaments)').all().map(c => c.name);
+  if (!cols.includes('servei')) {
+    db.exec(`ALTER TABLE tournaments ADD COLUMN servei TEXT NOT NULL DEFAULT 'dashboard'`);
+    db.exec(`UPDATE tournaments SET servei = 'inscripcions' WHERE registration_mode = 'padelvalles'`);
+    try {
+      db.exec(`UPDATE tournaments SET servei = 'torneig'
+               WHERE id IN (SELECT DISTINCT tournament_id FROM competitions)`);
+    } catch { /* la taula competitions encara no existeix */ }
+  }
 }
 
 // Migració: parelles apuntades manualment pel club (jugadors sense compte).
