@@ -255,6 +255,13 @@ r.post('/torneig/:id/avis', (req, res) => {
   res.redirect(`/torneig/${t.id}?avis=enviat`);
 });
 
+// Serveis per a clubs: què pot contractar cada club (Dashboard / Inscripcions / Torneig)
+r.get('/serveis', (req, res) => {
+  res.render('serveis', { titol: 'Serveis per a clubs',
+    metaDescription: 'Serveis de PadelVallès per a clubs: Dashboard gratuït, Inscripcions centralitzades i gestió completa del Torneig. 19 € per torneig, el primer gratis.',
+    canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/serveis` });
+});
+
 // Pàgines legals (text breu de mostra; cal revisar amb assessor)
 r.get('/avis-legal', (req, res) => res.render('legal', { titol: 'Avís legal', pagina: 'avis' }));
 r.get('/privacitat', (req, res) => res.render('legal', { titol: 'Política de privacitat', pagina: 'privacitat' }));

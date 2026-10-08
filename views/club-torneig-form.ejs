@@ -115,8 +115,8 @@ function actualitzaQuota() {
   const n = QUOTES[selClub.value] || 0;
   avis.style.display = '';
   avis.innerHTML = n === 0
-    ? '<strong>El primer torneig del club amb inscripció a PadelVallès és gratuït.</strong>'
-    : '<strong>Recorda:</strong> a partir del segon torneig amb inscripció a PadelVallès s\u2019aplicarà una petita quota (fixa o per inscrit). T\u2019avisarem abans que entri en vigor.';
+    ? '<strong>El primer torneig del club amb inscripció a PadelVallès és gratuït.</strong> A partir del segon: 19 € per torneig.'
+    : '<strong>Recorda:</strong> aquest torneig té una quota de <strong>19 €</strong> (el primer amb inscripció a PadelVallès és gratuït). Consulta els <a href="/serveis">serveis per a clubs</a>.';
 }
 selClub.addEventListener('change', actualitzaQuota);
 selMode.addEventListener('change', actualitzaQuota);
