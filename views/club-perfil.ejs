@@ -11,6 +11,17 @@
     <div class="camp"><label>Telèfon</label><input name="telefon" maxlength="40" value="<%= club.phone || '' %>"></div>
   </div>
   <div class="camp"><label>Email de contacte</label><input name="email" type="email" maxlength="120" value="<%= club.email || '' %>"></div>
+  <h2>Xarxes socials</h2>
+  <p class="meta">Enllaços complets (https://…). Es mostren a la fitxa pública del club.</p>
+  <div class="fila">
+    <div class="camp"><label>Instagram</label><input name="instagram" maxlength="200" value="<%= club.instagram || '' %>" placeholder="https://instagram.com/..."></div>
+    <div class="camp"><label>Facebook</label><input name="facebook" maxlength="200" value="<%= club.facebook || '' %>" placeholder="https://facebook.com/..."></div>
+  </div>
+  <div class="fila">
+    <div class="camp"><label>X</label><input name="x" maxlength="200" value="<%= club.x || '' %>" placeholder="https://x.com/..."></div>
+    <div class="camp"><label>TikTok</label><input name="tiktok" maxlength="200" value="<%= club.tiktok || '' %>" placeholder="https://tiktok.com/..."></div>
+  </div>
+  <div class="camp"><label>YouTube</label><input name="youtube" maxlength="200" value="<%= club.youtube || '' %>" placeholder="https://youtube.com/..."></div>
   <div class="camp"><label>Nombre de pistes</label><input name="pistes" type="number" min="1" max="50" value="<%= club.courts || '' %>"></div>
   <div class="camp"><label>Descripció</label><textarea name="descripcio" rows="4" maxlength="1000"><%= club.description || '' %></textarea></div>
   <div class="camp"><label>Logo del club (PNG o JPG, màx. 2 MB)</label>

@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { sembraCandidats20260928 } from './seed-candidats-20260928.js';
 import { sembraCandidats20261012 } from './seed-candidats-20261012.js';
+import { sembraXarxes20261015 } from './seed-xarxes-20261015.js';
 
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -329,6 +330,11 @@ for (const [taula, columna, def] of [
   ['users', 'newsletter', `INTEGER NOT NULL DEFAULT 0`],
   ['tournaments', 'poster_path', `TEXT DEFAULT ''`],
   ['tournaments', 'organizer_id', `INTEGER REFERENCES organizers(id)`],
+  ['clubs', 'instagram', `TEXT DEFAULT ''`],
+  ['clubs', 'facebook', `TEXT DEFAULT ''`],
+  ['clubs', 'x', `TEXT DEFAULT ''`],
+  ['clubs', 'tiktok', `TEXT DEFAULT ''`],
+  ['clubs', 'youtube', `TEXT DEFAULT ''`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
@@ -459,6 +465,7 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_interests_t ON interests(tournament_id)`
 // Sembra idempotent de tornejos proposats per la cerca setmanal (pendents de revisió per l'admin)
 sembraCandidats20260928(db);
 sembraCandidats20261012(db);
+sembraXarxes20261015(db);
 
 // Transacció: tot o res. Si alguna ordre falla, es desfà tot el bloc.
 export function transaccio(fn) {

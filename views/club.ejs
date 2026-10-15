@@ -22,6 +22,12 @@
       <% } %>
     </div>
     <% if (club.phone) { %><div class="meta" style="margin-top:.5rem">📞 <%= club.phone %></div><% } %>
+    <% const xarxes = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['x', 'X'], ['tiktok', 'TikTok'], ['youtube', 'YouTube']].filter(([k]) => club[k]); %>
+    <% if (xarxes.length) { %>
+      <div class="xarxes" style="margin-top:.5rem">
+        <% for (const [k, nom] of xarxes) { %><a class="boto secundari menut" href="<%= club[k] %>" target="_blank" rel="nofollow noopener"><%= nom %></a><% } %>
+      </div>
+    <% } %>
   </div>
 </div>
 
