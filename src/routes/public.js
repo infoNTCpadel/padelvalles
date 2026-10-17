@@ -159,7 +159,9 @@ r.get('/torneig/:tid/quadre/:cid', (req, res) => {
   if (!quadre || !quadre.teQuadre) return res.status(404).render('404', { titol: 'Encara no hi ha quadre' });
   const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(comp.category_id);
   const etiquetaCat = cat ? (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '') : '';
-  res.render('quadre-public', { titol: 'Quadre: ' + comp.name, t, comp, quadre, etiquetaCat, FORMATS });
+  const baseUrl = process.env.APP_URL || 'https://padelvalles.com';
+  const publicUrl = `${baseUrl}/torneig/${t.id}/quadre/${comp.id}`;
+  res.render('quadre-public', { titol: 'Quadre: ' + comp.name, t, comp, quadre, etiquetaCat, FORMATS, publicUrl });
 });
 
 r.get('/torneig/:id/cartell.svg', (req, res) => {

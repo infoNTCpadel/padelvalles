@@ -229,10 +229,11 @@ export function rutesCompeticio(cfg) {
     if (!comp) return;
     const q = quadreDe(comp.id);
     const actius = participantsDe(comp.id, false);
+    const publicUrl = (process.env.APP_URL || 'https://padelvalles.com') + `/torneig/${t.id}/quadre/${comp.id}`;
     res.render('club-quadre', {
       titol: 'Quadre: ' + comp.name, t, base, comp, quadre: q,
       nActius: actius.length, ambSeed: actius.filter(p => p.seed !== null && p.seed !== undefined).length,
-      teResultats: teResultats(comp.id),
+      teResultats: teResultats(comp.id), publicUrl,
       ETIQUETA_RONDA, FORMATS, ESTATS_COMPETICIO,
       msg: req.query.msg || null, errorMsg: req.query.error || null,
     });

@@ -46,6 +46,29 @@ const marca = (p) => {
   <div class="exit" style="font-size:1.2rem">🏆 Campions: <strong><%= nomPareja(quadre.campio, quadre.campio.winner_id === quadre.campio.entry_a_id ? 'a' : 'b') %></strong></div>
 <% } %>
 
+<div class="avis">
+  <strong>🔗 Quadre públic</strong> — comparteix-lo amb els jugadors:
+  <div class="fila" style="margin-top:.4rem">
+    <input readonly id="url-publica" value="<%= publicUrl %>" style="flex:1;min-width:200px;font-family:monospace;padding:.4rem .6rem;border:1px solid var(--vora);border-radius:6px" onclick="this.select()">
+    <button class="boto secundari menut" id="copia-publica" type="button">📋 Copia</button>
+    <a class="boto secundari menut" target="_blank" rel="noopener"
+       href="https://wa.me/?text=<%= encodeURIComponent('Mira el quadre del torneig ' + t.name + ': ' + publicUrl) %>">💬 WhatsApp</a>
+  </div>
+</div>
+<script>
+(function () {
+  var b = document.getElementById('copia-publica');
+  var i = document.getElementById('url-publica');
+  if (!b || !navigator.clipboard) return;
+  b.addEventListener('click', function () {
+    navigator.clipboard.writeText(i.value).then(function () {
+      b.textContent = '✓ Copiat!';
+      setTimeout(function () { b.textContent = '📋 Copia'; }, 2000);
+    });
+  });
+})();
+</script>
+
 <div class="quadre">
 <% for (const ronda of quadre.rondes) { %>
   <div class="ronda">
@@ -60,10 +83,10 @@ const marca = (p) => {
         </div>
         <% const na = nomPareja(p, 'a'), nb = nomPareja(p, 'b'); %>
         <div class="parella<%= p.winner_id === p.entry_a_id ? ' guanyadora' : '' %>">
-          <span><% if (p.seed_a) { %><strong class="meta">[<%= p.seed_a %>]</strong> <% } %><%= na || '<span class="meta">Per decidir</span>' %></span>
+          <span><% if (p.seed_a) { %><strong class="meta">[<%= p.seed_a %>]</strong> <% } %><% if (na) { %><%= na %><% } else { %><span class="meta">Per decidir</span><% } %></span>
         </div>
         <div class="parella<%= p.winner_id === p.entry_b_id ? ' guanyadora' : '' %>">
-          <span><% if (p.seed_b) { %><strong class="meta">[<%= p.seed_b %>]</strong> <% } %><%= nb || (p.unplayed ? '<span class="meta">Exempt</span>' : '<span class="meta">Per decidir</span>') %></span>
+          <span><% if (p.seed_b) { %><strong class="meta">[<%= p.seed_b %>]</strong> <% } %><% if (nb) { %><%= nb %><% } else if (p.unplayed) { %><span class="meta">Exempt</span><% } else { %><span class="meta">Per decidir</span><% } %></span>
         </div>
         <% const m = marca(p); %>
         <% if (m) { %><div class="marcador"><%= m %></div><% } %>
