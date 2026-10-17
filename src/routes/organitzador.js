@@ -4,7 +4,7 @@ import { requireLogin, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
 import { inscritsDe, pujada, tipusImatge, esborraFitxerPujat, filesCategories, dirPujades } from './club.js';
-import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid, conciliaCategoria } from '../lib/competicions.js';
 import { dretsPerClubs, teDret, consumeixDret, alliberaDret } from '../lib/autoritzacions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendTorneigPendentValidacio } from '../mail.js';
@@ -408,6 +408,7 @@ r.post('/organitzador/torneig/:id/inscrits/nova', nomesOrg, (req, res) => {
       (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, added_by_club, status, paid, decided_at)
       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'))`)
       .run(t.id, cat.id, j1.id, j2.id, j1.nom, j2.nom, nouEstat, req.body.pagat ? 1 : 0);
+    if (nouEstat === 'registered') conciliaCategoria(cat.id, req.session.user.id);
     res.redirect(enrere + '?alta=1');
   } catch (e) {
     res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
@@ -432,6 +433,7 @@ r.post('/organitzador/torneig/:id/inscrits/:rid/treu', nomesOrg, (req, res) => {
     db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
     promouLlistaEspera(t.id, insc.category_id);
   });
+  conciliaCategoria(insc.category_id, req.session.user.id);
   res.redirect(`/organitzador/torneig/${t.id}/inscrits`);
 });
 

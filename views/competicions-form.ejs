@@ -18,7 +18,7 @@
           <% if (comp) { %>
             <span class="meta">✓ <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>"><%= comp.name %></a></span>
           <% } else { %>
-            <select name="formats[<%= c.id %>]">
+            <select name="formats[cat_<%= c.id %>]">
               <% for (const clau of Object.keys(FORMATS)) { const f = FORMATS[clau]; %>
                 <option value="<%= clau %>" <%= f.actiu ? '' : 'disabled' %> <%= clau === 'eliminatoria' ? 'selected' : '' %>><%= f.nom %><%= f.actiu ? '' : ' (properament)' %></option>
               <% } %>

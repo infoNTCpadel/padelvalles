@@ -14,7 +14,7 @@ import db from '../db.js';
 import { MODALITATS } from '../brand.js';
 import {
   FORMATS, ESTATS_COMPETICIO, resolCreador, competicionsDe, creaCompeticio,
-  creaCompeticionsBulk, importaInscrits, agafaCompeticio, participantsDe, fixaSeed,
+  creaCompeticionsBulk, agafaCompeticio, participantsDe, fixaSeed,
   canviaEstatParticipant, commutaPagatParticipant,
 } from '../lib/competicions.js';
 
@@ -116,7 +116,10 @@ export function rutesCompeticio(cfg) {
       if (!nomesPV(t)) throw new Error('Aquest torneig no té la inscripció a PadelVallès.');
       if (t.servei !== 'torneig') throw new Error('Aquest torneig no té el servei Torneig.');
       const formats = req.body.formats || {};
-      const items = Object.entries(formats).map(([category_id, format]) => ({ category_id, format }));
+      // El formulari envia formats[cat_<id>] (el prefix evita que qs ho parsegi com a array)
+      const items = Object.entries(formats)
+        .map(([k, format]) => ({ category_id: String(k).replace(/^cat_/, ''), format }))
+        .filter(it => /^\d+$/.test(it.category_id));
       const { creades } = creaCompeticionsBulk({
         tournament_id: t.id, items,
         fee_text: req.body.quota_text, fee_amount: req.body.quota_import,
@@ -145,23 +148,9 @@ export function rutesCompeticio(cfg) {
       titol: comp.name, t, base, comp, etiquetaCat,
       participants, actius: participants.filter(p => p.status === 'active'),
       FORMATS, ESTATS_COMPETICIO,
-      creada: req.query.creada || null, sinc: req.query.sinc || null,
+      creada: req.query.creada || null,
       errorMsg: req.query.error || null,
     });
-  });
-
-  // --- Sincronitza: importa les inscripcions confirmades noves ---
-  r.post(`${base}/torneig/:tid/competicio/:cid/sincronitza`, ...cfg.middlewares, (req, res) => {
-    const t = cfg.agafaTorneig(req, res);
-    if (!t) return;
-    if (!exigeixCreador(req, res, t)) return;
-    const comp = agafaComp(req, res, t);
-    if (!comp) return;
-    const n = importaInscrits(comp.id, comp.category_id);
-    db.prepare(`INSERT INTO competition_audit (competition_id, actor_id, action, detail)
-                VALUES (?, ?, 'sincronitza', ?)`)
-      .run(comp.id, req.session.user.id, `importades=${n}`);
-    res.redirect(`${base}/torneig/${t.id}/competicio/${comp.id}?sinc=${n}`);
   });
 
   // --- Accions sobre un participant ---

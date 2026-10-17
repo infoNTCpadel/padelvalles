@@ -335,10 +335,42 @@ for (const [taula, columna, def] of [
   ['clubs', 'x', `TEXT DEFAULT ''`],
   ['clubs', 'tiktok', `TEXT DEFAULT ''`],
   ['clubs', 'youtube', `TEXT DEFAULT ''`],
+  ['competition_entries', 'registration_id', `INTEGER REFERENCES registrations(id) ON DELETE SET NULL`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
 }
+
+// 2026-10-17: els participants de competició apunten a la inscripció (font única
+// de veritat). Backfill únic per a BDs ja creades + retirada d'actius obsolets.
+try {
+  const __ceCols = db.prepare(`PRAGMA table_info(competition_entries)`).all().map(c => c.name);
+  if (__ceCols.includes('registration_id')) {
+    const __pendents = db.prepare(`SELECT COUNT(*) n FROM competition_entries WHERE registration_id IS NULL`).get().n;
+    if (__pendents > 0) {
+      const __clau = (a, b, n1, n2) => `${a ?? 'n'}/${b ?? 'n'}|${n1 || ''}|${n2 || ''}`;
+      const __link = db.prepare(`UPDATE competition_entries SET registration_id = ? WHERE id = ?`);
+      for (const comp of db.prepare(`SELECT id, category_id FROM competitions WHERE category_id IS NOT NULL`).all()) {
+        const perClau = new Map();
+        for (const r of db.prepare(`SELECT id, player1_id, player2_id, player1_name, player2_name
+                                    FROM registrations WHERE category_id = ? ORDER BY id`).all(comp.category_id)) {
+          perClau.set(__clau(r.player1_id, r.player2_id, r.player1_name, r.player2_name), r.id);
+        }
+        const usats = new Set();
+        for (const e of db.prepare(`SELECT id, player1_id, player2_id, player1_name, player2_name
+                                    FROM competition_entries
+                                    WHERE competition_id = ? AND registration_id IS NULL`).all(comp.id)) {
+          const rid = perClau.get(__clau(e.player1_id, e.player2_id, e.player1_name, e.player2_name));
+          if (rid && !usats.has(rid)) { __link.run(rid, e.id); usats.add(rid); }
+        }
+      }
+      // Les entries actives d'inscripcions que ja no són 'registered' passen a retirades
+      db.exec(`UPDATE competition_entries SET status = 'withdrawn', seed = NULL
+               WHERE status = 'active' AND registration_id IS NOT NULL
+               AND (SELECT status FROM registrations r WHERE r.id = competition_entries.registration_id) != 'registered'`);
+    }
+  }
+} catch (e) { console.error('[migracio] backfill registration_id:', e.message); }
 
 // Autoritzacions de serveis per club (atorgades per l'admin).
 // - modalitat 'credits': quantitat de torneos amb aquest servei (usats = consumits)

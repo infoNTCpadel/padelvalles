@@ -6,7 +6,7 @@ import db, { transaccio } from '../db.js';
 import { requireLogin, requireRole, requireVerified } from '../middleware.js';
 import { MODALITATS, TIPUS_TORNEIG } from '../brand.js';
 import { comptaAmbInscripcio, promouLlistaEspera, potInscriure, placesCategoria } from '../lib/inscripcions.js';
-import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid } from '../lib/competicions.js';
+import { competicionsDe, FORMATS, ESTATS_COMPETICIO, SERVEIS, ORDRE_SERVEI, serveiValid, conciliaCategoria } from '../lib/competicions.js';
 import { dretsPerClubs, teDret, consumeixDret, alliberaDret, resumDrets } from '../lib/autoritzacions.js';
 import { rutesCompeticio } from './competicions.js';
 import { sendPromocioEspera, sendParellaAfegidaClub, sendMonitorAutoritzat, sendTorneigValidatClub, sendSollicitudServei } from '../mail.js';
@@ -646,6 +646,7 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
       (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, added_by_club, status, paid, decided_at)
       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'))`)
       .run(t.id, cat.id, j1.id, j2.id, j1.nom, j2.nom, nouEstat, req.body.pagat ? 1 : 0);
+    if (nouEstat === 'registered') conciliaCategoria(cat.id, req.session.user.id);
     const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');
     const enEspera = nouEstat === 'waitlist';
     if (j1.email) sendParellaAfegidaClub(j1.email, j1.nom, t.name, et, enEspera);
@@ -675,6 +676,8 @@ r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {
     db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
     promoguda = promouLlistaEspera(t.id, insc.category_id);
   });
+  // La competició es concilia sola: la baixa es retira i la promoguda entra
+  conciliaCategoria(insc.category_id, req.session.user.id);
   if (promoguda) {
     const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(promoguda.category_id);
     const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');

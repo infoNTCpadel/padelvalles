@@ -10,6 +10,7 @@ import {
   sendInvitacioParella, sendInvitacioAcceptada, sendInvitacioRebutjada,
   sendInscripcioConfirmada, sendPromocioEspera,
 } from '../mail.js';
+import { conciliaCategoria } from '../lib/competicions.js';
 
 const r = Router();
 const juga = [requireLogin, requireVerified];
@@ -99,6 +100,7 @@ r.post('/torneig/:id/invitacio/:rid/accepta', juga, (req, res) => {
     db.prepare(`UPDATE partner_search SET status = 'closed' WHERE tournament_id = ? AND status = 'open' AND user_id IN (?, ?)`)
       .run(t.id, insc.player1_id, insc.player2_id);
   });
+  if (nouEstat === 'registered') conciliaCategoria(insc.category_id, req.session.user.id);
   const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(insc.category_id);
   const { p1, p2 } = parellaDe(insc);
   const enEspera = nouEstat === 'waitlist';
@@ -153,6 +155,7 @@ r.post('/torneig/:id/baixa/:rid', juga, (req, res) => {
     db.prepare(`UPDATE registrations SET status = 'cancelled' WHERE id = ?`).run(insc.id);
     promoguda = promouLlistaEspera(t.id, insc.category_id);
   });
+  conciliaCategoria(insc.category_id, req.session.user.id);
   if (promoguda) {
     const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(promoguda.category_id);
     const { p1, p2 } = parellaDe(promoguda);

@@ -81,28 +81,66 @@ function clauParella(p1id, p2id, n1, n2) {
 }
 
 // Importa les inscripcions 'registered' d'una categoria com a participants.
-// Idempotent: no duplica les que ja hi són.
+// Idempotent: enllaça per registration_id (font única de veritat), no duplica.
 export function importaInscrits(competitionId, categoryId) {
   const existents = new Set(db.prepare(
-    `SELECT * FROM competition_entries WHERE competition_id = ? AND kind = 'pair'`)
+    `SELECT registration_id FROM competition_entries
+     WHERE competition_id = ? AND registration_id IS NOT NULL`)
+    .all(competitionId).map(e => e.registration_id));
+  // Salvaguarda per a entries antigues sense enllaç: evita duplicar per nom
+  const clausAntigues = new Set(db.prepare(
+    `SELECT * FROM competition_entries WHERE competition_id = ? AND kind = 'pair' AND registration_id IS NULL`)
     .all(competitionId).map(e => clauParella(e.player1_id, e.player2_id, e.player1_name, e.player2_name)));
   const regs = db.prepare(`
     SELECT * FROM registrations
     WHERE category_id = ? AND status = 'registered'
     ORDER BY decided_at ASC, id ASC`).all(categoryId);
   const ins = db.prepare(`INSERT INTO competition_entries
-    (competition_id, kind, player1_id, player2_id, player1_name, player2_name, status, paid)
-    VALUES (?, 'pair', ?, ?, ?, ?, 'active', ?)`);
+    (competition_id, kind, registration_id, player1_id, player2_id, player1_name, player2_name, status, paid)
+    VALUES (?, 'pair', ?, ?, ?, ?, ?, 'active', ?)`);
   let n = 0;
   for (const reg of regs) {
-    const k = clauParella(reg.player1_id, reg.player2_id, reg.player1_name, reg.player2_name);
-    if (existents.has(k)) continue;
-    ins.run(competitionId, reg.player1_id, reg.player2_id,
+    if (existents.has(reg.id)) continue;
+    if (clausAntigues.has(clauParella(reg.player1_id, reg.player2_id, reg.player1_name, reg.player2_name))) continue;
+    ins.run(competitionId, reg.id, reg.player1_id, reg.player2_id,
       reg.player1_name || '', reg.player2_name || '', reg.paid ? 1 : 0);
-    existents.add(k);
+    existents.add(reg.id);
     n++;
   }
   return n;
+}
+
+// Concilia els participants d'una competició amb les inscripcions (automàtic;
+// substitueix el botó manual "sincronitza"):
+// - crea participant per cada inscripció 'registered' sense entry
+// - retira els participants actius la inscripció dels quals ja no és 'registered'
+// Es respecta la retirada manual del gestor (no es reactiva res).
+export function conciliaCompeticio(competitionId, actorId = null) {
+  const comp = db.prepare('SELECT category_id FROM competitions WHERE id = ?').get(competitionId);
+  if (!comp || !comp.category_id) return { entrades: 0, tretes: 0 };
+  return transaccio(() => {
+    const entrades = importaInscrits(competitionId, comp.category_id);
+    const treure = db.prepare(`
+      SELECT e.id FROM competition_entries e
+      JOIN registrations r ON r.id = e.registration_id
+      WHERE e.competition_id = ? AND e.status = 'active' AND r.status != 'registered'`).all(competitionId);
+    for (const t of treure) canviaEstatParticipant(t.id, competitionId, 'withdrawn');
+    if (entrades || treure.length) {
+      db.prepare(`INSERT INTO competition_audit (competition_id, actor_id, action, detail)
+                  VALUES (?, ?, 'concilia', ?)`)
+        .run(competitionId, actorId || null, `entrades=${entrades}; tretes=${treure.length}`);
+    }
+    return { entrades, tretes: treure.length };
+  });
+}
+
+// Concilia la competició d'una categoria (crida-la després de qualsevol canvi
+// d'estat d'una inscripció). No fa res si la categoria no té competició.
+export function conciliaCategoria(categoryId, actorId = null) {
+  if (!categoryId) return null;
+  const comp = db.prepare('SELECT id FROM competitions WHERE category_id = ?').get(categoryId);
+  if (!comp) return null;
+  return conciliaCompeticio(comp.id, actorId);
 }
 
 // Crea la competició d'una categoria i hi converteix les inscripcions confirmades.
@@ -186,10 +224,22 @@ export function agafaCompeticio(competitionId, torneigId) {
 }
 
 export function participantsDe(competitionId, inclouBaixes = false) {
+  // Noms i pagat sempre en viu des de la inscripció (font única de veritat);
+  // les entries antigues sense enllaç fan servir les dades copiades.
+  // Defensa extra: una inscripció que ja no és 'registered' mai compta com a activa.
   return db.prepare(`
-    SELECT * FROM competition_entries
-    WHERE competition_id = ? ${inclouBaixes ? '' : "AND status = 'active'"}
-    ORDER BY CASE WHEN seed IS NULL THEN 1 ELSE 0 END, seed ASC, id ASC`).all(competitionId);
+    SELECT e.id, e.competition_id, e.kind, e.registration_id,
+      COALESCE(r.player1_id, e.player1_id) AS player1_id,
+      COALESCE(r.player2_id, e.player2_id) AS player2_id,
+      COALESCE(r.player1_name, e.player1_name) AS player1_name,
+      COALESCE(r.player2_name, e.player2_name) AS player2_name,
+      COALESCE(r.paid, e.paid) AS paid,
+      e.status, e.seed
+    FROM competition_entries e
+    LEFT JOIN registrations r ON r.id = e.registration_id
+    WHERE e.competition_id = ?
+      ${inclouBaixes ? '' : "AND e.status = 'active' AND (e.registration_id IS NULL OR r.status = 'registered')"}
+    ORDER BY CASE WHEN e.seed IS NULL THEN 1 ELSE 0 END, e.seed ASC, e.id ASC`).all(competitionId);
 }
 
 export function fixaSeed(entryId, competitionId, seed) {
@@ -211,9 +261,18 @@ export function canviaEstatParticipant(entryId, competitionId, nouEstat) {
 }
 
 export function commutaPagatParticipant(entryId, competitionId) {
-  const e = db.prepare('SELECT paid FROM competition_entries WHERE id = ? AND competition_id = ?')
-    .get(entryId, competitionId);
+  // El pagat viu a la inscripció: el botó de la competició i el d'Inscrits
+  // mouen el mateix interruptor (les entries antigues sense enllaç, el seu).
+  const e = db.prepare(`
+    SELECT e.id, e.registration_id, COALESCE(r.paid, e.paid) AS paid
+    FROM competition_entries e LEFT JOIN registrations r ON r.id = e.registration_id
+    WHERE e.id = ? AND e.competition_id = ?`).get(entryId, competitionId);
   if (!e) throw new Error('Participant no trobat.');
-  db.prepare('UPDATE competition_entries SET paid = ? WHERE id = ? AND competition_id = ?')
-    .run(e.paid ? 0 : 1, entryId, competitionId);
+  const nou = e.paid ? 0 : 1;
+  if (e.registration_id) {
+    db.prepare('UPDATE registrations SET paid = ? WHERE id = ?').run(nou, e.registration_id);
+  } else {
+    db.prepare('UPDATE competition_entries SET paid = ? WHERE id = ? AND competition_id = ?')
+      .run(nou, entryId, competitionId);
+  }
 }
