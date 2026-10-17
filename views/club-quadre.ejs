@@ -48,6 +48,9 @@ const marca = (p) => {
 
 <div class="avis">
   <strong>🔗 Quadre públic</strong> — comparteix-lo amb els jugadors:
+  <% if (t.status !== 'published') { %>
+    <p class="error" style="margin:.4rem 0">⚠️ El torneig encara no està publicat: l'enllaç no funcionarà fins que s'aprovi (Admin → Tornejos).</p>
+  <% } %>
   <div class="fila" style="margin-top:.4rem">
     <input readonly id="url-publica" value="<%= publicUrl %>" style="flex:1;min-width:200px;font-family:monospace;padding:.4rem .6rem;border:1px solid var(--vora);border-radius:6px" onclick="this.select()">
     <button class="boto secundari menut" id="copia-publica" type="button">📋 Copia</button>
