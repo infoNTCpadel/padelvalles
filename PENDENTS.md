@@ -1,13 +1,14 @@
 # Pendents (per a un proper lot de canvis)
 
-## 2026-10-10 — Inscripcions
+## 2026-10-10 — Inscripcions — ✅ FET el 2026-10-17 (commit `d0a8a6e`)
 
-1. **Modificar parella en comptes de només treure-la.** Si una parella s'equivoca de
-   categoria, ara només es pot treure (i s'ha de tornar a inscriure). Caldria poder
-   **modificar** la parella inscrita (p. ex. canviar-la de categoria) sense passar
-   per treure + reinscriure.
+1. **Modificar parella en comptes de només treure-la.** ✅ Botó «Mou» a Inscrits
+   (club i organitzador): mou la parella a una altra categoria sense treure +
+   reinscriure. Si la destí és plena va a llista d'espera; s'allibera plaça a
+   l'origen (promoció); les competicions es concilien soles (origen retira, destí
+   incorpora); bloquejat si la competició ja ha començat; valida duplicats.
 
-2. **Demanar mòbil i email de l'acompanyant no donat d'alta.** En inscriure una
-   parella, si l'acompanyant no és a la base de dades ara només se'n demana el nom.
-   Caldria demanar també **mòbil i email**, perquè quedi registrat a la base de dades
-   i rebi l'email de confirmació.
+2. **Demanar mòbil i email de l'acompanyant no donat d'alta.** ✅ L'alta manual
+   demana email i mòbil de contacte (columnes `player1/2_email/phone` a
+   `registrations`); queden guardats, es mostren a Inscrits i al CSV, i reben
+   l'email de confirmació.

@@ -511,8 +511,12 @@ function inscritsDe(torneigId) {
     for (const estat of ['registered', 'waitlist', 'pending']) {
       c[estat] = db.prepare(`
         SELECT r.*,
-          COALESCE(u1.name, r.player1_name, '') AS nom1, u1.email AS email1, u1.phone AS tel1,
-          COALESCE(u2.name, r.player2_name, '') AS nom2, u2.email AS email2, u2.phone AS tel2
+          COALESCE(u1.name, r.player1_name, '') AS nom1,
+          COALESCE(u1.email, NULLIF(r.player1_email, ''), '') AS email1,
+          COALESCE(u1.phone, NULLIF(r.player1_phone, ''), '') AS tel1,
+          COALESCE(u2.name, r.player2_name, '') AS nom2,
+          COALESCE(u2.email, NULLIF(r.player2_email, ''), '') AS email2,
+          COALESCE(u2.phone, NULLIF(r.player2_phone, ''), '') AS tel2
         FROM registrations r
         LEFT JOIN users u1 ON u1.id = r.player1_id
         LEFT JOIN users u2 ON u2.id = r.player2_id
@@ -553,7 +557,7 @@ r.get('/club/torneig/:id/inscrits', nomesClub, (req, res) => {
   const esGestor = potGestionar(req.session.user.id, t.club_id, esAdmin);
   const { perCat: competicionsPerCat } = competicionsDe(t.id);
   res.render('club-inscrits', { titol: 'Inscrits: ' + t.name, t, categories: inscritsDe(t.id), MODALITATS,
-    alta: req.query.alta || null, errorMsg: req.query.error || null, creades: req.query.creades || null,
+    alta: req.query.alta || null, errorMsg: req.query.error || null, creades: req.query.creades || null, moguda: req.query.moguda || null,
     competicionsPerCat, FORMATS, ESTATS_COMPETICIO, esGestor });
 });
 
@@ -635,6 +639,16 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
     const j1 = resol(email1, nom1);
     const j2 = resol(email2, nom2);
     if (j1.id && j1.id === j2.id) throw new Error('Els dos jugadors no poden ser la mateixa persona.');
+    // Email i mòbil de contacte per als jugadors sense compte: queden a la BD
+    // i reben l'avís de confirmació (si el jugador té compte, manen les seves dades)
+    const contacte = (email, mobil) => {
+      email = String(email || '').trim().toLowerCase().slice(0, 120);
+      mobil = String(mobil || '').trim().slice(0, 20);
+      if (email && !email.includes('@')) throw new Error(`L'email de contacte «${email}» no és vàlid.`);
+      return { email, mobil };
+    };
+    const c1 = contacte(req.body.email_contacte1, req.body.mobil1);
+    const c2 = contacte(req.body.email_contacte2, req.body.mobil2);
     for (const j of [j1, j2]) {
       if (!j.id) continue;
       const motiu = potInscriure(t.id, j.id, cat.id);
@@ -643,14 +657,20 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
     const lliures = placesCategoria(cat.id);
     const nouEstat = (lliures === null || lliures > 0) ? 'registered' : 'waitlist';
     db.prepare(`INSERT INTO registrations
-      (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name, added_by_club, status, paid, decided_at)
-      VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'))`)
-      .run(t.id, cat.id, j1.id, j2.id, j1.nom, j2.nom, nouEstat, req.body.pagat ? 1 : 0);
+      (tournament_id, category_id, player1_id, player2_id, player1_name, player2_name,
+       player1_email, player1_phone, player2_email, player2_phone, added_by_club, status, paid, decided_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'))`)
+      .run(t.id, cat.id, j1.id, j2.id, j1.nom, j2.nom,
+        j1.id ? '' : c1.email, j1.id ? '' : c1.mobil,
+        j2.id ? '' : c2.email, j2.id ? '' : c2.mobil,
+        nouEstat, req.body.pagat ? 1 : 0);
     if (nouEstat === 'registered') conciliaCategoria(cat.id, req.session.user.id);
     const et = (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '');
     const enEspera = nouEstat === 'waitlist';
-    if (j1.email) sendParellaAfegidaClub(j1.email, j1.nom, t.name, et, enEspera);
-    if (j2.email) sendParellaAfegidaClub(j2.email, j2.nom, t.name, et, enEspera);
+    const desti1 = j1.email || c1.email;
+    const desti2 = j2.email || c2.email;
+    if (desti1) sendParellaAfegidaClub(desti1, j1.nom, t.name, et, enEspera);
+    if (desti2) sendParellaAfegidaClub(desti2, j2.nom, t.name, et, enEspera);
     res.redirect(enrere + '?alta=1');
   } catch (e) {
     res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
@@ -664,6 +684,65 @@ r.post('/club/torneig/:id/inscrits/:rid/pagat', nomesClub, (req, res) => {
   if (!insc) return res.status(404).render('404', { titol: 'No trobat' });
   db.prepare('UPDATE registrations SET paid = ? WHERE id = ?').run(insc.paid ? 0 : 1, insc.id);
   res.redirect(`/club/torneig/${t.id}/inscrits`);
+});
+
+// Mou una parella inscrita a una altra categoria (p. ex. error de categoria).
+// Si la destí és plena, passa a la llista d'espera; si s'allibera plaça a l'origen, es promou.
+r.post('/club/torneig/:id/inscrits/:rid/mou', nomesClub, (req, res) => {
+  const t = agafaTorneigInscrits(req, res);
+  if (!t) return;
+  const enrere = `/club/torneig/${t.id}/inscrits`;
+  try {
+    const insc = db.prepare('SELECT * FROM registrations WHERE id = ? AND tournament_id = ?').get(req.params.rid, t.id);
+    if (!insc) throw new Error('Inscripció no trobada.');
+    if (!['registered', 'waitlist'].includes(insc.status)) throw new Error('Només es pot moure una inscripció confirmada o en llista d\u2019espera.');
+    const desti = db.prepare('SELECT * FROM tournament_categories WHERE id = ? AND tournament_id = ?').get(req.body.categoria, t.id);
+    if (!desti) throw new Error('Categoria no vàlida.');
+    if (desti.id === insc.category_id) throw new Error('La parella ja és en aquesta categoria.');
+    // La parella ha de poder jugar a la categoria destí
+    const jugadors = [
+      { id: insc.player1_id, nom: insc.player1_name || 'Jugador 1' },
+      { id: insc.player2_id, nom: insc.player2_name || 'Jugador 2' },
+    ];
+    for (const j of jugadors) {
+      if (j.id) {
+        const motiu = potInscriure(t.id, j.id, desti.id, insc.id);
+        if (motiu) throw new Error(`${j.nom}: ${motiu.charAt(0).toLowerCase()}${motiu.slice(1)}`);
+      } else if (j.nom && j.nom !== 'Jugador 1' && j.nom !== 'Jugador 2') {
+        const dup = db.prepare(`SELECT 1 FROM registrations
+          WHERE tournament_id = ? AND category_id = ? AND id != ?
+          AND status IN ('registered', 'waitlist', 'pending')
+          AND (LOWER(player1_name) = LOWER(?) OR LOWER(player2_name) = LOWER(?))`)
+          .get(t.id, desti.id, insc.id, j.nom, j.nom);
+        if (dup) throw new Error(`${j.nom} ja està inscrit en aquesta categoria.`);
+      }
+    }
+    // Si la competició ja ha començat, no es toca res
+    for (const catId of [insc.category_id, desti.id]) {
+      const comp = db.prepare('SELECT status FROM competitions WHERE category_id = ?').get(catId);
+      if (comp && ['en_joc', 'finalitzada'].includes(comp.status))
+        throw new Error('No es pot moure: la competició d\u2019una de les categories ja ha començat.');
+    }
+    const lliures = placesCategoria(desti.id);
+    const nouEstat = (lliures === null || lliures > 0) ? 'registered' : 'waitlist';
+    const origenCat = insc.category_id;
+    transaccio(() => {
+      if (nouEstat === insc.status) {
+        db.prepare('UPDATE registrations SET category_id = ? WHERE id = ?').run(desti.id, insc.id);
+      } else {
+        db.prepare(`UPDATE registrations SET category_id = ?, status = ?, decided_at = datetime('now') WHERE id = ?`)
+          .run(desti.id, nouEstat, insc.id);
+      }
+      promouLlistaEspera(t.id, origenCat);
+    });
+    // Les dues competicions es concilien soles (origen retira, destí incorpora)
+    conciliaCategoria(origenCat, req.session.user.id);
+    conciliaCategoria(desti.id, req.session.user.id);
+    const et = (MODALITATS[desti.modality] || desti.modality) + (desti.level ? ' · ' + desti.level : '');
+    res.redirect(enrere + '?moguda=' + encodeURIComponent(et));
+  } catch (e) {
+    res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+  }
 });
 
 r.post('/club/torneig/:id/inscrits/:rid/treu', nomesClub, (req, res) => {

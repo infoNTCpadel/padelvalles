@@ -120,10 +120,14 @@ export function conciliaCompeticio(competitionId, actorId = null) {
   if (!comp || !comp.category_id) return { entrades: 0, tretes: 0 };
   return transaccio(() => {
     const entrades = importaInscrits(competitionId, comp.category_id);
+    // Es retira si la inscripció ja no és 'registered' O si ha canviat de categoria
+    // (una parella moguda de categoria surt d'aquesta competició i entra a l'altra)
     const treure = db.prepare(`
       SELECT e.id FROM competition_entries e
       JOIN registrations r ON r.id = e.registration_id
-      WHERE e.competition_id = ? AND e.status = 'active' AND r.status != 'registered'`).all(competitionId);
+      WHERE e.competition_id = ? AND e.status = 'active'
+        AND (r.status != 'registered' OR r.category_id != ?)`)
+      .all(competitionId, comp.category_id);
     for (const t of treure) canviaEstatParticipant(t.id, competitionId, 'withdrawn');
     if (entrades || treure.length) {
       db.prepare(`INSERT INTO competition_audit (competition_id, actor_id, action, detail)
@@ -237,8 +241,9 @@ export function participantsDe(competitionId, inclouBaixes = false) {
       e.status, e.seed
     FROM competition_entries e
     LEFT JOIN registrations r ON r.id = e.registration_id
+    JOIN competitions c ON c.id = e.competition_id
     WHERE e.competition_id = ?
-      ${inclouBaixes ? '' : "AND e.status = 'active' AND (e.registration_id IS NULL OR r.status = 'registered')"}
+      ${inclouBaixes ? '' : "AND e.status = 'active' AND (e.registration_id IS NULL OR (r.status = 'registered' AND r.category_id = c.category_id))"}
     ORDER BY CASE WHEN e.seed IS NULL THEN 1 ELSE 0 END, e.seed ASC, e.id ASC`).all(competitionId);
 }
 

@@ -8,6 +8,7 @@
 <% if ((t.registration_mode || 'externa') === 'padelvalles') { %>
 <h2>Afegeix una parella</h2>
 <% if (alta) { %><div class="exit">Parella afegida correctament.</div><% } %>
+<% if (typeof moguda !== 'undefined' && moguda) { %><div class="exit">Parella moguda a <%= moguda %>.</div><% } %>
 <% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
 <form class="formulari" action="<%= base %>/torneig/<%= t.id %>/inscrits/nova" method="post">
   <div class="fila">
@@ -27,6 +28,10 @@
     </div>
   </div>
   <div class="fila">
+    <div class="camp"><label>Jugador 1 · email (si no té compte)</label><input name="email_contacte1" type="email" maxlength="120" placeholder="opcional · rebrà l'avís"></div>
+    <div class="camp"><label>Jugador 1 · mòbil (si no té compte)</label><input name="mobil1" type="tel" maxlength="20" placeholder="opcional"></div>
+  </div>
+  <div class="fila">
     <div class="camp"><label>Jugador 2 · nom</label><input name="nom2" required maxlength="80" placeholder="Nom i cognoms"></div>
     <div class="camp cerca-usuari"><label>Jugador 2 · té compte? cerca'l pel nom</label>
       <input type="text" class="cerca-usuari-nom" maxlength="120" placeholder="opcional" autocomplete="off">
@@ -34,7 +39,11 @@
       <div class="suggeriments"></div>
     </div>
   </div>
-  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Cerca el jugador pel nom i tria'l de la llista: la parella quedarà vinculada al seu compte i rebrà l'avís per email. Si no té compte, deixa-ho en blanc i queda apuntada només amb el nom.</p>
+  <div class="fila">
+    <div class="camp"><label>Jugador 2 · email (si no té compte)</label><input name="email_contacte2" type="email" maxlength="120" placeholder="opcional · rebrà l'avís"></div>
+    <div class="camp"><label>Jugador 2 · mòbil (si no té compte)</label><input name="mobil2" type="tel" maxlength="20" placeholder="opcional"></div>
+  </div>
+  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Cerca el jugador pel nom i tria'l de la llista: la parella quedarà vinculada al seu compte i rebrà l'avís per email. Si no té compte, apunta'n l'email i el mòbil: quedaran guardats i rebrà l'avís de confirmació.</p>
   <button class="boto" type="submit">Afegeix la parella</button>
 </form>
 <%- include('cerca-usuari-script') %>
@@ -80,6 +89,15 @@
             onsubmit="return confirm('Vols donar de baixa aquesta parella? Si hi ha llista d\u2019espera, la primera parella pujarà automàticament.')">
             <button class="boto secundari menut">Treu</button>
           </form>
+          <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/mou" method="post"
+            onsubmit="return confirm('Moure aquesta parella a una altra categoria?')">
+            <select name="categoria" required title="Mou a una altra categoria">
+              <% for (const cc of categories) { if (cc.id !== c.id) { %>
+                <option value="<%= cc.id %>">→ <%= cc.etiqueta %></option>
+              <% } } %>
+            </select>
+            <button class="boto secundari menut">Mou</button>
+          </form>
         </td>
       </tr>
     <% } %>
@@ -97,6 +115,15 @@
           <td>
             <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/treu" method="post">
               <button class="boto secundari menut">Treu</button>
+            </form>
+            <form class="enlinia" action="<%= base %>/torneig/<%= t.id %>/inscrits/<%= i.id %>/mou" method="post"
+              onsubmit="return confirm('Moure aquesta parella a una altra categoria?')">
+              <select name="categoria" required title="Mou a una altra categoria">
+                <% for (const cc of categories) { if (cc.id !== c.id) { %>
+                  <option value="<%= cc.id %>">→ <%= cc.etiqueta %></option>
+                <% } } %>
+              </select>
+              <button class="boto secundari menut">Mou</button>
             </form>
           </td>
         </tr>
