@@ -17,6 +17,11 @@ import {
   creaCompeticionsBulk, agafaCompeticio, participantsDe, fixaSeed,
   canviaEstatParticipant, commutaPagatParticipant,
 } from '../lib/competicions.js';
+import {
+  llegirConfig, desaConfig, generaQuadre, esborraQuadre, desaResultat,
+  esborraResultat, programaPartit, quadreDe, teQuadreGenerat, teResultats,
+  ETIQUETA_RONDA,
+} from '../lib/quadre.js';
 
 export function rutesCompeticio(cfg) {
   const r = Router();
@@ -170,6 +175,150 @@ export function rutesCompeticio(cfg) {
       }
     });
   }
+
+  // --- Configurador de la competició (característiques editables) ---
+  r.get(`${base}/torneig/:tid/competicio/:cid/configura`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    res.render('competicio-config', {
+      titol: 'Configura: ' + comp.name, t, base, comp,
+      cfg: llegirConfig(comp), FORMATS, ESTATS_COMPETICIO,
+      desat: req.query.desat || null, error: req.query.error || null,
+    });
+  });
+
+  r.post(`${base}/torneig/:tid/competicio/:cid/configura`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    const enrere = `${base}/torneig/${t.id}/competicio/${comp.id}/configura`;
+    try {
+      if (teQuadreGenerat(comp.id)) throw new Error('Amb el quadre generat, la configuració del sorteig ja no es pot canviar. Esborra el quadre primer.');
+      const cfgNou = desaConfig(comp.id, {
+        num_seeds: req.body.num_seeds,
+        draw_size: req.body.draw_size,
+        super_tiebreak: req.body.super_tiebreak,
+        pistes: req.body.pistes,
+        min_parelles: req.body.min_parelles,
+      });
+      const updates = [];
+      if (req.body.nom && req.body.nom.trim()) updates.push(['name', req.body.nom.trim().slice(0, 120)]);
+      if (req.body.quota_text !== undefined) updates.push(['fee_text', String(req.body.quota_text || '').slice(0, 80)]);
+      const nouEstat = String(req.body.status || '');
+      if (nouEstat && ESTATS_COMPETICIO[nouEstat] && ['draft', 'inscripcio'].includes(nouEstat)) updates.push(['status', nouEstat]);
+      for (const [col, val] of updates) db.prepare(`UPDATE competitions SET ${col} = ? WHERE id = ?`).run(val, comp.id);
+      db.prepare(`INSERT INTO competition_audit (competition_id, actor_id, action, detail) VALUES (?, ?, 'configura', ?)`)
+        .run(comp.id, req.session.user.id, JSON.stringify(cfgNou));
+      res.redirect(enrere + '?desat=1');
+    } catch (e) {
+      res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+    }
+  });
+
+  // --- Quadre: vista de gestió (organitzador) ---
+  r.get(`${base}/torneig/:tid/competicio/:cid/quadre`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    const q = quadreDe(comp.id);
+    const actius = participantsDe(comp.id, false);
+    res.render('club-quadre', {
+      titol: 'Quadre: ' + comp.name, t, base, comp, quadre: q,
+      nActius: actius.length, ambSeed: actius.filter(p => p.seed !== null && p.seed !== undefined).length,
+      teResultats: teResultats(comp.id),
+      ETIQUETA_RONDA, FORMATS, ESTATS_COMPETICIO,
+      msg: req.query.msg || null, errorMsg: req.query.error || null,
+    });
+  });
+
+  r.post(`${base}/torneig/:tid/competicio/:cid/quadre/genera`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    const enrere = `${base}/torneig/${t.id}/competicio/${comp.id}/quadre`;
+    try {
+      const r = generaQuadre(comp.id, req.session.user.id);
+      let msg = `Quadre de ${r.draw} generat amb ${r.parelles} parelles (${r.byes} byes).`;
+      if (r.avisaMinim) msg += ' Atenció: menys parelles del mínim configurat.';
+      res.redirect(enrere + '?msg=' + encodeURIComponent(msg));
+    } catch (e) {
+      res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+    }
+  });
+
+  r.post(`${base}/torneig/:tid/competicio/:cid/quadre/esborra`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    const enrere = `${base}/torneig/${t.id}/competicio/${comp.id}/quadre`;
+    try {
+      esborraQuadre(comp.id, req.session.user.id);
+      res.redirect(enrere + '?msg=' + encodeURIComponent('Quadre esborrat. Pots tornar a generar-lo.'));
+    } catch (e) {
+      res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+    }
+  });
+
+  // --- Resultats ---
+  function accioPartit(sufix, fn) {
+    r.post(`${base}/torneig/:tid/competicio/:cid/partit/:mid/${sufix}`, ...cfg.middlewares, (req, res) => {
+      const t = cfg.agafaTorneig(req, res);
+      if (!t) return;
+      if (!exigeixCreador(req, res, t)) return;
+      const comp = agafaComp(req, res, t);
+      if (!comp) return;
+      const enrere = `${base}/torneig/${t.id}/competicio/${comp.id}/quadre`;
+      try {
+        fn(req, comp);
+        res.redirect(enrere + '?msg=' + encodeURIComponent('Resultat desat. El guanyador avança automàticament.'));
+      } catch (e) {
+        res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+      }
+    });
+  }
+
+  accioPartit('resultat', (req, comp) => {
+    desaResultat(Number(req.params.mid), comp.id, {
+      tipus: req.body.tipus, guanyador: req.body.guanyador,
+      s1a: req.body.s1a, s1b: req.body.s1b,
+      s2a: req.body.s2a, s2b: req.body.s2b,
+      s3a: req.body.s3a, s3b: req.body.s3b,
+      stb_a: req.body.stb_a, stb_b: req.body.stb_b,
+      notes: req.body.notes,
+    }, req.session.user.id);
+  });
+
+  r.post(`${base}/torneig/:tid/competicio/:cid/partit/:mid/resultat/esborra`, ...cfg.middlewares, (req, res) => {
+    const t = cfg.agafaTorneig(req, res);
+    if (!t) return;
+    if (!exigeixCreador(req, res, t)) return;
+    const comp = agafaComp(req, res, t);
+    if (!comp) return;
+    const enrere = `${base}/torneig/${t.id}/competicio/${comp.id}/quadre`;
+    try {
+      esborraResultat(Number(req.params.mid), comp.id, req.session.user.id);
+      res.redirect(enrere + '?msg=' + encodeURIComponent('Resultat esborrat.'));
+    } catch (e) {
+      res.redirect(enrere + '?error=' + encodeURIComponent(e.message));
+    }
+  });
+
+  accioPartit('programa', (req, comp) => {
+    programaPartit(Number(req.params.mid), comp.id, {
+      scheduled_at: req.body.scheduled_at, pista: req.body.pista,
+    }, req.session.user.id);
+  });
 
   accioParticipant('seed', (req, comp) => {
     fixaSeed(req.params.eid, comp.id, req.body.seed);

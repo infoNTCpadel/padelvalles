@@ -1,0 +1,54 @@
+<p class="meta"><a href="/torneig/<%= t.id %>">← <%= t.name %></a> · <%= t.club_nom %></p>
+<h1>El camí al títol</h1>
+<p class="meta">Quadre d'eliminatòria<% if (etiquetaCat) { %> · <%= etiquetaCat %><% } %> · <%= quadre.draw %> parelles · Eliminació directa</p>
+
+<%
+const nomPareja = (p, costat) => {
+  const a1 = p[costat === 'a' ? 'a1' : 'b1'], a2 = p[costat === 'a' ? 'a2' : 'b2'];
+  if (!a1 && !a2) return null;
+  return (a1 || '') + ' / ' + (a2 || '');
+};
+const marca = (p) => {
+  const s = [];
+  if (p.s1a !== null && p.s1a !== undefined) s.push(p.s1a + '-' + p.s1b);
+  if (p.s2a !== null && p.s2a !== undefined) s.push(p.s2a + '-' + p.s2b);
+  if (p.stb_a !== null && p.stb_b !== undefined && p.stb_a !== null) s.push(p.stb_a + '-' + p.stb_b);
+  else if (p.s3a !== null && p.s3a !== undefined) s.push(p.s3a + '-' + p.s3b);
+  return s.join(' · ');
+};
+%>
+
+<% if (quadre.campio) { %>
+  <div class="campio-banner">
+    <div class="meta">🏆 CAMPIONS</div>
+    <div style="font-size:1.5rem;font-weight:800;margin:.3rem 0"><%= nomPareja(quadre.campio, quadre.campio.winner_id === quadre.campio.entry_a_id ? 'a' : 'b') %></div>
+    <% const m = marca(quadre.campio); if (m) { %><div class="marcador" style="font-size:1.3rem"><%= m %></div><% } %>
+  </div>
+<% } %>
+
+<div class="quadre quadre-public">
+<% for (const ronda of quadre.rondes) { %>
+  <div class="ronda">
+    <h3><%= ronda.etiqueta %></h3>
+    <% ronda.partits.forEach((p) => { %>
+      <div class="partit<%= p.winner_id ? ' jugat' : '' %><%= p.unplayed ? ' bye' : '' %>">
+        <% const na = nomPareja(p, 'a'), nb = nomPareja(p, 'b'); %>
+        <div class="parella<%= p.winner_id === p.entry_a_id ? ' guanyadora' : '' %>">
+          <span><% if (p.seed_a) { %><strong class="meta">[<%= p.seed_a %>]</strong> <% } %><%= na || '<span class="meta">Per decidir</span>' %></span>
+        </div>
+        <div class="parella<%= p.winner_id === p.entry_b_id ? ' guanyadora' : '' %>">
+          <span><% if (p.seed_b) { %><strong class="meta">[<%= p.seed_b %>]</strong> <% } %><%= nb || (p.unplayed ? '<span class="meta">Exempt</span>' : '<span class="meta">Per decidir</span>') %></span>
+        </div>
+        <% const m2 = marca(p); %>
+        <% if (m2) { %><div class="marcador"><%= m2 %></div><% } %>
+        <% if (p.wo_winner_id) { %><div><span class="etiqueta pendent">W.O.</span></div><% } %>
+        <% if (p.unplayed) { %><div><span class="etiqueta pendent">Bye</span></div><% } %>
+        <% if (p.scheduled_at || p.pista) { %>
+          <div class="meta">📅 <%= p.scheduled_at ? p.scheduled_at.replace('T', ' ') : '' %><%= p.pista ? ' · ' + p.pista : '' %></div>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
+</div>
+<p class="ajuda">El quadre s'actualitza automàticament amb cada resultat.</p>

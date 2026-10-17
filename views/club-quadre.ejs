@@ -1,0 +1,146 @@
+<h1>🏆 Quadre: <%= comp.name %></h1>
+<p class="meta"><%= t.name %> · <%= FORMATS[comp.format].nom %> · Estat: <%= ESTATS_COMPETICIO[comp.status] %></p>
+<p><a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>">← Participants</a> ·
+   <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/configura">⚙️ Configura</a></p>
+<% if (msg) { %><div class="exit"><%= msg %></div><% } %>
+<% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
+
+<% if (!quadre.teQuadre) { %>
+  <h2>Genera el quadre</h2>
+  <p><%= nActius %> parelles inscrites
+    <% if (quadre.cfg.draw_size) { %> · quadre de <%= quadre.cfg.draw_size %>
+    <% } else { %> · quadre automàtic
+    <% } %>
+    · <%= ambSeed %> amb cap de sèrie assignat.</p>
+  <% if (nActius < 2) { %>
+    <p class="error">Calen com a mínim 2 parelles per generar el quadre.</p>
+  <% } else { %>
+    <% if (nActius < quadre.cfg.min_parelles) { %>
+      <p class="avis">Atenció: hi ha menys parelles del mínim configurat (<%= quadre.cfg.min_parelles %>). Pots generar igualment.</p>
+    <% } %>
+    <form action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/quadre/genera" method="post"
+      onsubmit="return confirm('Generar el quadre? Es farà el sorteig amb els caps de sèrie i els byes.')">
+      <button class="boto">🎲 Genera el quadre</button>
+    </form>
+    <p class="ajuda">Els caps de sèrie s'assignen a Participants. El sorteig és aleatori per a la resta i els byes van primer als caps de sèrie. Un cop generat, l'estat passa a «En joc» i les inscripcions ja no modifiquen el quadre soles.</p>
+  <% } %>
+<% } else { %>
+
+<%
+const nomPareja = (p, costat) => {
+  const a1 = p[costat === 'a' ? 'a1' : 'b1'], a2 = p[costat === 'a' ? 'a2' : 'b2'];
+  if (!a1 && !a2) return null;
+  return (a1 || '') + ' / ' + (a2 || '');
+};
+const marca = (p) => {
+  const s = [];
+  if (p.s1a !== null && p.s1a !== undefined) s.push(p.s1a + '-' + p.s1b);
+  if (p.s2a !== null && p.s2a !== undefined) s.push(p.s2a + '-' + p.s2b);
+  if (p.stb_a !== null && p.stb_a !== undefined) s.push(p.stb_a + '-' + p.stb_b + ' (STB)');
+  else if (p.s3a !== null && p.s3a !== undefined) s.push(p.s3a + '-' + p.s3b);
+  return s.join(', ');
+};
+%>
+
+<% if (quadre.campio) { %>
+  <div class="exit" style="font-size:1.2rem">🏆 Campions: <strong><%= nomPareja(quadre.campio, quadre.campio.winner_id === quadre.campio.entry_a_id ? 'a' : 'b') %></strong></div>
+<% } %>
+
+<div class="quadre">
+<% for (const ronda of quadre.rondes) { %>
+  <div class="ronda">
+    <h3><%= ronda.etiqueta %></h3>
+    <% ronda.partits.forEach((p, idx) => { %>
+      <div class="partit<%= p.winner_id ? ' jugat' : '' %><%= p.unplayed ? ' bye' : '' %>">
+        <div class="partit-cap">
+          <span class="meta">Partit <%= idx + 1 %></span>
+          <% if (p.unplayed) { %><span class="etiqueta pendent">Bye</span><% } %>
+          <% if (p.wo_winner_id) { %><span class="etiqueta pendent">W.O.</span><% } %>
+          <% if (p.winner_id && !p.unplayed && !p.wo_winner_id) { %><span class="etiqueta ok">Finalitzat</span><% } %>
+        </div>
+        <% const na = nomPareja(p, 'a'), nb = nomPareja(p, 'b'); %>
+        <div class="parella<%= p.winner_id === p.entry_a_id ? ' guanyadora' : '' %>">
+          <span><% if (p.seed_a) { %><strong class="meta">[<%= p.seed_a %>]</strong> <% } %><%= na || '<span class="meta">Per decidir</span>' %></span>
+        </div>
+        <div class="parella<%= p.winner_id === p.entry_b_id ? ' guanyadora' : '' %>">
+          <span><% if (p.seed_b) { %><strong class="meta">[<%= p.seed_b %>]</strong> <% } %><%= nb || (p.unplayed ? '<span class="meta">Exempt</span>' : '<span class="meta">Per decidir</span>') %></span>
+        </div>
+        <% const m = marca(p); %>
+        <% if (m) { %><div class="marcador"><%= m %></div><% } %>
+        <% if (p.scheduled_at || p.pista) { %>
+          <div class="meta">📅 <%= p.scheduled_at ? p.scheduled_at.replace('T', ' ') : '' %><%= p.pista ? ' · ' + p.pista : '' %></div>
+        <% } %>
+        <% if (p.notes && !p.unplayed) { %><div class="meta"><%= p.notes %></div><% } %>
+
+        <% if (!p.unplayed) { %>
+        <details>
+          <summary><%= p.winner_id ? 'Modifica el resultat' : 'Puja el resultat' %></summary>
+          <form action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/partit/<%= p.id %>/resultat" method="post" class="form-resultat">
+            <div class="fila">
+              <div class="camp"><label>Tipus</label>
+                <select name="tipus">
+                  <option value="marcador">Marcador</option>
+                  <option value="wo">W.O.</option>
+                  <option value="retirada">Retirada</option>
+                  <option value="desqualificacio">Desqualificació</option>
+                </select>
+              </div>
+              <div class="camp"><label>Guanyador (W.O./ret./desq.)</label>
+                <select name="guanyador">
+                  <option value="">—</option>
+                  <option value="a"><%= na || 'Parella A' %></option>
+                  <option value="b"><%= nb || 'Parella B' %></option>
+                </select>
+              </div>
+            </div>
+            <div class="fila sets">
+              <% for (const s of [1, 2]) { %>
+                <div class="camp"><label>Set <%= s %></label>
+                  <input name="s<%= s %>a" type="number" min="0" max="7" value="<%= p['s' + s + 'a'] ?? '' %>" placeholder="–">
+                  <input name="s<%= s %>b" type="number" min="0" max="7" value="<%= p['s' + s + 'b'] ?? '' %>" placeholder="–">
+                </div>
+              <% } %>
+              <div class="camp"><label>Set 3 / STB</label>
+                <input name="s3a" type="number" min="0" max="7" value="<%= p.s3a ?? '' %>" placeholder="–">
+                <input name="s3b" type="number" min="0" max="7" value="<%= p.s3b ?? '' %>" placeholder="–">
+                <input name="stb_a" type="number" min="0" max="30" value="<%= p.stb_a ?? '' %>" placeholder="STB" title="Super tie-break">
+                <input name="stb_b" type="number" min="0" max="30" value="<%= p.stb_b ?? '' %>" placeholder="STB" title="Super tie-break">
+              </div>
+            </div>
+            <div class="camp"><label>Notes (opcional)</label>
+              <input name="notes" maxlength="200" value="<%= p.notes || '' %>" placeholder="p. ex. lesió al 2n set">
+            </div>
+            <button class="boto menut" type="submit">Desa el resultat</button>
+          </form>
+          <% if (p.winner_id) { %>
+            <form action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/partit/<%= p.id %>/resultat/esborra" method="post"
+              onsubmit="return confirm('Esborrar el resultat d\u2019aquest partit?')">
+              <button class="boto secundari menut" type="submit">Esborra el resultat</button>
+            </form>
+          <% } %>
+        </details>
+        <details>
+          <summary>Programa</summary>
+          <form action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/partit/<%= p.id %>/programa" method="post" class="enlinia">
+            <input type="datetime-local" name="scheduled_at" value="<%= p.scheduled_at || '' %>">
+            <input name="pista" list="pistes-<%= comp.id %>" value="<%= p.pista || '' %>" placeholder="Pista" style="width:7rem">
+            <datalist id="pistes-<%= comp.id %>">
+              <% for (const pi of (quadre.cfg.pistes || [])) { %><option value="<%= pi %>"><% } %>
+            </datalist>
+            <button class="boto secundari menut" type="submit">Desa</button>
+          </form>
+        </details>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
+</div>
+
+<% if (!teResultats) { %>
+  <form action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/quadre/esborra" method="post"
+    onsubmit="return confirm('Esborrar el quadre? Es perdrà el sorteig i podràs tornar a generar-lo.')">
+    <button class="boto secundari" type="submit">Esborra el quadre</button>
+  </form>
+<% } %>
+<% } %>

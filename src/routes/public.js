@@ -4,6 +4,7 @@ import { cartellSVG } from '../poster.js';
 import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig, nomNivell } from '../brand.js';
 import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
 import { competicionsDe, FORMATS } from '../lib/competicions.js';
+import { quadreDe } from '../lib/quadre.js';
 
 const r = Router();
 
@@ -148,6 +149,19 @@ r.get('/torneig/:id', (req, res) => {
 
 // Cartell generat automàticament (SVG amb la marca). Accessible sempre perquè
 // el club i l'admin el puguin previsualitzar abans de publicar.
+// Quadre públic d'una competició
+r.get('/torneig/:tid/quadre/:cid', (req, res) => {
+  const t = getTorneig(req.params.tid);
+  if (!t || t.status !== 'published') return res.status(404).render('404', { titol: 'Torneig no trobat' });
+  const comp = db.prepare(`SELECT * FROM competitions WHERE id = ? AND tournament_id = ?`).get(req.params.cid, t.id);
+  if (!comp) return res.status(404).render('404', { titol: 'Competició no trobada' });
+  const quadre = quadreDe(comp.id);
+  if (!quadre || !quadre.teQuadre) return res.status(404).render('404', { titol: 'Encara no hi ha quadre' });
+  const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(comp.category_id);
+  const etiquetaCat = cat ? (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '') : '';
+  res.render('quadre-public', { titol: 'Quadre: ' + comp.name, t, comp, quadre, etiquetaCat, FORMATS });
+});
+
 r.get('/torneig/:id/cartell.svg', (req, res) => {
   const t = getTorneig(req.params.id);
   if (!t) return res.sendStatus(404);

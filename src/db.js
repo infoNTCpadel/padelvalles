@@ -340,6 +340,7 @@ for (const [taula, columna, def] of [
   ['registrations', 'player1_phone', `TEXT DEFAULT ''`],
   ['registrations', 'player2_email', `TEXT DEFAULT ''`],
   ['registrations', 'player2_phone', `TEXT DEFAULT ''`],
+  ['matches', 'pista', `TEXT DEFAULT ''`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);

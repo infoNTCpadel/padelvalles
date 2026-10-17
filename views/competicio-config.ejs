@@ -1,0 +1,63 @@
+<h1>⚙️ Configura: <%= comp.name %></h1>
+<p><a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>">← Torna a la competició</a></p>
+<% if (desat) { %><div class="exit">Configuració desada.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<form class="formulari" action="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/configura" method="post">
+  <h2>Dades generals</h2>
+  <div class="fila">
+    <div class="camp"><label>Nom de la competició</label>
+      <input name="nom" maxlength="120" value="<%= comp.name %>">
+    </div>
+    <div class="camp"><label>Estat</label>
+      <select name="status">
+        <% for (const [k, v] of Object.entries(ESTATS_COMPETICIO)) { %>
+          <% if (['draft', 'inscripcio'].includes(k)) { %>
+            <option value="<%= k %>" <%= comp.status === k ? 'selected' : '' %>><%= v %></option>
+          <% } %>
+        <% } %>
+      </select>
+      <p class="ajuda">Un cop generat el quadre, l'estat passa a «En joc» sol.</p>
+    </div>
+  </div>
+  <div class="camp"><label>Quota (text)</label>
+    <input name="quota_text" maxlength="80" value="<%= comp.fee_text || '' %>" placeholder="p. ex. 20 € per parella">
+  </div>
+
+  <h2>Sorteig del quadre</h2>
+  <div class="fila">
+    <div class="camp"><label>Mida del quadre</label>
+      <select name="draw_size">
+        <option value="0" <%= !cfg.draw_size ? 'selected' : '' %>>Automàtica (següent potència de 2)</option>
+        <% for (const m of [4, 8, 16, 32, 64, 128]) { %>
+          <option value="<%= m %>" <%= cfg.draw_size === m ? 'selected' : '' %>><%= m %> parelles</option>
+        <% } %>
+      </select>
+      <p class="ajuda">Amb 12 parelles, l'automàtica fa un quadre de 16 amb 4 byes.</p>
+    </div>
+    <div class="camp"><label>Caps de sèrie protegits</label>
+      <input name="num_seeds" type="number" min="0" max="64" value="<%= cfg.num_seeds %>">
+      <p class="ajuda">S'assignen a Participants amb el número de cap de sèrie.</p>
+    </div>
+    <div class="camp"><label>Mínim de parelles (avís)</label>
+      <input name="min_parelles" type="number" min="2" max="128" value="<%= cfg.min_parelles %>">
+      <p class="ajuda">Per sota d'aquest número avisa, però deixa generar.</p>
+    </div>
+  </div>
+
+  <h2>Regles de partit</h2>
+  <div class="fila">
+    <div class="camp"><label>&nbsp;</label>
+      <label><input type="checkbox" name="super_tiebreak" value="1" <%= cfg.super_tiebreak ? 'checked' : '' %>> El 3r set és super tie-break a 10</label>
+      <p class="ajuda">Sempre al millor de 3 sets.</p>
+    </div>
+  </div>
+
+  <h2>Pistes</h2>
+  <div class="camp"><label>Pistes disponibles (separades per comes)</label>
+    <input name="pistes" maxlength="200" value="<%= (cfg.pistes || []).join(', ') %>" placeholder="Pista 1, Pista 2, Pista 3">
+    <p class="ajuda">S'usen per programar els partits del quadre.</p>
+  </div>
+
+  <button class="boto" type="submit">Desa la configuració</button>
+</form>

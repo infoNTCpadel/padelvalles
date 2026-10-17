@@ -1,8 +1,13 @@
 <h1>🏆 <%= comp.name %></h1>
 <p class="meta"><%= t.name %><% if (etiquetaCat) { %> · <%= etiquetaCat %><% } %> · <%= FORMATS[comp.format].nom %> · Estat: <%= ESTATS_COMPETICIO[comp.status] %><% if (comp.fee_text) { %> · Quota: <%= comp.fee_text %><% } %></p>
-<p><a href="<%= base %>/torneig/<%= t.id %>/inscrits">← Inscrits del torneig</a></p>
+<p><a href="<%= base %>/torneig/<%= t.id %>/inscrits">← Inscrits del torneig</a> ·
+   <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/configura">⚙️ Configura</a> ·
+   <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/quadre">🎲 Quadre</a></p>
 <% if (creada) { %><div class="exit">Competició creada. S'han importat les parelles amb inscripció confirmada.</div><% } %>
 <% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
+<% if (['en_joc', 'finalitzada'].includes(comp.status)) { %>
+  <p class="avis">El quadre ja està generat: les inscripcions no s'hi incorporen soles. Gestiona els canvis amb W.O. al quadre.</p>
+<% } %>
 
 <h2>Participants (<%= actius.length %>)</h2>
 <p class="ajuda">La llista es manté sola: les inscripcions confirmades entren automàticament i les baixes es retiren soles. La llista d'espera no hi entra fins que es confirma.</p>
@@ -46,4 +51,4 @@
 </table>
 <% } %>
 
-<p class="ajuda">La generació del quadre d'eliminatòria arribarà a la Fase 2a: amb els caps de sèrie assignats aquí es farà el sorteig.</p>
+<p class="ajuda">Amb els caps de sèrie assignats, genera el quadre des de <a href="<%= base %>/torneig/<%= t.id %>/competicio/<%= comp.id %>/quadre">🎲 Quadre</a>.</p>

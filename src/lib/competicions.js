@@ -69,7 +69,9 @@ export function competicionsDe(torneigId) {
   const totes = db.prepare(`
     SELECT c.*,
       (SELECT COUNT(*) FROM competition_entries e
-        WHERE e.competition_id = c.id AND e.status = 'active') AS n_actius
+        WHERE e.competition_id = c.id AND e.status = 'active') AS n_actius,
+      (SELECT COUNT(*) FROM matches m
+        WHERE m.competition_id = c.id AND m.stage = 'bracket') AS n_partits_quadre
     FROM competitions c WHERE c.tournament_id = ? ORDER BY c.id`).all(torneigId);
   const perCat = {};
   for (const c of totes) if (c.category_id) perCat[c.category_id] = c;
@@ -116,8 +118,11 @@ export function importaInscrits(competitionId, categoryId) {
 // - retira els participants actius la inscripció dels quals ja no és 'registered'
 // Es respecta la retirada manual del gestor (no es reactiva res).
 export function conciliaCompeticio(competitionId, actorId = null) {
-  const comp = db.prepare('SELECT category_id FROM competitions WHERE id = ?').get(competitionId);
+  const comp = db.prepare('SELECT category_id, status FROM competitions WHERE id = ?').get(competitionId);
   if (!comp || !comp.category_id) return { entrades: 0, tretes: 0 };
+  // Un cop el quadre està generat (en_joc/finalitzada), les inscripcions ja no
+  // modifiquen la competició soles: ho gestiona l'organitzador (WO, etc.)
+  if (['en_joc', 'finalitzada'].includes(comp.status)) return { entrades: 0, tretes: 0, quadreTancat: true };
   return transaccio(() => {
     const entrades = importaInscrits(competitionId, comp.category_id);
     // Es retira si la inscripció ja no és 'registered' O si ha canviat de categoria
