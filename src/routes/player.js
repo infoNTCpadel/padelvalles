@@ -142,7 +142,7 @@ r.get('/api/cerca-usuaris', requireLogin, (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 40).replace(/[%_\\]/g, '\\$&');
   if (q.length < 2) return res.json([]);
   const usuaris = db.prepare(`
-    SELECT name, email FROM users
+    SELECT id, name, email FROM users
     WHERE email_verified = 1 AND (name LIKE '%' || ? || '%' ESCAPE '\\' OR email LIKE '%' || ? || '%' ESCAPE '\\')
     ORDER BY name ASC LIMIT 10`).all(q, q);
   res.json(usuaris);

@@ -625,19 +625,18 @@ r.post('/club/torneig/:id/inscrits/nova', nomesClub, (req, res) => {
     if (!cat) throw new Error('Categoria no vàlida.');
     const nom1 = String(req.body.nom1 || '').trim().slice(0, 80);
     const nom2 = String(req.body.nom2 || '').trim().slice(0, 80);
-    const email1 = String(req.body.email1 || '').trim().toLowerCase();
-    const email2 = String(req.body.email2 || '').trim().toLowerCase();
     if (!nom1 || !nom2) throw new Error('Cal el nom dels dos jugadors.');
-    // Si l'email és d'un usuari registrat i verificat, la parella hi queda vinculada
-    const resol = (email, nom) => {
-      if (!email) return { id: null, nom, email: null };
-      const u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
-      if (!u) throw new Error(`L'email ${email} no és d'un usuari registrat. Deixa l'email en blanc per apuntar la parella només amb el nom.`);
-      if (!u.email_verified) throw new Error(`L'usuari ${email} encara no ha verificat el compte.`);
+    // Si el camp intel·ligent ha vinculat un usuari, la parella hi queda vinculada
+    const juga = (idRaw, nom) => {
+      const uid = Number(idRaw || 0);
+      if (!uid) return { id: null, nom, email: null };
+      const u = db.prepare('SELECT id, name, email, email_verified FROM users WHERE id = ?').get(uid);
+      if (!u) throw new Error('Jugador no trobat.');
+      if (!u.email_verified) throw new Error(`L'usuari ${u.email} encara no ha verificat el compte.`);
       return { id: u.id, nom: u.name, email: u.email };
     };
-    const j1 = resol(email1, nom1);
-    const j2 = resol(email2, nom2);
+    const j1 = juga(req.body.jugador1_id, nom1);
+    const j2 = juga(req.body.jugador2_id, nom2);
     if (j1.id && j1.id === j2.id) throw new Error('Els dos jugadors no poden ser la mateixa persona.');
     // Email i mòbil de contacte per als jugadors sense compte: queden a la BD
     // i reben l'avís de confirmació (si el jugador té compte, manen les seves dades)

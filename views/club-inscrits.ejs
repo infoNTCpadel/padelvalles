@@ -10,43 +10,36 @@
 <% if (alta) { %><div class="exit">Parella afegida correctament.</div><% } %>
 <% if (typeof moguda !== 'undefined' && moguda) { %><div class="exit">Parella moguda a <%= moguda %>.</div><% } %>
 <% if (errorMsg) { %><div class="error"><%= errorMsg %></div><% } %>
-<form class="formulari" action="<%= base %>/torneig/<%= t.id %>/inscrits/nova" method="post">
-  <div class="fila">
+<form class="formulari alta-parella" action="<%= base %>/torneig/<%= t.id %>/inscrits/nova" method="post">
+  <div class="fila jugadors">
+    <% for (const n of [1, 2]) { %>
+    <div class="camp jugador" data-jugador="<%= n %>">
+      <label>Jugador <%= n %></label>
+      <div class="jugador-camp">
+        <input name="nom<%= n %>" class="jugador-nom" required maxlength="80" placeholder="Nom del jugador…" autocomplete="off">
+        <input type="hidden" name="jugador<%= n %>_id">
+        <span class="jugador-estat"></span>
+        <div class="suggeriments"></div>
+      </div>
+      <div class="jugador-contacte">
+        <input name="email_contacte<%= n %>" type="email" maxlength="120" placeholder="Email · rebrà l'avís">
+        <input name="mobil<%= n %>" type="tel" maxlength="20" placeholder="Mòbil">
+      </div>
+    </div>
+    <% } %>
+  </div>
+  <div class="fila accions-alta">
     <div class="camp"><label>Categoria</label>
       <select name="categoria" required>
         <% for (const c of categories) { %><option value="<%= c.id %>"><%= c.etiqueta %></option><% } %>
       </select>
     </div>
     <div class="camp"><label>&nbsp;</label><label><input type="checkbox" name="pagat" value="1"> Pagat</label></div>
+    <button class="boto" type="submit">Afegeix la parella</button>
   </div>
-  <div class="fila">
-    <div class="camp"><label>Jugador 1 · nom</label><input name="nom1" required maxlength="80" placeholder="Nom i cognoms"></div>
-    <div class="camp cerca-usuari"><label>Jugador 1 · té compte? cerca'l pel nom</label>
-      <input type="text" class="cerca-usuari-nom" maxlength="120" placeholder="opcional" autocomplete="off">
-      <input type="hidden" name="email1">
-      <div class="suggeriments"></div>
-    </div>
-  </div>
-  <div class="fila">
-    <div class="camp"><label>Jugador 1 · email (si no té compte)</label><input name="email_contacte1" type="email" maxlength="120" placeholder="opcional · rebrà l'avís"></div>
-    <div class="camp"><label>Jugador 1 · mòbil (si no té compte)</label><input name="mobil1" type="tel" maxlength="20" placeholder="opcional"></div>
-  </div>
-  <div class="fila">
-    <div class="camp"><label>Jugador 2 · nom</label><input name="nom2" required maxlength="80" placeholder="Nom i cognoms"></div>
-    <div class="camp cerca-usuari"><label>Jugador 2 · té compte? cerca'l pel nom</label>
-      <input type="text" class="cerca-usuari-nom" maxlength="120" placeholder="opcional" autocomplete="off">
-      <input type="hidden" name="email2">
-      <div class="suggeriments"></div>
-    </div>
-  </div>
-  <div class="fila">
-    <div class="camp"><label>Jugador 2 · email (si no té compte)</label><input name="email_contacte2" type="email" maxlength="120" placeholder="opcional · rebrà l'avís"></div>
-    <div class="camp"><label>Jugador 2 · mòbil (si no té compte)</label><input name="mobil2" type="tel" maxlength="20" placeholder="opcional"></div>
-  </div>
-  <p class="ajuda">Per a les parelles que s'apunten per telèfon, WhatsApp o a recepció. Cerca el jugador pel nom i tria'l de la llista: la parella quedarà vinculada al seu compte i rebrà l'avís per email. Si no té compte, apunta'n l'email i el mòbil: quedaran guardats i rebrà l'avís de confirmació.</p>
-  <button class="boto" type="submit">Afegeix la parella</button>
+  <p class="ajuda">Escriu el nom i, si el jugador té compte, tria'l de la llista: quedarà en <strong class="verd">verd ✓</strong>. Si no en té, queda en <strong class="ambre">taronja +</strong> i li pots apuntar l'email i el mòbil perquè rebi l'avís.</p>
 </form>
-<%- include('cerca-usuari-script') %>
+<%- include('alta-parella-script') %>
 <% } %>
 
 <% const __pendentsComp = (typeof competicionsPerCat !== 'undefined' ? categories.filter(c => !competicionsPerCat[c.id]) : []); %>

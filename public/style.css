@@ -369,3 +369,25 @@ table.llista th { background: var(--bg); color: #fff; }
 .targeta-servei.deshab { opacity:.45; cursor:not-allowed; }
 .targeta-servei input { margin-right:.35rem; }
 .targeta-servei .preu { display:block; font-weight:700; margin:.15rem 0; }
+
+/* ============================================================
+   Alta de parella: formulari compacte amb camp intel·ligent
+   Verd = jugador amb compte (vinculat) · Ambre = jugador nou
+   ============================================================ */
+.alta-parella .fila.jugadors { align-items: flex-start; }
+.alta-parella .jugador { flex: 1 1 220px; margin-bottom: 0; }
+.jugador-camp { position: relative; }
+.jugador-nom { width: 100%; padding-right: 5.2rem; transition: border-color .18s ease, background .18s ease; }
+.jugador-estat { position: absolute; right: .45rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.pill { font-size: .7rem; font-weight: 700; padding: .18rem .55rem; border-radius: 999px; white-space: nowrap; }
+.pill.te-compte { background: #E3F2E6; color: #1E6B32; }
+.pill.nou { background: #FDF0DD; color: #9A5B13; }
+.jugador-camp.te-compte .jugador-nom { border-color: #2F9E44; background: #F0F9F2; }
+.jugador-camp.nou .jugador-nom { border-color: #E8A13A; background: #FFF8E6; }
+.jugador-contacte { display: none; gap: .5rem; margin-top: .5rem; }
+.jugador.nou .jugador-contacte { display: flex; }
+.jugador-contacte input { flex: 1 1 0; min-width: 0; padding: .5rem .6rem; border: 1px solid var(--vora); border-radius: 8px; font-size: .9rem; }
+.alta-parella .accions-alta { margin-top: .9rem; }
+.alta-parella .ajuda .verd { color: #1E6B32; }
+.alta-parella .ajuda .ambre { color: #9A5B13; }
+.suggeriment .meta { color: #6B6257; font-size: .85em; }

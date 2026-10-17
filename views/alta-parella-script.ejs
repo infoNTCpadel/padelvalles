@@ -1,0 +1,72 @@
+<script>
+// Alta de parella: un sol camp intel·ligent per jugador.
+// Escrius el nom → si el jugador té compte, el tries de la llista i el camp
+// es pinta en verd (vinculat); si no, queda en ambre com a "nou" i s'obren
+// els camps d'email/mòbil de contacte només per a ell.
+(function () {
+  document.querySelectorAll('.alta-parella .jugador').forEach(function (cont) {
+    var nom = cont.querySelector('.jugador-nom');
+    var idOcult = cont.querySelector('input[type=hidden]');
+    var camp = cont.querySelector('.jugador-camp');
+    var caixa = cont.querySelector('.suggeriments');
+    var estat = cont.querySelector('.jugador-estat');
+    if (!nom || !idOcult || !camp || !caixa || !estat) return;
+    var t = null;
+
+    function pinta() {
+      var teText = nom.value.trim().length > 0;
+      var vinculat = !!idOcult.value;
+      var nou = teText && !vinculat;
+      cont.classList.toggle('nou', nou);
+      camp.classList.toggle('te-compte', vinculat);
+      camp.classList.toggle('nou', nou);
+      if (vinculat) estat.innerHTML = '<span class="pill te-compte">✓ Amb compte</span>';
+      else if (nou) estat.innerHTML = '<span class="pill nou">+ Nou</span>';
+      else estat.innerHTML = '';
+    }
+
+    nom.addEventListener('input', function () {
+      idOcult.value = ''; // si retoca el nom, es perd la vinculació
+      pinta();
+      clearTimeout(t);
+      var q = nom.value.trim();
+      if (q.length < 2) { caixa.innerHTML = ''; caixa.style.display = 'none'; return; }
+      t = setTimeout(function () {
+        fetch('/api/cerca-usuaris?q=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); })
+          .then(function (usuaris) {
+            caixa.innerHTML = '';
+            if (!usuaris.length) { caixa.style.display = 'none'; return; }
+            usuaris.forEach(function (u) {
+              var d = document.createElement('div');
+              d.className = 'suggeriment';
+              var fort = document.createElement('strong');
+              fort.textContent = u.name;
+              var fluix = document.createElement('span');
+              fluix.className = 'meta';
+              fluix.textContent = ' · ' + u.email;
+              d.appendChild(fort);
+              d.appendChild(fluix);
+              d.addEventListener('mousedown', function () {
+                nom.value = u.name;
+                idOcult.value = u.id;
+                caixa.innerHTML = '';
+                caixa.style.display = 'none';
+                pinta();
+              });
+              caixa.appendChild(d);
+            });
+            caixa.style.display = 'block';
+          })
+          .catch(function () { caixa.style.display = 'none'; });
+      }, 250);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!cont.contains(e.target)) caixa.style.display = 'none';
+    });
+
+    pinta();
+  });
+})();
+</script>
