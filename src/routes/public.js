@@ -152,11 +152,23 @@ r.get('/torneig/:id', (req, res) => {
 // Quadre públic d'una competició
 r.get('/torneig/:tid/quadre/:cid', (req, res) => {
   const t = getTorneig(req.params.tid);
-  if (!t || t.status !== 'published') return res.status(404).render('404', { titol: 'Torneig no trobat' });
+  if (!t) return res.status(404).render('quadre-no-disponible', {
+    titol: 'Quadre no disponible',
+    motiu: 'Aquest torneig no existeix o el seu club encara no està verificat.',
+  });
+  if (t.status !== 'published') return res.status(404).render('quadre-no-disponible', {
+    titol: 'Quadre no disponible',
+    motiu: 'Aquest torneig encara no està publicat. El quadre es podrà veure quan el torneig sigui públic.',
+  });
   const comp = db.prepare(`SELECT * FROM competitions WHERE id = ? AND tournament_id = ?`).get(req.params.cid, t.id);
-  if (!comp) return res.status(404).render('404', { titol: 'Competició no trobada' });
+  if (!comp) return res.status(404).render('quadre-no-disponible', {
+    titol: 'Quadre no disponible', motiu: 'Aquesta competició no existeix en aquest torneig.',
+  });
   const quadre = quadreDe(comp.id);
-  if (!quadre || !quadre.teQuadre) return res.status(404).render('404', { titol: 'Encara no hi ha quadre' });
+  if (!quadre || !quadre.teQuadre) return res.status(404).render('quadre-no-disponible', {
+    titol: 'Quadre no disponible',
+    motiu: 'Encara no s\'ha generat el quadre d\'aquesta competició. Torna-ho a provar més endavant.',
+  });
   const cat = db.prepare('SELECT * FROM tournament_categories WHERE id = ?').get(comp.category_id);
   const etiquetaCat = cat ? (MODALITATS[cat.modality] || cat.modality) + (cat.level ? ' · ' + cat.level : '') : '';
   const baseUrl = process.env.APP_URL || 'https://padelvalles.com';

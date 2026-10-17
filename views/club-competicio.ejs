@@ -9,6 +9,26 @@
   <p class="avis">El quadre ja està generat: les inscripcions no s'hi incorporen soles. Gestiona els canvis amb W.O. al quadre.</p>
 <% } %>
 
+<%
+const CICLE = [
+  ['draft', 'Esborrany', 'En preparació. No rep parelles soles.'],
+  ['inscripcio', 'Inscripció', 'Rep parelles: les confirmades entren soles.'],
+  ['en_joc', 'En joc', 'Quadre generat automàticament. Les inscripcions ja no el toquen.'],
+  ['finalitzada', 'Finalitzada', 'Hi ha campions. Es tanca sola en guanyar la final.'],
+];
+const idxActual = CICLE.findIndex(p => p[0] === comp.status);
+%>
+<div class="cicle">
+  <% CICLE.forEach(([clau, nom, desc], i) => { %>
+    <div class="pas<%= i === idxActual ? ' actiu' : '' %><%= i < idxActual ? ' fet' : '' %>">
+      <span class="pas-num"><%= i < idxActual ? '✓' : (i + 1) %></span>
+      <strong><%= nom %></strong>
+      <span class="pas-desc"><%= desc %></span>
+    </div>
+    <% if (i < CICLE.length - 1) { %><div class="pas-fletxa">→</div><% } %>
+  <% }); %>
+</div>
+
 <h2>Participants (<%= actius.length %>)</h2>
 <p class="ajuda">La llista es manté sola: les inscripcions confirmades entren automàticament i les baixes es retiren soles. La llista d'espera no hi entra fins que es confirma.</p>
 
