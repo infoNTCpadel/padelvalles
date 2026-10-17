@@ -3,54 +3,100 @@
 <p class="meta">Quadre d'eliminatòria<% if (etiquetaCat) { %> · <%= etiquetaCat %><% } %> · <%= quadre.draw %> parelles · Eliminació directa</p>
 
 <%
+const DIES = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
+const MESOS = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+const fmtData = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso.replace('T', ' ');
+  return DIES[d.getDay()] + ', ' + d.getDate() + ' de ' + MESOS[d.getMonth()] + ' de ' + d.getFullYear() +
+    ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+};
+// Números globals de partit (#1, #2, ...) per ordre de ronda
+let _n = 0;
+const _nums = {};
+quadre.rondes.forEach((ronda, ri) => {
+  ronda.partits.forEach((p) => { _n++; _nums[ri + '-' + p.bracket_slot] = _n; });
+});
 const nomPareja = (p, costat) => {
   const a1 = p[costat === 'a' ? 'a1' : 'b1'], a2 = p[costat === 'a' ? 'a2' : 'b2'];
   if (!a1 && !a2) return null;
-  return (a1 || '') + ' / ' + (a2 || '');
+  return [a1 || '', a2 || ''];
 };
-const marca = (p) => {
+const setsDe = (p) => {
   const s = [];
-  if (p.s1a !== null && p.s1a !== undefined) s.push(p.s1a + '-' + p.s1b);
-  if (p.s2a !== null && p.s2a !== undefined) s.push(p.s2a + '-' + p.s2b);
-  if (p.stb_a !== null && p.stb_b !== undefined && p.stb_a !== null) s.push(p.stb_a + '-' + p.stb_b);
-  else if (p.s3a !== null && p.s3a !== undefined) s.push(p.s3a + '-' + p.s3b);
-  return s.join(' · ');
+  if (p.s1a !== null && p.s1a !== undefined) s.push([p.s1a, p.s1b]);
+  if (p.s2a !== null && p.s2a !== undefined) s.push([p.s2a, p.s2b]);
+  if (p.stb_a !== null && p.stb_a !== undefined) s.push([p.stb_a, p.stb_b]);
+  else if (p.s3a !== null && p.s3a !== undefined) s.push([p.s3a, p.s3b]);
+  return s;
+};
+// Etiqueta d'una banda: parella, exempt (bye) o "Ganador #X"
+const banda = (p, ri, costat) => {
+  const noms = nomPareja(p, costat);
+  if (noms) return { tipus: 'parella', noms };
+  if (p.unplayed) return { tipus: 'exempt' };
+  const fs = costat === 'a' ? p.bracket_slot * 2 : p.bracket_slot * 2 + 1;
+  return { tipus: 'tbd', n: _nums[(ri - 1) + '-' + fs] || '?' };
 };
 %>
 
 <% if (quadre.campio) { %>
+  <% const pc = quadre.campio; const nc = nomPareja(pc, pc.winner_id === pc.entry_a_id ? 'a' : 'b'); %>
   <div class="campio-banner">
     <div class="meta">🏆 CAMPIONS</div>
-    <div style="font-size:1.5rem;font-weight:800;margin:.3rem 0"><%= nomPareja(quadre.campio, quadre.campio.winner_id === quadre.campio.entry_a_id ? 'a' : 'b') %></div>
-    <% const m = marca(quadre.campio); if (m) { %><div class="marcador" style="font-size:1.3rem"><%= m %></div><% } %>
+    <div style="font-size:1.5rem;font-weight:800;margin:.3rem 0"><%= nc ? nc[0] + ' / ' + nc[1] : '' %></div>
   </div>
 <% } %>
 
-<div class="quadre quadre-public">
-<% for (const ronda of quadre.rondes) { %>
-  <div class="ronda">
-    <h3><%= ronda.etiqueta %></h3>
-    <% ronda.partits.forEach((p) => { %>
-      <div class="partit<%= p.winner_id ? ' jugat' : '' %><%= p.unplayed ? ' bye' : '' %>">
-        <% const na = nomPareja(p, 'a'), nb = nomPareja(p, 'b'); %>
-        <div class="parella<%= p.winner_id === p.entry_a_id ? ' guanyadora' : '' %>">
-          <span><% if (p.seed_a) { %><strong class="meta">[<%= p.seed_a %>]</strong> <% } %><% if (na) { %><%= na %><% } else { %><span class="meta">Per decidir</span><% } %></span>
+<div class="bracket-scroll">
+  <div class="bracket-canvas">
+    <svg id="bracket-svg" style="position:absolute;left:0;top:0;pointer-events:none" aria-hidden="true"></svg>
+    <div class="bracket" style="min-height:<%= Math.max(480, quadre.rondes[0].partits.length * 170) %>px">
+      <% quadre.rondes.forEach((ronda, ri) => { %>
+        <div class="bround">
+          <h3><%= ronda.etiqueta %> <span class="meta">· <%= ronda.partits.length %> partit<%= ronda.partits.length === 1 ? '' : 's' %></span></h3>
+          <% ronda.partits.forEach((p) => { %>
+            <% const sets = setsDe(p); const num = _nums[ri + '-' + p.bracket_slot]; %>
+            <div class="bcard<%= p.unplayed ? ' bye' : '' %>" data-r="<%= ri %>" data-s="<%= p.bracket_slot %>">
+              <div class="bcard-top">
+                <span class="bnum">#<%= num %></span>
+                <% if (p.unplayed) { %><span class="etiqueta pendent">Bye</span><% } %>
+                <% if (p.wo_winner_id) { %><span class="etiqueta pendent">W.O.</span><% } %>
+                <% if (p.winner_id && !p.unplayed && !p.wo_winner_id) { %><span class="etiqueta ok">Finalitzat</span><% } %>
+              </div>
+              <% for (const costat of ['a', 'b']) { %>
+                <% const info = banda(p, ri, costat);
+                   const entryId = costat === 'a' ? p.entry_a_id : p.entry_b_id;
+                   const guanya = p.winner_id && entryId && p.winner_id === entryId;
+                   const idx = costat === 'a' ? 0 : 1; %>
+                <div class="brow<%= guanya ? ' guanyadora' : '' %>">
+                  <div class="bnoms">
+                    <% if (info.tipus === 'parella') { %>
+                      <span><%= info.noms[0] %></span><span><%= info.noms[1] %></span>
+                    <% } else if (info.tipus === 'exempt') { %>
+                      <span class="meta">Exempt</span>
+                    <% } else { %>
+                      <span class="meta">Ganador #<%= info.n %></span>
+                    <% } %>
+                  </div>
+                  <div class="bsets">
+                    <% for (let i = 0; i < 3; i++) { %>
+                      <span class="<%= guanya && sets[i] ? 'w' : '' %>"><%= sets[i] ? sets[i][idx] : '-' %></span>
+                    <% } %>
+                  </div>
+                </div>
+              <% } %>
+              <% const f = fmtData(p.scheduled_at); %>
+              <% if (f || p.pista) { %><div class="bmeta"><%= f %><%= p.pista ? ' · ' + p.pista : '' %></div><% } %>
+            </div>
+          <% }); %>
         </div>
-        <div class="parella<%= p.winner_id === p.entry_b_id ? ' guanyadora' : '' %>">
-          <span><% if (p.seed_b) { %><strong class="meta">[<%= p.seed_b %>]</strong> <% } %><% if (nb) { %><%= nb %><% } else if (p.unplayed) { %><span class="meta">Exempt</span><% } else { %><span class="meta">Per decidir</span><% } %></span>
-        </div>
-        <% const m2 = marca(p); %>
-        <% if (m2) { %><div class="marcador"><%= m2 %></div><% } %>
-        <% if (p.wo_winner_id) { %><div><span class="etiqueta pendent">W.O.</span></div><% } %>
-        <% if (p.unplayed) { %><div><span class="etiqueta pendent">Bye</span></div><% } %>
-        <% if (p.scheduled_at || p.pista) { %>
-          <div class="meta">📅 <%= p.scheduled_at ? p.scheduled_at.replace('T', ' ') : '' %><%= p.pista ? ' · ' + p.pista : '' %></div>
-        <% } %>
-      </div>
-    <% }); %>
+      <% }); %>
+    </div>
   </div>
-<% } %>
 </div>
+
 <p class="ajuda">El quadre s'actualitza automàticament amb cada resultat.</p>
 
 <div class="fila" style="margin-top:1rem">
@@ -61,12 +107,59 @@ const marca = (p) => {
 <script>
 (function () {
   var b = document.getElementById('copia-enllac');
-  if (!b || !navigator.clipboard) { if (b) b.style.display = 'none'; return; }
-  b.addEventListener('click', function () {
-    navigator.clipboard.writeText('<%= publicUrl %>').then(function () {
-      b.textContent = '✓ Copiat!';
-      setTimeout(function () { b.textContent = '📋 Copia l\u2019enllaç'; }, 2000);
+  if (b && navigator.clipboard) {
+    b.addEventListener('click', function () {
+      navigator.clipboard.writeText('<%= publicUrl %>').then(function () {
+        b.textContent = '✓ Copiat!';
+        setTimeout(function () { b.textContent = '📋 Copia l\u2019enllaç'; }, 2000);
+      });
     });
-  });
+  } else if (b) { b.style.display = 'none'; }
+})();
+// Línies conectoras de l'arbre: de cada partit als dos que l'alimenten
+(function () {
+  var canvas = document.querySelector('.bracket-canvas');
+  var svg = document.getElementById('bracket-svg');
+  if (!canvas || !svg) return;
+  function draw() {
+    var cr = canvas.getBoundingClientRect();
+    var W = canvas.scrollWidth, H = canvas.scrollHeight;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.style.width = W + 'px';
+    svg.style.height = H + 'px';
+    function rel(el) {
+      var r = el.getBoundingClientRect();
+      return { x: r.left - cr.left, y: r.top - cr.top, w: r.width, h: r.height };
+    }
+    var paths = [];
+    canvas.querySelectorAll('.bcard[data-r]').forEach(function (card) {
+      var r = +card.dataset.r, s = +card.dataset.s;
+      if (r === 0) return;
+      var c = rel(card);
+      var x2 = c.x, y2 = c.y + c.h / 2;
+      [s * 2, s * 2 + 1].forEach(function (fs) {
+        var f = canvas.querySelector('.bcard[data-r="' + (r - 1) + '"][data-s="' + fs + '"]');
+        if (!f) return;
+        var fr = rel(f);
+        var x1 = fr.x + fr.w, y1 = fr.y + fr.h / 2;
+        var mx = Math.round((x1 + x2) / 2);
+        paths.push('M' + Math.round(x1) + ',' + Math.round(y1) + ' H' + mx + ' V' + Math.round(y2) + ' H' + Math.round(x2));
+      });
+    });
+    var ns = 'http://www.w3.org/2000/svg';
+    svg.innerHTML = '';
+    paths.forEach(function (d) {
+      var pa = document.createElementNS(ns, 'path');
+      pa.setAttribute('d', d);
+      pa.setAttribute('fill', 'none');
+      pa.setAttribute('stroke', '#C9BFA9');
+      pa.setAttribute('stroke-width', '2');
+      svg.appendChild(pa);
+    });
+  }
+  window.addEventListener('resize', draw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  draw();
+  setTimeout(draw, 150);
 })();
 </script>
