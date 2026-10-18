@@ -52,6 +52,21 @@ CREATE TABLE IF NOT EXISTS club_users (
   PRIMARY KEY (user_id, club_id)
 );
 
+-- Bústia de novetats: notes que els clubs envien (tornejos, canvis de dates,
+-- ajornaments...). L'admin les modera; el cron d'Instagram llegeix les aprovades.
+CREATE TABLE IF NOT EXISTS club_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  club_id INTEGER REFERENCES clubs(id) ON DELETE SET NULL,
+  club_nom TEXT DEFAULT '',
+  contacte TEXT DEFAULT '',
+  tipus TEXT NOT NULL DEFAULT 'novetat',
+  titol TEXT DEFAULT '',
+  missatge TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendent',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  resolta_at TEXT
+);
+
 -- Monitors autoritzats per un club (veure inscrits + altes/baixes, sense gestionar el club)
 CREATE TABLE IF NOT EXISTS club_monitors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,0 +1,29 @@
+<h1>Bústia de novetats</h1>
+<p>Ets club i tens una novetat? Un torneig nou, un canvi de dates, un ajornament per la pluja, resultats... Deixa'ns una nota i la publiquem a PadelVallès i a les nostres xarxes.</p>
+<% if (ok) { %><div class="exit">Nota enviada. La revisarem i la publicarem ben aviat. Gràcies!</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/bustia" method="post">
+  <div class="fila">
+    <div class="camp"><label>Club</label>
+      <select name="club_id">
+        <option value="">-- Selecciona el teu club --</option>
+        <% for (const c of clubs) { %><option value="<%= c.id %>"><%= c.name %> (<%= c.town %>)</option><% } %>
+      </select>
+    </div>
+    <div class="camp"><label>Tipus de novetat</label>
+      <select name="tipus">
+        <option value="torneig">Torneig nou</option>
+        <option value="canvi-dates">Canvi de dates</option>
+        <option value="ajornament">Ajornament</option>
+        <option value="resultat">Resultat / crònica</option>
+        <option value="altra">Altra</option>
+      </select>
+    </div>
+  </div>
+  <p class="meta">Si el teu club no és al directori, indica'n el nom aquí:</p>
+  <div class="camp"><label>Nom del club (si no és a la llista)</label><input name="club_nom" maxlength="120"></div>
+  <div class="camp"><label>Títol</label><input name="titol" maxlength="140" placeholder="p. ex. El COTA 360 s'ajornat per la pluja"></div>
+  <div class="camp"><label>La novetat</label><textarea name="missatge" rows="4" maxlength="1000" placeholder="Explica'ns què ha passat, les noves dates si les saps..."></textarea></div>
+  <div class="camp"><label>Contacte (email o telèfon, per si hem de verificar-ho)</label><input name="contacte" maxlength="120"></div>
+  <button class="boto" type="submit">Envia la nota</button>
+</form>

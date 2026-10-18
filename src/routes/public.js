@@ -301,6 +301,31 @@ r.get('/serveis', (req, res) => {
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/serveis` });
 });
 
+// Bústia de novetats: els clubs hi deixen notes (tornejos, canvis de dates,
+// ajornaments...). Sense login, per no posar fricció; l'admin les modera.
+r.get('/bustia', (req, res) => {
+  const clubs = db.prepare('SELECT id, name, town FROM clubs WHERE verified = 1 ORDER BY name').all();
+  res.render('bustia', { titol: 'Bústia de novetats', clubs,
+    error: req.query.error ? 'Cal escriure la novetat.' : null, ok: req.query.ok });
+});
+
+r.post('/bustia', (req, res) => {
+  const TIPUS = ['torneig', 'canvi-dates', 'ajornament', 'resultat', 'altra'];
+  const clubId = Number(req.body.club_id) || null;
+  const tipus = TIPUS.includes(req.body.tipus) ? req.body.tipus : 'altra';
+  const clubNom = String(req.body.club_nom || '').trim().slice(0, 120);
+  const titol = String(req.body.titol || '').trim().slice(0, 140);
+  const missatge = String(req.body.missatge || '').trim().slice(0, 1000);
+  const contacte = String(req.body.contacte || '').trim().slice(0, 120);
+  if (!missatge) return res.redirect('/bustia?error=1');
+  if (clubId && !db.prepare('SELECT id FROM clubs WHERE id = ?').get(clubId))
+    return res.redirect('/bustia?error=1');
+  db.prepare(`INSERT INTO club_notes (club_id, club_nom, contacte, tipus, titol, missatge)
+              VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(clubId, clubNom, contacte, tipus, titol, missatge);
+  res.redirect('/bustia?ok=1');
+});
+
 // Pàgines legals (text breu de mostra; cal revisar amb assessor)
 r.get('/avis-legal', (req, res) => res.render('legal', { titol: 'Avís legal', pagina: 'avis' }));
 r.get('/privacitat', (req, res) => res.render('legal', { titol: 'Política de privacitat', pagina: 'privacitat' }));

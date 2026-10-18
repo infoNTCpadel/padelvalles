@@ -60,7 +60,26 @@ r.get('/', (req, res) => {
       LEFT JOIN tournaments t ON t.id = s.tournament_id
       WHERE s.status = 'pending' ORDER BY s.created_at DESC`).all();
   } catch { /* taula encara no creada */ }
-  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats, organitzadorsPendents, sollicitudsServei });
+  const notesPendents = db.prepare(`
+    SELECT n.*, c.name AS club_nom_llista
+    FROM club_notes n LEFT JOIN clubs c ON c.id = n.club_id
+    WHERE n.status = 'pendent' ORDER BY n.created_at`).all();
+  res.render('admin/index', { titol: 'Administració', clubsPendents, tornejosPendents, avisos, stats, organitzadorsPendents, sollicitudsServei, notesPendents });
+});
+
+// Bústia de novetats: aprovar / rebutjar nota
+r.post('/notes/:id/aprova', (req, res) => {
+  db.prepare(`UPDATE club_notes SET status = 'aprovada', resolta_at = datetime('now')
+              WHERE id = ? AND status = 'pendent'`).run(req.params.id);
+  log(req.session.user.id, 'nota_aprovada', 'club_notes', req.params.id);
+  res.redirect('/admin');
+});
+
+r.post('/notes/:id/rebutja', (req, res) => {
+  db.prepare(`UPDATE club_notes SET status = 'rebutjada', resolta_at = datetime('now')
+              WHERE id = ? AND status = 'pendent'`).run(req.params.id);
+  log(req.session.user.id, 'nota_rebutjada', 'club_notes', req.params.id);
+  res.redirect('/admin');
 });
 
 // Marcar una sol·licitud de servei com a gestionada

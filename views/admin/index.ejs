@@ -53,6 +53,23 @@
   </div>
 <% } %>
 
+<h2 class="seccio">Bústia de novetats (<%= (typeof notesPendents !== 'undefined' ? notesPendents : []).length %>)</h2>
+<% const __notes = typeof notesPendents !== 'undefined' ? notesPendents : []; %>
+<% if (!__notes.length) { %><p>No n'hi ha cap.</p><% } %>
+<% const TIPUS_NOTA = {'torneig':'🏆 Torneig','canvi-dates':'📅 Canvi de dates','ajornament':'🌧️ Ajornament','resultat':'🏅 Resultat','altra':'💬 Altra','novetat':'💬 Novetat'}; %>
+<% for (const n of __notes) { %>
+  <div class="dades" style="margin-bottom:.8rem">
+    <strong><%= TIPUS_NOTA[n.tipus] || n.tipus %></strong>
+    <% if (n.titol) { %> · <%= n.titol %><% } %>
+    <div class="meta"><%= n.club_nom_llista || n.club_nom || 'Club no indicat' %><% if (n.contacte) { %> · <%= n.contacte %><% } %> · <%= (n.created_at || '').slice(0, 16).replace('T', ' ') %></div>
+    <div style="margin:.4rem 0"><%= n.missatge %></div>
+    <div class="fila" style="margin-top:.5rem">
+      <form class="enlinia" action="/admin/notes/<%= n.id %>/aprova" method="post"><button class="boto menut">Aprova</button></form>
+      <form class="enlinia" action="/admin/notes/<%= n.id %>/rebutja" method="post" onsubmit="return confirm('Segur que vols rebutjar aquesta nota?')"><button class="boto perill menut">Rebutja</button></form>
+    </div>
+  </div>
+<% } %>
+
 <h2 class="seccio">Tornejos pendents de revisió (<%= tornejosPendents.length %>)</h2>
 <% if (!tornejosPendents.length) { %><p>No n'hi ha cap.</p><% } %>
 <% for (const t of tornejosPendents) { %>
