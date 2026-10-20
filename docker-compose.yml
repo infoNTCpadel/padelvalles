@@ -10,6 +10,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SESSION_SECRET=${SESSION_SECRET}
       - APP_URL=${APP_URL:-https://padelvalles.com}
+      - ADVENT_SIM_DATE=${ADVENT_SIM_DATE:-}
       - BREVO_API_KEY=${BREVO_API_KEY:-}
       - MAIL_FROM=${MAIL_FROM:-hola@padelvalles.com}
     volumes:
