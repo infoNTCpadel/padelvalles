@@ -1,0 +1,98 @@
+<h1>🎄 Calendari d'Advent</h1>
+<p><a href="/admin">← Torna a Administració</a> · <a href="/calendari" target="_blank" rel="noopener">Veure el calendari</a> (pàgina oculta: només s'hi arriba per enllaç directe)</p>
+
+<% if (fet) { %><div class="exit">Fet: <%= fet %>.</div><% } %>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+
+<div class="crm-resum">
+  <div class="crm-dada"><strong><%= stats.apertures %></strong><span>obertures de caselles</span></div>
+  <div class="crm-dada"><strong><%= stats.participants %></strong><span>participants</span></div>
+  <div class="crm-dada"><strong><%= stats.participacions %></strong><span>participacions totals</span></div>
+  <div class="crm-dada"><strong><%= stats.referits %></strong><span>referits verificats abonats</span></div>
+</div>
+
+<h2 class="seccio">Sorteigs</h2>
+<div class="dades" style="margin-bottom:1rem">
+  <form class="enlinia" action="/admin/advent/sorteig-diari" method="post" onsubmit="return confirm('Fer el sorteig d\'aquest dia? El guanyador quedarà registrat i serà públic.')">
+    <label>Dia <select name="day">
+      <% for (const d of dies) { %><option value="<%= d.day %>"><%= d.day %> de desembre</option><% } %>
+    </select></label>
+    <button class="boto menut" type="submit">Fes el sorteig del dia</button>
+  </form>
+  <form class="enlinia" action="/admin/advent/sorteig-final" method="post" onsubmit="return confirm('Fer el GRAN sorteig final? És únic i quedarà registrat.')" style="margin-left:1rem">
+    <button class="boto" type="submit">⭐ Fes el gran sorteig final (dia 24)</button>
+  </form>
+  <p class="meta">El sorteig diari tria un guanyador entre qui ha obert la casella d'aquell dia. El final pondera per participacions acumulades (totes les entrades del llibre compten).</p>
+</div>
+
+<% if (draws.length) { %>
+<table class="llista">
+  <thead><tr><th>Quan</th><th>Tipus</th><th>Dia</th><th>Guanyador/a</th><th>Participacions del sorteig</th></tr></thead>
+  <tbody>
+    <% for (const dr of draws) { %>
+      <tr>
+        <td><%= (dr.created_at || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= dr.scope === 'final' ? '⭐ Final' : 'Diari' %></td>
+        <td><%= dr.day || '—' %></td>
+        <td><strong><%= dr.guanyador || '(compte esborrat)' %></strong><% if (dr.guanyador_email) { %> · <%= dr.guanyador_email %><% } %></td>
+        <td><%= dr.entries_count %></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<% } else { %><p>Encara no s'ha fet cap sorteig.</p><% } %>
+
+<div class="fila" style="align-items:flex-start;gap:2rem">
+  <div>
+    <h2 class="seccio">Qui més amics ha portat</h2>
+    <% if (!topReferidors.length) { %><p>Cap referit abonat encara.</p><% } else { %>
+    <table class="llista">
+      <thead><tr><th>Usuari</th><th>Amics verificats</th></tr></thead>
+      <tbody><% for (const t of topReferidors) { %><tr><td><%= t.name %></td><td><strong><%= t.n %></strong></td></tr><% } %></tbody>
+    </table>
+    <% } %>
+  </div>
+  <div>
+    <h2 class="seccio">Classificació de participacions</h2>
+    <% if (!ranking.length) { %><p>Cap participació encara.</p><% } else { %>
+    <table class="llista">
+      <thead><tr><th>Usuari</th><th>Participacions</th></tr></thead>
+      <tbody><% for (const t of ranking) { %><tr><td><%= t.name %></td><td><strong><%= t.pts %></strong></td></tr><% } %></tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+
+<h2 class="seccio">Contingut dels 24 dies</h2>
+<p class="meta">Clica un dia per editar-ne el premi, el patrocinador i, si cal, el quiz. Els canvis són immediats. Compte: la descripció pública del dia 24 ha de mantenir el secret; la descripció completa del gran premi només consta a les bases legals.</p>
+<% for (const d of dies) { %>
+  <% const sorteigDia = draws.find(x => x.scope === 'daily' && x.day === d.day); %>
+  <details id="dia-<%= d.day %>" style="margin-bottom:.6rem">
+    <summary><strong>Dia <%= d.day %></strong> — <%= d.title || '(sense títol)' %> · <%= d.type === 'quiz' ? '🧠 quiz' : '🎁 premi' %><% if (d.day === 12) { %> · 🎁 especial<% } %><% if (d.is_final) { %> · ⭐ gran final<% } %> · <%= obertsPerDia[d.day] || 0 %> obertures<% if (sorteigDia) { %> · 🏆 <%= sorteigDia.guanyador %><% } %></summary>
+    <form class="formulari" action="/admin/advent/dia/<%= d.day %>" method="post" style="margin:.6rem 0 1rem">
+      <div class="camp"><label>Títol del premi</label><input name="title" value="<%= d.title %>" maxlength="120"></div>
+      <div class="camp"><label>Descripció (pública quan la casella és visible)</label><textarea name="description" rows="3" maxlength="1000"><%= d.description %></textarea></div>
+      <div class="camp"><label>Patrocinador</label><input name="sponsor_name" value="<%= d.sponsor_name %>" maxlength="120" placeholder="Nom de la botiga o club (buit = PadelVallès)"></div>
+      <div class="camp"><label>Web del patrocinador</label><input name="sponsor_url" value="<%= d.sponsor_url %>" maxlength="300" placeholder="https://..."></div>
+      <div class="camp"><label>Tipus de casella</label>
+        <select name="type">
+          <option value="premi" <%= d.type === 'premi' ? 'selected' : '' %>>Premi (només obrir)</option>
+          <option value="quiz" <%= d.type === 'quiz' ? 'selected' : '' %>>Quiz (+1 si s'encerta)</option>
+        </select>
+      </div>
+      <div class="camp"><label>Pregunta del quiz</label><input name="quiz_question" value="<%= d.quiz_question %>" maxlength="300"></div>
+      <div class="camp"><label>Opcions del quiz (una per línia)</label><textarea name="quiz_options" rows="4"><%= d.opcions.join('\n') %></textarea></div>
+      <div class="camp"><label>Resposta correcta</label>
+        <% if (d.opcions.length) { %>
+          <select name="quiz_correct">
+            <% d.opcions.forEach(function (op, i) { %><option value="<%= i %>" <%= d.quiz_correct === i ? 'selected' : '' %>><%= i + 1 %>. <%= op %></option><% }); %>
+          </select>
+        <% } else { %>
+          <input type="number" name="quiz_correct" value="<%= d.quiz_correct %>" min="0" max="5">
+        <% } %>
+      </div>
+      <div class="camp"><label style="display:flex;gap:.5rem;align-items:center;font-weight:normal"><input type="checkbox" name="is_final" <%= d.is_final ? 'checked' : '' %> style="width:auto"> És el gran premi final (dia 24)</label></div>
+      <button class="boto menut" type="submit">Desa el dia <%= d.day %></button>
+    </form>
+  </details>
+<% } %>

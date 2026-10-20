@@ -1,0 +1,150 @@
+<section class="hero">
+  <h1>🎄 Calendari d'Advent <span class="accent">PadelVallès</span></h1>
+  <p>De l'1 al 24 de desembre: cada dia, un regal de pàdel. Obre la casella del dia, entra al sorteig d'aquell regal i suma participacions per al <strong>gran premi final del dia 24, valorat en <%= valorGranPremi %> €</strong> (el seu contingut és secret fins al final!).</p>
+</section>
+
+<% if (obert) { %>
+<div class="exit">🎉 Has obert la casella del dia <%= obert %>! Ja participes al sorteig d'avui i sumes participacions per al gran premi final.</div>
+<% } %>
+
+<% if (est.fase === 'abans') { %>
+<div class="avis">⏳ El calendari comença l'<strong>1 de desembre de 2026</strong>. Registra't ja i convida els teus amics: cada amic que es registri i verifiqui el seu email et donarà participacions extra des del primer dia.</div>
+<% } else if (est.fase === 'despres') { %>
+<div class="avis">🎄 El Calendari d'Advent ha acabat. <% if (finalDraw) { %>El gran premi final és per a <strong><%= finalDraw.name %></strong>. Enhorabona!<% } else { %>El gran sorteig final es farà en breu: molta sort a tothom!<% } %></div>
+<% } %>
+
+<h2 class="seccio">Com funciona</h2>
+<div class="fila">
+  <span class="etiqueta">🎁 1 participació per obrir la casella del dia</span>
+  <span class="etiqueta">🧠 +1 si encertes el quiz del dia</span>
+  <span class="etiqueta">👥 +2 per cada amic que es registri i es verifiqui (fins a <%= maxReferits %>)</span>
+  <span class="etiqueta">🔥 +2 per cada ratxa de 7 dies seguits</span>
+</div>
+<p class="meta">Cada dia sortegem el regal entre qui ha obert la casella aquell dia. I el dia 24, totes les participacions acumulades entren al gran sorteig final. Consulta les <a href="/calendari/bases">bases legals</a>.</p>
+
+<% if (meu) { %>
+<h2 class="seccio">La teva participació</h2>
+<div class="dades">
+  <div class="fila">
+    <span class="etiqueta">⭐ <%= meu.participacions %> participacions per al sorteig final</span>
+    <span class="etiqueta">📅 <%= meu.obertes %> de 24 caselles obertes</span>
+    <span class="etiqueta">👥 <%= meu.amics %> amics convidats verificats</span>
+  </div>
+  <p style="margin:.9rem 0 .3rem"><strong>Convida els teus amics i suma +2 per cap:</strong></p>
+  <div class="fila">
+    <input id="enllac-referit" readonly value="<%= meu.enllac %>" style="flex:1;min-width:260px;padding:.5rem .7rem;border:1px solid var(--vora);border-radius:8px;font-family:monospace">
+    <button class="boto menut" type="button" onclick="pvCopiaReferit()">Copia l'enllaç</button>
+    <a class="boto secundari menut" href="<%= meu.whatsapp %>" target="_blank" rel="noopener">💬 Comparteix per WhatsApp</a>
+  </div>
+  <p class="meta" id="copia-ok" style="margin:.4rem 0 0"></p>
+  <p class="meta">Les participacions de referit s'abonen quan l'amic verifica el seu email (topall: <%= maxReferits %> amics).</p>
+</div>
+<script>
+function pvCopiaReferit() {
+  var i = document.getElementById('enllac-referit');
+  var fet = function () { document.getElementById('copia-ok').textContent = '✅ Enllaç copiat!'; };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(i.value).then(fet, fet);
+  } else {
+    i.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    fet();
+  }
+}
+</script>
+<% } else if (est.fase === 'durant') { %>
+<div class="registre-cta">
+  <h2>Per obrir la casella d'avui, entra o registra't</h2>
+  <p>El registre és gratuït i només triga un minut. A més, podràs seguir els teus clubs i no perdre't cap torneig del Vallès.</p>
+  <p><a class="boto" href="/registre?next=/calendari">Registra't gratis</a> <a class="boto secundari" href="/entra?next=/calendari">Ja tinc compte</a></p>
+</div>
+<% } %>
+
+<% if (est.fase === 'durant' && diaAvui) { %>
+<h2 class="seccio">Casella d'avui · <%= est.dia %> de desembre</h2>
+<div class="dades" style="border:2px solid var(--accent)">
+  <% if (!meu) { %>
+    <p>🎁 El premi d'avui t'espera. <a href="/registre?next=/calendari">Registra't</a> o <a href="/entra?next=/calendari">entra</a> per obrir la casella.</p>
+  <% } else if (obertAvui) { %>
+    <p style="font-size:1.15rem;margin:.2rem 0"><strong><%= diaAvui.is_final ? '⭐ ' : '🎁 ' %><%= diaAvui.title %></strong></p>
+    <p><%= diaAvui.description %></p>
+    <% if (diaAvui.sponsor_name) { %><p class="meta">Premi ofert per <% if (diaAvui.sponsor_url) { %><a href="<%= diaAvui.sponsor_url %>" target="_blank" rel="noopener"><%= diaAvui.sponsor_name %></a><% } else { %><%= diaAvui.sponsor_name %><% } %></p><% } %>
+    <% if (diaAvui.type === 'quiz') { %>
+      <% if (obertAvui.correct === 1) { %><div class="exit">🧠 Has encertat el quiz del dia: +1 participació extra!</div>
+      <% } else { %><div class="avis">🧠 El quiz no l'has encertat. La resposta correcta era: <strong><%= quizOpcions[diaAvui.quiz_correct] %></strong>. Demà, una altra oportunitat!</div><% } %>
+    <% } %>
+    <% if (guanyadors[est.dia]) { %><p>🏆 Guanyador/a del sorteig d'avui: <strong><%= guanyadors[est.dia] %></strong></p><% } %>
+  <% } else { %>
+    <% if (diaAvui.type === 'quiz') { %>
+      <p>Avui la casella porta un <strong>quiz de pàdel</strong>: si l'encertes, sumes una participació extra per al gran sorteig final.</p>
+      <form class="formulari" style="margin:.6rem 0;box-shadow:none;border:0;padding:0" action="/calendari/obre" method="post">
+        <div class="camp"><label><%= diaAvui.quiz_question %></label>
+          <% quizOpcions.forEach(function (op, i) { %>
+            <label style="display:flex;gap:.5rem;align-items:center;font-weight:normal;margin:.3rem 0"><input type="radio" name="resposta" value="<%= i %>" required style="width:auto"> <%= op %></label>
+          <% }); %>
+        </div>
+        <button class="boto" type="submit">🎁 Obre la casella</button>
+      </form>
+    <% } else { %>
+      <p>🎁 El premi d'avui és una sorpresa fins que obris la casella.</p>
+      <form action="/calendari/obre" method="post">
+        <button class="boto" type="submit">🎁 Obre la casella d'avui</button>
+      </form>
+    <% } %>
+  <% } %>
+</div>
+<% } %>
+
+<h2 class="seccio">Les 24 caselles</h2>
+<div class="advent-graella">
+  <% for (const d of dies) { %>
+    <% let estatCasella = 'futura';
+       if (est.fase === 'despres' || d.day < est.dia) estatCasella = 'passada';
+       else if (est.fase === 'durant' && d.day === est.dia) estatCasella = 'avui';
+       const meva = meu && meu.obertesMap.has(d.day);
+       if (meva) estatCasella += ' oberta'; %>
+    <div class="advent-casella <%= estatCasella %><%= d.is_final ? ' final' : '' %>">
+      <div class="num"><%= d.day %><% if (d.is_final) { %> ⭐<% } %></div>
+      <% if (estatCasella.startsWith('passada')) { %>
+        <div class="premi"><%= d.title %></div>
+        <% if (d.sponsor_name) { %><div class="meta"><%= d.sponsor_name %></div><% } %>
+        <% if (guanyadors[d.day]) { %><div class="meta">🏆 <%= guanyadors[d.day] %></div><% } %>
+        <% if (meva) { %><div class="meta">✅ L'has oberta</div><% } %>
+      <% } else if (estatCasella.startsWith('avui')) { %>
+        <% if (obertAvui) { %>
+          <div class="premi"><%= d.title %></div>
+          <% if (guanyadors[d.day]) { %><div class="meta">🏆 <%= guanyadors[d.day] %></div><% } %>
+        <% } else if (d.is_final) { %>
+          <div class="premi">Gran premi final · <%= valorGranPremi %> €</div>
+          <div class="meta">Avui és el gran dia!</div>
+        <% } else { %>
+          <div class="premi">🎁 Casella d'avui</div>
+          <div class="meta">Obre-la a dalt de tot</div>
+        <% } %>
+      <% } else { %>
+        <% if (d.is_final) { %>
+          <div class="premi">Gran premi final · <%= valorGranPremi %> €</div>
+          <div class="meta">🔒 Es desvela el 24 de desembre</div>
+        <% } else { %>
+          <div class="meta">🔒 S'obri el <%= d.day %> de desembre</div>
+        <% } %>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<h2 class="seccio">Classificació de participacions</h2>
+<% if (!ranking.length) { %>
+<p>Encara no hi ha cap participació. Sigues el primer a sumar-ne!</p>
+<% } else { %>
+<table class="llista advent-ranquing">
+  <thead><tr><th>#</th><th>Jugador/a</th><th>Participacions</th></tr></thead>
+  <tbody>
+    <% ranking.forEach(function (x, i) { %>
+      <tr><td class="pos"><%= i + 1 %></td><td><%= x.name %></td><td><strong><%= x.pts %></strong></td></tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+
+<p class="meta">Promoció gratuïta de PadelVallès (NOTECOMPLIQUES, SL), de l'1 al 24 de desembre de 2026. Consulta les <a href="/calendari/bases">bases legals del Calendari d'Advent</a>.</p>

@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
+import { sorteigDiari, sorteigFinal } from '../lib/advent.js';
 import { COMARQUES } from '../brand.js';
 import { dirPujades } from './club.js';
 import { sendClaimResolta, sendOrganitzadorResolt } from '../mail.js';
@@ -362,6 +363,71 @@ r.get('/historial', (req, res) => {
     SELECT m.*, u.name AS qui FROM moderation_log m LEFT JOIN users u ON u.id = m.actor_id
     ORDER BY m.created_at DESC LIMIT 200`).all();
   res.render('admin/historial', { titol: 'Historial de moderació', accions });
+});
+
+// --- Calendari d'Advent: contingut dels 24 dies, estadístiques i sorteigs ---
+r.get('/advent', (req, res) => {
+  const dies = db.prepare('SELECT * FROM advent_days ORDER BY day').all()
+    .map(d => { try { d.opcions = JSON.parse(d.quiz_options || '[]'); } catch { d.opcions = []; } return d; });
+  const obertsPerDia = {};
+  for (const x of db.prepare('SELECT day, COUNT(*) n FROM advent_opens GROUP BY day').all()) obertsPerDia[x.day] = x.n;
+  const stats = {
+    apertures: db.prepare('SELECT COUNT(*) n FROM advent_opens').get().n,
+    participants: db.prepare('SELECT COUNT(DISTINCT user_id) n FROM advent_opens').get().n,
+    participacions: db.prepare('SELECT COALESCE(SUM(points), 0) n FROM advent_entries').get().n,
+    referits: db.prepare(`SELECT COUNT(*) n FROM advent_entries WHERE source = 'referral'`).get().n,
+  };
+  const topReferidors = db.prepare(`
+    SELECT u.name, COUNT(*) n FROM advent_entries e JOIN users u ON u.id = e.user_id
+    WHERE e.source = 'referral' GROUP BY e.user_id ORDER BY n DESC LIMIT 10`).all();
+  const ranking = db.prepare(`
+    SELECT u.name, SUM(e.points) pts FROM advent_entries e JOIN users u ON u.id = e.user_id
+    GROUP BY e.user_id ORDER BY pts DESC LIMIT 10`).all();
+  const draws = db.prepare(`
+    SELECT d.*, u.name AS guanyador, u.email AS guanyador_email
+    FROM advent_draws d LEFT JOIN users u ON u.id = d.winner_user_id
+    ORDER BY d.created_at DESC`).all();
+  res.render('admin/advent', {
+    titol: "Calendari d'Advent", dies, obertsPerDia, stats, topReferidors, ranking, draws,
+    fet: req.query.fet || null, error: req.query.error || null,
+  });
+});
+
+r.post('/advent/dia/:day', (req, res) => {
+  const day = parseInt(req.params.day, 10);
+  if (!Number.isInteger(day) || day < 1 || day > 24) return res.redirect('/admin/advent');
+  const type = req.body.type === 'quiz' ? 'quiz' : 'premi';
+  const opcions = String(req.body.quiz_options || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
+  let correct = parseInt(req.body.quiz_correct, 10);
+  if (Number.isNaN(correct) || correct < 0 || correct >= Math.max(opcions.length, 1)) correct = 0;
+  db.prepare(`UPDATE advent_days SET title = ?, description = ?, sponsor_name = ?, sponsor_url = ?,
+              type = ?, quiz_question = ?, quiz_options = ?, quiz_correct = ?, is_final = ?
+              WHERE day = ?`)
+    .run(String(req.body.title || '').trim().slice(0, 120),
+         String(req.body.description || '').trim().slice(0, 1000),
+         String(req.body.sponsor_name || '').trim().slice(0, 120),
+         String(req.body.sponsor_url || '').trim().slice(0, 300),
+         type,
+         String(req.body.quiz_question || '').trim().slice(0, 300),
+         JSON.stringify(opcions), correct,
+         req.body.is_final === 'on' ? 1 : 0, day);
+  log(req.session.user.id, 'advent_dia_editat', 'advent_day', day);
+  res.redirect('/admin/advent?fet=dia' + day + '#dia-' + day);
+});
+
+r.post('/advent/sorteig-diari', (req, res) => {
+  const day = parseInt(req.body.day, 10);
+  const resultat = sorteigDiari(day);
+  if (resultat.error) return res.redirect('/admin/advent?error=' + encodeURIComponent(resultat.error));
+  log(req.session.user.id, 'advent_sorteig_diari', 'advent_day', day, 'guanyador uid=' + resultat.winner);
+  res.redirect('/admin/advent?fet=sorteig' + day);
+});
+
+r.post('/advent/sorteig-final', (req, res) => {
+  const resultat = sorteigFinal();
+  if (resultat.error) return res.redirect('/admin/advent?error=' + encodeURIComponent(resultat.error));
+  log(req.session.user.id, 'advent_sorteig_final', 'advent', 24, 'guanyador uid=' + resultat.winner);
+  res.redirect('/admin/advent?fet=sorteigfinal');
 });
 
 export default r;

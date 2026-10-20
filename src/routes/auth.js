@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import db from '../db.js';
 import { sendVerificationEmail, sendPasswordReset, afegirALlistaBrevo } from '../mail.js';
 import { permet } from '../lib/rateLimit.js';
+import { codiReferitDe, usuariPerCodiReferit, abonaReferit } from '../lib/advent.js';
 import { NIVELLS } from '../brand.js';
 
 const r = Router();
@@ -24,6 +25,8 @@ function sessio(user) {
 // Registre de jugador
 r.get('/registre', (req, res) => {
   if (req.session.user) return res.redirect('/');
+  // Calendari d'Advent: el codi de referit es desa a la sessió fins al registre
+  if (req.query.ref) req.session.refCode = String(req.query.ref).trim().toUpperCase().slice(0, 16);
   res.render('registre', { titol: "Registre't", error: null, NIVELLS, next: req.query.next || '' });
 });
 
@@ -43,6 +46,19 @@ r.post('/registre', (req, res) => {
   const butlleti = req.body.butlleti === 'on' ? 1 : 0;
   const info = db.prepare('INSERT INTO users (email, password_hash, name, level, phone, newsletter) VALUES (?, ?, ?, ?, ?, ?)')
     .run(em, hash, nom.trim(), nivellValid(nivell), netejaTelefon(telefon), butlleti);
+  // Calendari d'Advent: codi de referit propi i vincle amb qui l'ha convidat
+  // (les participacions s'abonen quan verifiqui l'email, vegeu /verifica/:token)
+  try {
+    codiReferitDe(info.lastInsertRowid);
+    const codiRef = String(req.session.refCode || '').trim().toUpperCase();
+    if (codiRef) {
+      const amfitrio = usuariPerCodiReferit(codiRef);
+      if (amfitrio && amfitrio.id !== Number(info.lastInsertRowid)) {
+        db.prepare('UPDATE users SET referred_by_id = ? WHERE id = ?').run(amfitrio.id, info.lastInsertRowid);
+      }
+      delete req.session.refCode;
+    }
+  } catch { /* el referit mai no ha de bloquejar un registre */ }
   const token = crypto.randomBytes(24).toString('hex');
   db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(info.lastInsertRowid, token);
   sendVerificationEmail(em, nom.trim(), token);
@@ -96,6 +112,8 @@ r.get('/verifica/:token', (req, res) => {
   // Alta a la llista de Brevo: només si ho ha consentit i amb l'email ja verificat
   const nou = db.prepare('SELECT email, name, newsletter FROM users WHERE id = ?').get(tok.user_id);
   if (nou && nou.newsletter) afegirALlistaBrevo(nou.email, nou.name);
+  // Calendari d'Advent: abona les participacions a qui el va convidar (idempotent)
+  try { abonaReferit(tok.user_id); } catch { /* mai no bloqueja la verificació */ }
   res.redirect('/elmeucompte?verificat=1');
 });
 

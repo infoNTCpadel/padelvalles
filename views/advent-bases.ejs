@@ -1,0 +1,64 @@
+<h1>Bases legals del Calendari d'Advent PadelVallès</h1>
+<p class="meta">Promoció «Calendari d'Advent PadelVallès», de l'1 al 24 de desembre de 2026.</p>
+
+<h2>1. Organitzador</h2>
+<ul>
+  <li><strong>Nom:</strong> NOTECOMPLIQUES, SL</li>
+  <li><strong>Domicili social:</strong> Avgda. Bejar, 188 5o1a, 08225 Terrassa</li>
+  <li><strong>C.I.F.:</strong> B63014633</li>
+  <li><strong>Correu electrònic:</strong> info@padelvalles.com</li>
+</ul>
+<p>NOTECOMPLIQUES, SL (en endavant, «l'Organitzador») organitza a través del lloc web https://padelvalles.com la promoció «Calendari d'Advent PadelVallès» (en endavant, «la Promoció»), que es regeix per aquestes bases.</p>
+
+<h2>2. Àmbit i dates</h2>
+<p>La Promoció és gratuïta, no exigeix cap compra ni pagament, i es desenvolupa de l'<strong>1 al 24 de desembre de 2026</strong> (hora peninsular espanyola, Europe/Madrid). Poden participar-hi les persones físiques <strong>majors de 18 anys</strong>, residents a Espanya, que disposin d'un compte d'usuari registrat i amb l'email verificat a PadelVallès. Cada persona pot participar-hi amb un únic compte; els comptes duplicats o fraudulents podran ser exclosos.</p>
+
+<h2>3. Mecànica de participació</h2>
+<ol>
+  <li>Cada dia, de l'1 al 24 de desembre, s'obre una «casella» del calendari a la pàgina de la Promoció. Per obrir la casella del dia cal haver iniciat sessió amb un compte de PadelVallès.</li>
+  <li>Obrir la casella del dia atorga <strong>1 participació</strong> per al gran sorteig final i l'entrada al <strong>sorteig diari</strong> del regal d'aquell dia.</li>
+  <li>Alguns dies la casella inclou un quiz de pàdel: si s'encerta la resposta, s'atorga <strong>1 participació addicional</strong>.</li>
+  <li>Cada usuari disposa d'un enllaç de referit personal. Per cada amic que es registri a PadelVallès amb aquest enllaç <strong>i verifiqui el seu correu electrònic</strong>, s'atorguen <strong>2 participacions addicionals</strong>, amb un màxim de <%= maxReferits %> amics per participant.</li>
+  <li>Obrir les caselles de <strong>7 dies consecutius</strong> atorga <strong>2 participacions addicionals</strong> per cada ratxa completada.</li>
+  <li>Les caselles de dies anteriors es poden consultar, però un cop passat el dia ja no es poden obrir ni generen participacions.</li>
+</ol>
+
+<h2>4. Premis</h2>
+<p>Cada dia es sorteja un regal entre totes les persones que hagin obert la casella d'aquell dia. Els regals són els següents:</p>
+<table class="llista">
+  <thead><tr><th>Dia</th><th>Premi</th><th>Ofert per</th></tr></thead>
+  <tbody>
+    <% for (const d of dies) { %>
+      <% if (!d.is_final) { %>
+      <tr><td><%= d.day %> de desembre</td><td><%= d.title %><% if (d.description) { %> — <%= d.description %><% } %></td><td><%= d.sponsor_name || 'PadelVallès' %></td></tr>
+      <% } %>
+    <% } %>
+  </tbody>
+</table>
+<p><strong>Gran premi final (24 de desembre).</strong> Entre totes les participacions acumulades durant la Promoció se sortejarà el gran premi final:</p>
+<!-- COMPLETAR ABANS DE PUBLICAR LA PROMOCIÓ: descripció completa i exacta del gran premi final. Aquesta descripció ha de constar a les bases encara que a la comunicació pública el premi es mantingui secret i només se n'anunciï el valor (<%= valorGranPremi %> €). -->
+<p><strong>[COMPLETAR: descripció completa del gran premi final — p. ex. «una pala de pàdel [marca i model], amb un preu de venda al públic de <%= valorGranPremi %> €».]</strong></p>
+<p>El dia 12 de desembre el regal diari és el premi especial de meitat de calendari indicat a la taula. Els premis són personals i intransferibles i no es podran canviar per diners ni per altres productes, tret que l'Organitzador ho autoritzi expressament. Els premis els proporcionen l'Organitzador i, si escau, les entitats patrocinadores indicades a cada dia.</p>
+
+<h2>5. Sorteigs, guanyadors i lliurament</h2>
+<ol>
+  <li>Els <strong>sorteigs diaris</strong> es faran entre les persones que hagin obert la casella del dia corresponent, un cop tancat el dia (a partir de les 00:00 del dia següent), mitjançant el sistema de sorteig aleatori de la plataforma, que queda registrat.</li>
+  <li>El <strong>gran sorteig final</strong> se celebrarà el <strong>28 de desembre de 2026</strong>, ponderat pel nombre de participacions acumulades per cada participant.</li>
+  <li>Els noms dels guanyadors es publicaran a la pàgina de la Promoció i es comunicaran per correu electrònic a l'adreça del seu compte.</li>
+  <li>El guanyador haurà de <strong>reclamar el premi responent el correu de notificació en un termini de 7 dies naturals</strong> i facilitar les dades necessàries per al lliurament. Si no ho fa, o si el premi és rebutjat, l'Organitzador podrà repetir el sorteig entre la resta de participants del mateix dia (o del sorteig final) i designar un nou guanyador amb el mateix procediment.</li>
+  <li>El lliurament es farà en mà en un club del Vallès a convenir o per enviament postal dins d'Espanya, a càrrec de l'Organitzador, en un termini màxim de 30 dies des de la reclamació.</li>
+</ol>
+
+<h2>6. Fiscalitat</h2>
+<p>Els premis d'aquesta Promoció són premis en espècie. D'acord amb la normativa de l'IRPF, cap premi supera els límits que obligarien l'Organitzador a practicar ingrés a compte, de manera que els premis es lliuren íntegres. El guanyador haurà de declarar el premi en el seu IRPF com a guany patrimonial pel seu <strong>valor de mercat</strong>, d'acord amb la normativa fiscal vigent.</p>
+
+<h2>7. Protecció de dades</h2>
+<p>El responsable del tractament de les dades personals és NOTECOMPLIQUES, SL (CIF B63014633, Avgda. Bejar, 188 5o1a, 08225 Terrassa, info@padelvalles.com). Les dades dels participants (nom, correu electrònic i activitat dins la Promoció) es tracten amb la finalitat de gestionar la participació, els sorteigs i el lliurament dels premis, amb la base jurídica de l'execució d'aquestes bases, acceptades en participar-hi, i del consentiment per a la publicació del nom del guanyador. Les dades es conservaran durant la Promoció i els terminis legals de prescripció. No es cediran a tercers amb fins comercials. Els participants poden exercir els drets d'accés, rectificació, supressió, oposició, limitació i portabilitat escrivint a info@padelvalles.com, i reclamar davant l'Agència Espanyola de Protecció de Dades (www.aepd.es). La política de privacitat completa és a https://padelvalles.com/privacitat.</p>
+
+<h2>8. Exoneració de plataformes</h2>
+<p>Aquesta Promoció no està patrocinada, avalada ni administrada per Instagram ni per Meta Platforms, ni hi està associada de cap manera. Cada participant exonera completament Instagram i Meta de qualsevol responsabilitat derivada de la Promoció.</p>
+
+<h2>9. Acceptació i modificacions</h2>
+<p>La participació en la Promoció implica l'acceptació íntegra d'aquestes bases. L'Organitzador es reserva el dret de modificar les bases o de cancel·lar la Promoció per causa justificada, comunicant-ho a la pàgina de la Promoció amb antelació raonable, i d'excloure participants que hi actuïn de mala fe o amb mitjans fraudulents. Aquestes bases es regeixen per la legislació espanyola i, en cas de controvèrsia, les parts se sotmeten als jutjats i tribunals de Terrassa.</p>
+
+<p class="meta">Darrera actualització: octubre de 2026.</p>

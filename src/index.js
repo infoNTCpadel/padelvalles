@@ -83,6 +83,7 @@ import clubRoutes from './routes/club.js';
 import adminRoutes from './routes/admin.js';
 import inscripcioRoutes from './routes/inscripcions.js';
 import organitzadorRoutes from './routes/organitzador.js';
+import adventRoutes from './routes/advent.js';
 import { arrencaProgramador } from './lib/programador.js';
 
 app.use('/', authRoutes);
@@ -90,6 +91,7 @@ app.use('/', playerRoutes);
 app.use('/', clubRoutes);
 app.use('/', organitzadorRoutes);
 app.use('/', inscripcioRoutes);
+app.use('/', adventRoutes);
 app.use('/admin', adminRoutes);
 // public l'últim: té rutes genèriques com /club/:id que no han de
 // capturar /club/panel, /club/torneig/nou, etc.

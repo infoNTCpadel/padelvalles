@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { sembraCandidats20260928 } from './seed-candidats-20260928.js';
 import { sembraCandidats20261012 } from './seed-candidats-20261012.js';
 import { sembraXarxes20261015 } from './seed-xarxes-20261015.js';
@@ -356,6 +357,8 @@ for (const [taula, columna, def] of [
   ['registrations', 'player2_email', `TEXT DEFAULT ''`],
   ['registrations', 'player2_phone', `TEXT DEFAULT ''`],
   ['matches', 'pista', `TEXT DEFAULT ''`],
+  ['users', 'referral_code', `TEXT DEFAULT ''`],
+  ['users', 'referred_by_id', `INTEGER REFERENCES users(id)`],
 ]) {
   const cols = db.prepare(`PRAGMA table_info(${taula})`).all();
   if (!cols.some(c => c.name === columna)) db.exec(`ALTER TABLE ${taula} ADD COLUMN ${columna} ${def}`);
@@ -518,6 +521,109 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_interests_t ON interests(tournament_id)`
 sembraCandidats20260928(db);
 sembraCandidats20261012(db);
 sembraXarxes20261015(db);
+
+// --- Calendari d'Advent (mòdul ocult: només accessible per la ruta directa
+// /calendari; cap enllaç des del web, vegeu src/routes/advent.js) ---
+// advent_days: contingut de cada casella (editable des de l'admin).
+// advent_opens: una obertura per usuari i dia (UNIQUE).
+// advent_entries: llibre auditable de participacions per al sorteig final
+//   (source: open | quiz | referral | bonus; ref_key identifica l'origen únic:
+//   id de l'amic als referits, 'ratxa-<dia>' als bonus; índex únic = idempotència).
+// advent_draws: historial de sorteigs (diaris i final).
+db.exec(`
+CREATE TABLE IF NOT EXISTS advent_days (
+  day INTEGER PRIMARY KEY,
+  title TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  sponsor_name TEXT DEFAULT '',
+  sponsor_url TEXT DEFAULT '',
+  type TEXT NOT NULL DEFAULT 'premi',
+  quiz_question TEXT DEFAULT '',
+  quiz_options TEXT DEFAULT '[]',
+  quiz_correct INTEGER DEFAULT 0,
+  is_final INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS advent_opens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day INTEGER NOT NULL,
+  correct INTEGER,
+  opened_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_id, day)
+);
+CREATE TABLE IF NOT EXISTS advent_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  ref_key TEXT,
+  points INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS advent_draws (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  scope TEXT NOT NULL,
+  day INTEGER,
+  winner_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  entries_count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_advent_opens_dia ON advent_opens(day);
+CREATE INDEX IF NOT EXISTS idx_advent_entries_user ON advent_entries(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_advent_entries_refkey ON advent_entries(user_id, source, ref_key);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_advent_draws_dia ON advent_draws(scope, day);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_refcode ON users(referral_code) WHERE referral_code IS NOT NULL AND referral_code <> '';
+`);
+
+// Llavors dels 24 dies: premis provisionals, editables des de l'admin.
+// El dia 12 és el premi especial de meitat de calendari; el 24, el gran premi
+// final (secret a la comunicació: només se n'anuncia el valor, 180 €).
+{
+  const sembraDia = db.prepare(`INSERT OR IGNORE INTO advent_days
+    (day, title, description, type, quiz_question, quiz_options, quiz_correct, is_final)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+  const Q = (p, opcions, correcta) => [p, JSON.stringify(opcions), correcta];
+  const dies = [
+    [1, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel per estrenar a la pista.', 'premi', '', '[]', 0, 0],
+    [2, 'Mitjons de pádel', 'Uns mitjons tècnics de canya alta, dels que no rellisquen dins la sabatilla.', 'premi', '', '[]', 0, 0],
+    [3, 'Pack de 3 grips', 'Tres grips per renovar l’empunyadura de la teva pala.', 'premi', '', '[]', 0, 0],
+    [4, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel per a la propera americana.', 'premi', '', '[]', 0, 0],
+    [5, 'Bidó esportiu', 'Un bidó esportiu per no quedar-te mai sense aigua entre jocs.', 'quiz', ...Q('Quants jugadors hi ha a la pista en un partit de pádel?', ['2', '4', '6'], 1), 0],
+    [6, 'Protector de pala', 'Un protector transparent per allargar la vida del marc de la pala.', 'premi', '', '[]', 0, 0],
+    [7, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel. Setmana 1 completada!', 'premi', '', '[]', 0, 0],
+    [8, 'Gorra PadelVallès', 'Una gorra per als dies de sol a les pistes exteriors.', 'premi', '', '[]', 0, 0],
+    [9, 'Tovallola de microfibra', 'Una tovallola de microfibra, petita i lleugera, per a la bossa de pádel.', 'premi', '', '[]', 0, 0],
+    [10, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel per al cap de setmana.', 'premi', '', '[]', 0, 0],
+    [11, 'Buf de pádel', 'Un buf tubular per als matins freds de desembre.', 'quiz', ...Q('Quin d’aquests cops es juga sense que la pelota boti?', ['La volea', 'La bandeja', 'La sortida de paret'], 0), 0],
+    [12, 'Motxilla de pádel', 'PREMI ESPECIAL de meitat de calendari: una motxilla de pádel amb compartiment per a la pala.', 'premi', '', '[]', 0, 0],
+    [13, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel per seguir sumant.', 'premi', '', '[]', 0, 0],
+    [14, 'Pack de 2 botes de pelotas', 'Dos botes de 3 pelotas: un per a tu i un per a la teva parella de joc.', 'premi', '', '[]', 0, 0],
+    [15, 'Mitjons tècnics', 'Uns mitjons tècnics de competició.', 'premi', '', '[]', 0, 0],
+    [16, 'Canellera i grips', 'Una canellera i un pack de grips per jugar còmode.', 'premi', '', '[]', 0, 0],
+    [17, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel. Ja queda poc per al gran dia!', 'premi', '', '[]', 0, 0],
+    [18, 'Samarreta tècnica', 'Una samarreta tècnica transpirable per entrenar i competir.', 'quiz', ...Q('A quants sets es juga, com a màxim, un partit oficial de pádel?', ['2', '3', '5'], 1), 0],
+    [19, 'Bote de pelotas', 'Un bote de 3 pelotas de pádel per a les festes.', 'premi', '', '[]', 0, 0],
+    [20, 'Tovallola i protector', 'Una tovallola de microfibra i un protector de pala.', 'premi', '', '[]', 0, 0],
+    [21, 'Bote de pelotas premium', 'Un bote de 3 pelotas premium, les de competició.', 'premi', '', '[]', 0, 0],
+    [22, 'Pack d’accessoris', 'Grips, protector i mitjons: el kit complet d’accessoris.', 'premi', '', '[]', 0, 0],
+    [23, 'Bote de pelotas i bidó', 'Un bote de 3 pelotas i un bidó esportiu. Demà, el gran dia!', 'premi', '', '[]', 0, 0],
+    [24, 'Gran premi final', 'El gran premi del Calendari d’Advent, valorat en 180 €. El seu contingut es desvela avui, 24 de desembre. Molta sort!', 'premi', '', '[]', 0, 1],
+  ];
+  for (const d of dies) sembraDia.run(...d);
+}
+
+// Codis de referit per als usuaris que encara no en tenen (nous i existents)
+{
+  const senseCodi = db.prepare(`SELECT id FROM users WHERE referral_code IS NULL OR referral_code = ''`).all();
+  if (senseCodi.length) {
+    const existeix = db.prepare('SELECT 1 FROM users WHERE referral_code = ?');
+    const upd = db.prepare('UPDATE users SET referral_code = ? WHERE id = ?');
+    for (const u of senseCodi) {
+      let codi;
+      do { codi = crypto.randomBytes(4).toString('hex').toUpperCase(); } while (existeix.get(codi));
+      upd.run(codi, u.id);
+    }
+  }
+}
 
 // Transacció: tot o res. Si alguna ordre falla, es desfà tot el bloc.
 export function transaccio(fn) {
