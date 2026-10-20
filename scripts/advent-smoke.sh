@@ -123,6 +123,15 @@ L_B="$(grep -n 'Bernat Prova' "$TMPD/ranquing.html" | head -1 | cut -d: -f1)"
 [ -n "$L_A" ] && [ -n "$L_B" ] && [ "$L_A" -lt "$L_B" ]
 check $? "la classificació pública ordena A (4) davant de B (1)"
 
+# --- 7b. Desfer el sorteig del dia 5 i tornar-lo a fer ---
+DRAW_ID="$(sql "SELECT id FROM advent_draws WHERE scope='daily' AND day=5")"
+curl -s -c "$JAR_ADM" -b "$JAR_ADM" -o /dev/null -X POST "$BASE/admin/advent/sorteig-desfer" --data "id=$DRAW_ID"
+N_DRAWS="$(sql "SELECT COUNT(*) n FROM advent_draws WHERE scope='daily' AND day=5")"
+[ "$N_DRAWS" = "0" ]; check $? "desfer el sorteig del dia 5 l'elimina del registre"
+curl -s -c "$JAR_ADM" -b "$JAR_ADM" -o /dev/null -X POST "$BASE/admin/advent/sorteig-diari" --data "day=5"
+N_DRAWS="$(sql "SELECT COUNT(*) n FROM advent_draws WHERE scope='daily' AND day=5")"
+[ "$N_DRAWS" = "1" ]; check $? "el sorteig del dia 5 es pot tornar a fer després de desfer-lo"
+
 # --- 8. La BD real no s'ha tocat ---
 DESPRES="$(md5sum "$REPO/data/padelvalles.db" | cut -d' ' -f1)"
 [ "$ABANS" = "$DESPRES" ]; check $? "data/padelvalles.db intacta (md5 $ABANS)"

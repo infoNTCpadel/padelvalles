@@ -19,15 +19,15 @@
     </select></label>
     <button class="boto menut" type="submit">Fes el sorteig del dia</button>
   </form>
-  <form class="enlinia" action="/admin/advent/sorteig-final" method="post" onsubmit="return confirm('Fer el GRAN sorteig final? És únic i quedarà registrat.')" style="margin-left:1rem">
+  <form class="enlinia" action="/admin/advent/sorteig-final" method="post" onsubmit="return confirm('Fer el GRAN sorteig final? Quedarà registrat (el podràs desfer des de l\'historial si cal).')" style="margin-left:1rem">
     <button class="boto" type="submit">⭐ Fes el gran sorteig final (dia 24)</button>
   </form>
-  <p class="meta">El sorteig diari tria un guanyador entre qui ha obert la casella d'aquell dia. El final pondera per participacions acumulades (totes les entrades del llibre compten).</p>
+  <p class="meta">El sorteig diari tria un guanyador entre qui ha obert la casella d'aquell dia. El final pondera per participacions acumulades (totes les entrades del llibre compten). Si fas un sorteig de prova o hi ha un error, el pots desfer des de l'historial i tornar-lo a fer; les participacions no es toquen.</p>
 </div>
 
 <% if (draws.length) { %>
 <table class="llista">
-  <thead><tr><th>Quan</th><th>Tipus</th><th>Dia</th><th>Guanyador/a</th><th>Participacions del sorteig</th></tr></thead>
+  <thead><tr><th>Quan</th><th>Tipus</th><th>Dia</th><th>Guanyador/a</th><th>Participacions del sorteig</th><th></th></tr></thead>
   <tbody>
     <% for (const dr of draws) { %>
       <tr>
@@ -36,6 +36,12 @@
         <td><%= dr.day || '—' %></td>
         <td><strong><%= dr.guanyador || '(compte esborrat)' %></strong><% if (dr.guanyador_email) { %> · <%= dr.guanyador_email %><% } %></td>
         <td><%= dr.entries_count %></td>
+        <td>
+          <form class="enlinia" action="/admin/advent/sorteig-desfer" method="post" onsubmit="return confirm('Desfer aquest sorteig? El guanyador deixarà de constar i podràs tornar-lo a fer.')">
+            <input type="hidden" name="id" value="<%= dr.id %>">
+            <button class="boto menut" type="submit">Desfés</button>
+          </form>
+        </td>
       </tr>
     <% } %>
   </tbody>

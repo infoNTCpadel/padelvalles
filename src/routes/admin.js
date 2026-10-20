@@ -430,4 +430,16 @@ r.post('/advent/sorteig-final', (req, res) => {
   res.redirect('/admin/advent?fet=sorteigfinal');
 });
 
+// Desfer un sorteig: elimina el registre (les participacions no es toquen),
+// el guanyador deixa de constar en públic i el sorteig es pot tornar a fer.
+// Pensat per a proves i per corregir errors abans de comunicar el guanyador.
+r.post('/advent/sorteig-desfer', (req, res) => {
+  const id = parseInt(req.body.id, 10);
+  const dr = Number.isInteger(id) ? db.prepare('SELECT * FROM advent_draws WHERE id = ?').get(id) : null;
+  if (!dr) return res.redirect('/admin/advent?error=' + encodeURIComponent('Sorteig no trobat.'));
+  db.prepare('DELETE FROM advent_draws WHERE id = ?').run(id);
+  log(req.session.user.id, 'advent_sorteig_desfet', 'advent_draw', id, `${dr.scope} dia=${dr.day || '-'} guanyador uid=${dr.winner_user_id}`);
+  res.redirect('/admin/advent?fet=desfet');
+});
+
 export default r;
