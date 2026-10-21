@@ -81,16 +81,14 @@
   </div>
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
   <%- include('_servei-torneig', { SERVEIS, serveiActual: (t && t.servei) || 'dashboard', serveiMinim: (teInscrits > 0 && t && t.servei) ? t.servei : 'dashboard' }) %>
+  <div class="camp"><label>Tancament d'inscripcions</label>
+    <input type="date" name="data_limit" value="<%= t ? (t.registration_deadline || t.data_limit || '') : '' %>">
+    <span class="ajuda">Buit = fins al dia abans del torneig. Passada aquesta data, la fitxa mostrarà «Inscripció tancada».</span>
+  </div>
   <div id="campsInscripcio" style="display:none">
-    <div class="fila">
-      <div class="camp"><label>Tancament d'inscripcions</label>
-        <input type="date" name="data_limit" value="<%= t ? (t.registration_deadline || t.data_limit || '') : '' %>">
-        <span class="ajuda">Buit = fins al dia abans del torneig.</span>
-      </div>
-      <div class="camp"><label>Els jugadors es poden donar de baixa fins a</label>
-        <div><input type="number" name="hores_baixa" min="0" max="720" style="width:5rem" value="<%= t ? (t.unregister_hours ?? t.hores_baixa ?? 48) : 48 %>"> hores abans de l'inici</div>
-        <span class="ajuda">Passat aquest termini hauran de contactar amb el club.</span>
-      </div>
+    <div class="camp"><label>Els jugadors es poden donar de baixa fins a</label>
+      <div><input type="number" name="hores_baixa" min="0" max="720" style="width:5rem" value="<%= t ? (t.unregister_hours ?? t.hores_baixa ?? 48) : 48 %>"> hores abans de l'inici</div>
+      <span class="ajuda">Passat aquest termini hauran de contactar amb el club.</span>
     </div>
     <div class="camp"><label><input type="checkbox" name="mostra_inscrits" value="1"<%= !t || t.mostra_inscrits ? ' checked' : '' %>> Mostra públicament els noms dels inscrits</label>
       <span class="ajuda">El nombre d'inscrits per categoria sempre és visible; els noms, només si ho actives.</span>
