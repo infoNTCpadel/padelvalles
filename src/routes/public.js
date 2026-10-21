@@ -225,7 +225,8 @@ r.get('/club/:id', (req, res) => {
   if (req.session.user) {
     segueix = !!db.prepare('SELECT 1 FROM follows WHERE user_id = ? AND club_id = ?').get(req.session.user.id, club.id);
   }
-  res.render('club', { titol: club.name, club, tornejos, segueix, COMARQUES,
+  const numSeguidors = db.prepare('SELECT COUNT(*) AS n FROM follows WHERE club_id = ?').get(club.id).n;
+  res.render('club', { titol: club.name, club, tornejos, segueix, numSeguidors, COMARQUES,
     metaDescription: `${club.name}: club de pàdel a ${club.town} (${COMARQUES[club.comarca] || ''}). Consulta els seus tornejos a PadelVallès.`,
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/club/${club.id}` });
 });

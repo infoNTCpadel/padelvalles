@@ -22,6 +22,7 @@
       <% } %>
     </div>
     <% if (club.phone) { %><div class="meta" style="margin-top:.5rem">📞 <%= club.phone %></div><% } %>
+    <% if (typeof numSeguidors !== 'undefined') { %><div class="meta" style="margin-top:.5rem">👥 <%= numSeguidors %> <%= numSeguidors === 1 ? 'seguidor' : 'seguidors' %></div><% } %>
     <% const xarxes = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['x', 'X'], ['tiktok', 'TikTok'], ['youtube', 'YouTube']].filter(([k]) => club[k]); %>
     <% if (xarxes.length) { %>
       <div class="xarxes" style="margin-top:.5rem">

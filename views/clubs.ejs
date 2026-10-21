@@ -22,7 +22,11 @@
   <% for (const c of clubs) { %>
     <article class="targeta targeta-club">
       <div class="cos">
-        <div class="club-icona" aria-hidden="true"><%= c.name.trim().charAt(0).toUpperCase() %></div>
+        <% if (c.logo_path) { %>
+          <div class="logo-club"><img src="<%= logoUrl(c.logo_path) %>" alt="Logo del <%= c.name %>" loading="lazy"></div>
+        <% } else { %>
+          <div class="club-icona" aria-hidden="true"><%= c.name.trim().charAt(0).toUpperCase() %></div>
+        <% } %>
         <div>
           <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
           <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>

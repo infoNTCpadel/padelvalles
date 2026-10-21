@@ -465,3 +465,6 @@ table.llista th { background: var(--bg); color: #fff; }
 .advent-casella.final .num, .advent-casella.final .premi { color: #fff; }
 .advent-casella.final .meta { color: var(--muted); }
 .advent-ranquing td.pos { font-weight: 800; color: var(--bg); width: 2.2rem; }
+
+/* Logo al llistat de clubs (mateixa mida que la icona de lletra) */
+.targeta-club .logo-club { width: 52px; height: 52px; margin: 0; flex: none; }

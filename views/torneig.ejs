@@ -29,6 +29,7 @@
 
     <div class="info-reixeta">
       <div class="info-casella"><div class="k">Dates</div><div class="v">📅 <%= t.starts_at %> – <%= t.ends_at %></div></div>
+      <% if (t.registration_deadline) { %><div class="info-casella"><div class="k">Tancament d'inscripcions</div><div class="v">⏰ <%= fmtDeadline(t.registration_deadline) %></div></div><% } %>
       <div class="info-casella"><div class="k">Club</div><div class="v">📍 <a href="/club/<%= t.club_id %>"><%= t.club_nom %></a><%- t.club_claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></div></div>
       <% if (t.org_nom) { %><div class="info-casella"><div class="k">Organitza</div><div class="v">🎪 <a href="/organitzador/<%= t.org_id %>"><%= t.org_nom %></a></div></div><% } %>
       <% if (user && t.price_text) { %><div class="info-casella"><div class="k">Preu</div><div class="v">🎟️ <%= t.price_text %></div></div><% } %>
