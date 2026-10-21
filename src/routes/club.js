@@ -254,7 +254,8 @@ function desaTorneig(req, id) {
   const catPlaces = [].concat(req.body.cat_places || []);
   const servei = serveiValid(serveiBody);
   const registration_mode = servei === 'dashboard' ? 'externa' : 'padelvalles';
-  const deadline = String(data_limit).slice(0, 10);
+  const dlBrut = String(data_limit || '').trim().slice(0, 16);
+  const deadline = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2})?$/.test(dlBrut) ? dlBrut.replace(' ', 'T') : '';
   const unregisterHores = Math.max(0, Math.min(720, parseInt(hores_baixa, 10) || 0));
   const tipusT = TIPUS_TORNEIG[tipus] ? tipus : 'open';
   const maxPairs = i => {

@@ -1,6 +1,6 @@
 <h2>Inscripció</h2>
 <p>Les inscripcions d'aquest torneig es gestionen aquí, a PadelVallès, <strong>per parelles</strong>. Pots jugar fins a 2 categories.</p>
-<% if (t.registration_deadline) { %><p class="meta">📅 Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
+<% if (t.registration_deadline) { %><p class="meta">📅 Inscripcions obertes fins al <%= fmtDeadline(t.registration_deadline) %>.</p><% } %>
 
 <% for (const m of lesMeves) { %>
   <% const company = m.socJo1 ? m.jug2 : m.jug1; %>

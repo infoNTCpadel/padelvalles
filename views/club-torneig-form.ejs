@@ -82,8 +82,8 @@
   <div class="camp"><label>Preu</label><input name="preu" maxlength="80" value="<%= t ? (t.price_text || t.preu || '') : '' %>" placeholder="P. ex.: 20 € per persona"></div>
   <%- include('_servei-torneig', { SERVEIS, serveiActual: (t && t.servei) || 'dashboard', serveiMinim: (teInscrits > 0 && t && t.servei) ? t.servei : 'dashboard' }) %>
   <div class="camp"><label>Tancament d'inscripcions</label>
-    <input type="date" name="data_limit" value="<%= t ? (t.registration_deadline || t.data_limit || '') : '' %>">
-    <span class="ajuda">Buit = fins al dia abans del torneig. Passada aquesta data, la fitxa mostrarà «Inscripció tancada».</span>
+    <input type="datetime-local" name="data_limit" value="<%= t && t.registration_deadline ? (t.registration_deadline.length === 10 ? t.registration_deadline + 'T23:59' : t.registration_deadline) : '' %>">
+    <span class="ajuda">Data i hora de tancament. Buit = fins al dia abans del torneig. Passat el moment, la fitxa mostrarà «Inscripció tancada».</span>
   </div>
   <div id="campsInscripcio" style="display:none">
     <div class="camp"><label>Els jugadors es poden donar de baixa fins a</label>

@@ -8,6 +8,7 @@
 import db from '../db.js';
 import { inscripcioOberta, inscripcioDe } from './inscripcions.js';
 import { fmtDataCurta } from '../poster.js';
+import { fmtDeadline } from '../brand.js';
 import { sendResumDiariClub, sendRecordatoriTancament } from '../mail.js';
 
 const HORA_EXECUCIO = 8; // Europe/Madrid
@@ -113,8 +114,8 @@ async function recordatorisTancament() {
   for (const t of tornejos) {
     t.categories = db.prepare('SELECT * FROM tournament_categories WHERE tournament_id = ?').all(t.id);
     if (!inscripcioOberta({ ...t })) continue;
-    // Data de tancament: la configurada, o el dia abans de l'inici si és buida
-    const tancament = t.registration_deadline || sumaDies(t.starts_at, -1);
+    // Data de tancament: la configurada (només la part de data), o el dia abans de l'inici si és buida
+    const tancament = t.registration_deadline ? String(t.registration_deadline).slice(0, 10) : sumaDies(t.starts_at, -1);
     if (tancament !== objectiu) continue;
     const interessats = db.prepare(`
       SELECT u.id, u.name, u.email FROM interests i JOIN users u ON u.id = i.user_id
@@ -122,7 +123,7 @@ async function recordatorisTancament() {
     let n = 0;
     for (const u of interessats) {
       if (inscripcioDe(t.id, u.id)) continue; // ja s'hi ha inscrit
-      await sendRecordatoriTancament(u.email, u.name, t.name, t.id, fmtDataCurta(tancament));
+      await sendRecordatoriTancament(u.email, u.name, t.name, t.id, fmtDeadline(t.registration_deadline) || fmtDataCurta(tancament));
       n++;
     }
     if (n) console.log(`[programador] recordatori de tancament: «${t.name}» (${n} avisos)`);

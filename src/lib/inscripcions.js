@@ -1,4 +1,5 @@
 import db from '../db.js';
+import { deadlineTancat } from '../brand.js';
 
 export const ESTATS_ACTIUS = ['pending', 'registered', 'waitlist'];
 
@@ -8,7 +9,7 @@ export function inscripcioOberta(t) {
   if (t.status !== 'published') return false;
   const avui = new Date().toISOString().slice(0, 10);
   if (t.ends_at < avui) return false;
-  if (t.registration_deadline && avui > t.registration_deadline) return false;
+  if (deadlineTancat(t.registration_deadline)) return false;
   return true;
 }
 

@@ -63,11 +63,48 @@ export const ESTATS_TORNEIG = {
   finalitzat: 'Finalitzat',
 };
 
+// --- Tancament d'inscripcions amb data i hora ---
+// El deadline es guarda com 'YYYY-MM-DD' (llegat: tanca a final de dia) o
+// 'YYYY-MM-DDTHH:MM'. Les comparacions es fan en hora d'Europe/Madrid.
+export function deadlineComparable(d) {
+  if (!d) return '';
+  const s = String(d).trim().slice(0, 16);
+  return s.length === 10 ? s + 'T23:59' : s;
+}
+
+export function araMadrid() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date());
+  const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+export function deadlineTancat(d) {
+  const c = deadlineComparable(d);
+  return !!c && araMadrid() > c;
+}
+
+const MESOS_CA_DL = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+export function fmtDeadline(d) {
+  if (!d) return '';
+  const s = String(d);
+  const [data, hora] = s.split('T');
+  const [Y, M, D] = (data || '').split('-').map(Number);
+  if (!Y || !M || !D) return s;
+  const mes = MESOS_CA_DL[M - 1] || '';
+  const de = /^[aeiouà]/i.test(mes) ? `d'${mes}` : `de ${mes}`;
+  let out = `${D} ${de} de ${Y}`;
+  if (hora && hora.slice(0, 5) !== '23:59') out += ` a les ${hora.slice(0, 5)}`;
+  return out;
+}
+
 export function estatTorneig(t) {
   const avui = new Date().toISOString().slice(0, 10);
   if (!t) return { clau: 'tancada', etiqueta: ESTATS_TORNEIG.tancada };
   if (t.ends_at && t.ends_at < avui) return { clau: 'finalitzat', etiqueta: ESTATS_TORNEIG.finalitzat };
   if (t.starts_at && t.starts_at <= avui) return { clau: 'enjoc', etiqueta: ESTATS_TORNEIG.enjoc };
-  if (t.registration_deadline && avui > t.registration_deadline) return { clau: 'tancada', etiqueta: ESTATS_TORNEIG.tancada };
+  if (deadlineTancat(t.registration_deadline)) return { clau: 'tancada', etiqueta: ESTATS_TORNEIG.tancada };
   return { clau: 'oberta', etiqueta: ESTATS_TORNEIG.oberta };
 }

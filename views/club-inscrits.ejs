@@ -2,7 +2,7 @@
 <% const base = typeof baseRuta !== 'undefined' && baseRuta ? baseRuta : '/club'; %>
 <% const nomPanell = base === '/organitzador' ? "Panell de l'organitzador" : 'Panell del club'; %>
 <p><a href="<%= base %>/panel">← <%= nomPanell %></a> · <a href="<%= base %>/torneig/<%= t.id %>/inscrits.csv">⬇ Descarrega CSV</a></p>
-<% if (t.registration_deadline) { %><p class="meta">Inscripcions obertes fins al <%= t.registration_deadline %>.</p><% } %>
+<% if (t.registration_deadline) { %><p class="meta">Inscripcions obertes fins al <%= fmtDeadline(t.registration_deadline) %>.</p><% } %>
 <p class="meta">Els jugadors es poden donar de baixa ells mateixos fins a <%= t.unregister_hours ?? 48 %> hores abans de l'inici. El pagament es fa fora de la plataforma: marca aquí qui ha pagat.</p>
 
 <% if ((t.registration_mode || 'externa') === 'padelvalles') { %>

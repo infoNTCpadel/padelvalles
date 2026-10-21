@@ -4,7 +4,7 @@ import layouts from 'express-ejs-layouts';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import db from './db.js';
-import { BRAND } from './brand.js';
+import { BRAND, fmtDeadline } from './brand.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +31,7 @@ app.use((req, res, next) => {
   // cal treure el prefix 'uploads/' que es guarda a logo_path (el cartell SVG
   // el necessita per llegir el fitxer del disc).
   res.locals.logoUrl = (p) => '/fitxers/' + String(p || '').replace(/^(data\/)?uploads\//, '');
+  res.locals.fmtDeadline = fmtDeadline;
   // Invitacions pendents: insígnia visible des de qualsevol pàgina
   let invitacionsPendents = 0;
   if (req.session.user) {
