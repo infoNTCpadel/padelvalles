@@ -350,6 +350,25 @@ table.llista th { background: var(--bg); color: #fff; }
 .etiqueta.rol-monitor { background: #E6F4EA; color: #137333; }
 .etiqueta.rol-admin { background: #2B2B29; color: #fff; }
 
+/* --- Pestanyes de filtre (Comunitat) --- */
+.pestanyes { display: flex; gap: .5rem; margin: 1.2rem 0 .2rem; overflow-x: auto;
+  padding-bottom: .4rem; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.pestanyes a { flex: none; display: inline-flex; align-items: center; gap: .4rem;
+  padding: .45rem 1rem; border: 1px solid var(--vora); border-radius: 999px;
+  background: var(--card); color: var(--ink); text-decoration: none;
+  font-weight: 600; font-size: .92rem; }
+.pestanyes a:hover { border-color: var(--accent); }
+.pestanyes a.activa { background: var(--bg); border-color: var(--bg); color: #fff; }
+.pestanyes a.activa .recompte { background: rgba(255, 255, 255, .22); color: #fff; }
+.pestanyes .recompte { background: #F1E8DC; color: #6B6257; border-radius: 999px;
+  padding: .05rem .5rem; font-size: .8rem; font-weight: 700; }
+.pestanyes a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Cerca d'una columna + botó (Comunitat): sense estil en línia, perquè el
+   media query de mòbil pugui apilar-la */
+.filtres-cerca { grid-template-columns: 2fr auto; }
+@media (max-width: 520px) { .filtres-cerca { grid-template-columns: 1fr; } }
+
 /* --- Banda de consentiment de cookies --- */
 .banda-cookies { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 90;
   background: #fff; border-radius: var(--radi); box-shadow: 0 8px 30px rgba(43, 43, 41, .25);

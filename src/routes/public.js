@@ -195,21 +195,46 @@ r.get('/clubs', (req, res) => {
   res.render('clubs', { titol: 'Clubs', clubs, comarca, q, COMARQUES });
 });
 
-// Directori de jugadors: nom + rol (+ nivell), sense cap altra dada personal
-const ROLS_JUGADORS = { player: 'Jugador', club: 'Club', monitor: 'Monitor', admin: 'Equip PadelVallès' };
-r.get('/jugadors', (req, res) => {
+// Directori de la comunitat: nom + rol (+ nivell), sense cap altra dada personal.
+// L'equip de PadelVallès (rol admin) no hi apareix.
+const ROLS_COMUNITAT = { player: 'Jugador', club: 'Club', monitor: 'Monitor' };
+r.get('/comunitat', (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 60);
-  let sql = `SELECT name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor','admin')`;
+  const rol = ['player', 'club', 'monitor'].includes(req.query.rol) ? req.query.rol : '';
+  let sql = `SELECT name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor')`;
   const p = [];
+  if (rol) { sql += ' AND role = ?'; p.push(rol); }
   if (q) { sql += ' AND name LIKE ?'; p.push(`%${q}%`); }
   sql += ' ORDER BY name';
   const jugadors = db.prepare(sql).all(...p).map(u => ({
     nom: u.name,
-    rol: ROLS_JUGADORS[u.role] || 'Jugador',
+    rol: ROLS_COMUNITAT[u.role] || 'Jugador',
     rolClau: u.role,
     nivell: u.level ? nomNivell(u.level) : ''
   }));
-  res.render('jugadors', { titol: 'Jugadors', jugadors, q });
+  const recomptes = { tots: 0, player: 0, club: 0, monitor: 0 };
+  for (const r of db.prepare(`SELECT role, COUNT(*) n FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor') GROUP BY role`).all()) {
+    recomptes[r.role] = r.n; recomptes.tots += r.n;
+  }
+  const pestanyes = [
+    { clau: '', nom: 'Tots', n: recomptes.tots },
+    { clau: 'player', nom: 'Jugadors', n: recomptes.player },
+    { clau: 'club', nom: 'Clubs', n: recomptes.club },
+    { clau: 'monitor', nom: 'Monitors', n: recomptes.monitor },
+  ].map(t => {
+    const params = new URLSearchParams();
+    if (t.clau) params.set('rol', t.clau);
+    if (q) params.set('q', q);
+    const s = params.toString();
+    return { ...t, href: '/comunitat' + (s ? '?' + s : '') };
+  });
+  res.render('comunitat', { titol: 'Comunitat', jugadors, q, rol, pestanyes });
+});
+
+// URL antiga: redirecció permanent, conservant la cerca
+r.get('/jugadors', (req, res) => {
+  const qs = new URLSearchParams(req.query).toString();
+  res.redirect(301, '/comunitat' + (qs ? '?' + qs : ''));
 });
 
 // Fitxa del club
