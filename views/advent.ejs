@@ -67,7 +67,7 @@ function pvCopiaReferit() {
     <p>🎁 El premi d'avui t'espera. <a href="/registre?next=/calendari">Registra't</a> o <a href="/entra?next=/calendari">entra</a> per obrir la casella.</p>
   <% } else if (obertAvui) { %>
     <p style="font-size:1.15rem;margin:.2rem 0"><strong><%= diaAvui.is_final ? '⭐ ' : '🎁 ' %><%= diaAvui.title %></strong></p>
-    <p><%= diaAvui.description %></p>
+    <p><%- diaAvuiDesc %></p>
     <% if (diaAvui.sponsor_name) { %><p class="meta">Premi ofert per <% if (diaAvui.sponsor_url) { %><a href="<%= diaAvui.sponsor_url %>" target="_blank" rel="noopener"><%= diaAvui.sponsor_name %></a><% } else { %><%= diaAvui.sponsor_name %><% } %></p><% } %>
     <% if (diaAvui.type === 'quiz') { %>
       <% if (obertAvui.correct === 1) { %><div class="exit">🧠 Has encertat el quiz del dia: +1 participació extra!</div>

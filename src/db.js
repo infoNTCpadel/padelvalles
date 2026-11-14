@@ -8,6 +8,7 @@ import { sembraXarxes20261015 } from './seed-xarxes-20261015.js';
 import { sembraDeadlineOha20261021 } from './seed-deadline-oha-20261021.js';
 import { sembraCandidats20261026 } from './seed-candidats-20261026.js';
 import { sembraCandidats20261102 } from './seed-candidats-20261102.js';
+import { actualitzaPremisAdvent20261114 } from './seed-advent-premis-20261114.js';
 
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -616,6 +617,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_refcode ON users(referral_code) WHER
   ];
   for (const d of dies) sembraDia.run(...d);
 }
+
+// Premis actualitzats el 14-nov-2026 (dia 12 = joc de cartes; la resta,
+// pendents de confirmar): ha d'anar DESPRÉS de la llavor dels 24 dies,
+// perquè la taula advent_days es crea aquí mateix.
+actualitzaPremisAdvent20261114(db);
 
 // Codis de referit per als usuaris que encara no en tenen (nous i existents)
 {

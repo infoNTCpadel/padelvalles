@@ -68,11 +68,17 @@ r.get('/calendari', (req, res) => {
       try { quizOpcions = JSON.parse(diaAvui.quiz_options || '[]'); } catch { quizOpcions = []; }
     }
   }
+  // Descripció de la casella d'avui amb els enllaços clicables (p. ex. el
+  // link de compra del joc del dia 12): s'escapa l'HTML i després es
+  // converteixen les URL en <a>.
+  const diaAvuiDesc = diaAvui ? String(diaAvui.description || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`) : '';
 
   res.render('advent', {
     titol: "Calendari d'Advent", noindex: true,
     est, dies, guanyadors, finalDraw: finalDraw || null,
-    meu, diaAvui, quizOpcions, obertAvui,
+    meu, diaAvui, diaAvuiDesc, quizOpcions, obertAvui,
     ranking: ranquing(10),
     valorGranPremi: VALOR_GRAN_PREMI, maxReferits: MAX_REFERITS,
     obert: req.query.obert ? parseInt(req.query.obert, 10) : null,
