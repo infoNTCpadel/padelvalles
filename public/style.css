@@ -350,6 +350,22 @@ table.llista th { background: var(--bg); color: #fff; }
 .etiqueta.rol-monitor { background: #E6F4EA; color: #137333; }
 .etiqueta.rol-admin { background: #2B2B29; color: #fff; }
 
+/* --- Banda Calendari d'Advent (portada) --- */
+.banda-advent { background: linear-gradient(115deg, var(--bg2), var(--bg) 60%, #8E2438);
+  color: #fff; border-radius: 14px; margin: 1.6rem 0 2rem; }
+.banda-advent .contenidor { display: flex; align-items: center; justify-content: space-between;
+  gap: 1.2rem; padding-top: 1.3rem; padding-bottom: 1.3rem; flex-wrap: wrap; }
+.banda-advent h2 { margin: 0 0 .3rem; font-size: 1.35rem; }
+.banda-advent p { margin: 0; color: var(--muted); max-width: 640px; }
+.banda-advent p strong { color: #fff; }
+.banda-advent-meta { margin-top: .45rem !important; font-weight: 600; color: #fff !important; }
+.boto-or { background: #E8C95A; color: #3D0F1D; }
+.boto-or:hover { background: #F2D96B; color: #3D0F1D; }
+@media (max-width: 640px) {
+  .banda-advent .contenidor { flex-direction: column; align-items: stretch; }
+  .banda-advent-accio .boto { width: 100%; text-align: center; }
+}
+
 /* --- Pestanyes de filtre (Comunitat) --- */
 .pestanyes { display: flex; gap: .5rem; margin: 1.2rem 0 .2rem; overflow-x: auto;
   padding-bottom: .4rem; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }

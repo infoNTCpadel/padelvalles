@@ -5,6 +5,7 @@ import { COMARQUES, MODALITATS, TIPUS_TORNEIG, estatTorneig, nomNivell } from '.
 import { inscripcioOberta, placesCategoria, inscripcionsDe, potDesapuntar } from '../lib/inscripcions.js';
 import { competicionsDe, FORMATS } from '../lib/competicions.js';
 import { quadreDe } from '../lib/quadre.js';
+import { estatCalendari, totalParticipacions } from '../lib/advent.js';
 
 const r = Router();
 
@@ -32,7 +33,16 @@ r.get('/', (req, res) => {
   const clubs = db.prepare(`SELECT * FROM clubs WHERE verified = 1 ORDER BY name LIMIT 8`).all();
   const totalClubs = db.prepare(`SELECT COUNT(*) AS n FROM clubs WHERE verified = 1`).get().n;
   const totalTornejos = db.prepare(`SELECT COUNT(*) AS n FROM tournaments t JOIN clubs c ON c.id = t.club_id WHERE t.status = 'published' AND t.ends_at >= ? AND c.verified = 1`).get(avui).n;
-  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, totalTornejos, COMARQUES, estatTorneig });
+  // Banda de l'Advent: si hi ha sessió i el calendari és obert, personalitza
+  // (casella d'avui ja oberta o no + participacions acumulades).
+  let adventUsuari = null;
+  const estAdvent = estatCalendari();
+  if (req.session.user && estAdvent.fase === 'durant') {
+    const uid = req.session.user.id;
+    const obert = db.prepare('SELECT 1 FROM advent_opens WHERE user_id = ? AND day = ?').get(uid, estAdvent.dia);
+    adventUsuari = { obert: !!obert, participacions: totalParticipacions(uid) };
+  }
+  res.render('index', { titol: 'Inici', propers, clubs, totalClubs, totalTornejos, COMARQUES, estatTorneig, adventUsuari });
 });
 
 // Llistat de tornejos amb filtres (inclou els finalitzats dels últims 60 dies com a historial)

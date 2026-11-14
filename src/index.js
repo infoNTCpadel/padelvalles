@@ -5,6 +5,7 @@ import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import db from './db.js';
 import { BRAND, fmtDeadline } from './brand.js';
+import { estatCalendari } from './lib/advent.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,9 @@ app.use((req, res, next) => {
   // el necessita per llegir el fitxer del disc).
   res.locals.logoUrl = (p) => '/fitxers/' + String(p || '').replace(/^(data\/)?uploads\//, '');
   res.locals.fmtDeadline = fmtDeadline;
+  // Estat del Calendari d'Advent (abans/durant/després): el menú mostra
+  // l'enllaç fins al 24-des i la portada mostra la banda mentre dura.
+  res.locals.advent = estatCalendari();
   // Invitacions pendents: insígnia visible des de qualsevol pàgina
   let invitacionsPendents = 0;
   if (req.session.user) {

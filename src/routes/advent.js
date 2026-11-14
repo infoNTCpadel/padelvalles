@@ -1,6 +1,8 @@
-// Calendari d'Advent — mòdul OCULT: la ruta existeix però cap pàgina del web
-// hi enllaça (ni menú, ni portada, ni sitemap) i porta noindex. Només hi
-// arriba qui té l'enllaç directe (campanyes, xarxes, boca-orella).
+// Calendari d'Advent — enllaçat des de la portada (banda) i el menú mentre
+// dura la campanya (fins al 24-des; la banda i l'enllaç s'amaguen sols
+// després). La pàgina porta noindex: no s'indexa a cercadors.
+// Només hi arriba qui té l'enllaç directe (campanyes, xarxes, boca-orella)
+// o qui entra per la portada o el menú.
 import { Router } from 'express';
 import db, { transaccio } from '../db.js';
 import { requireLogin } from '../middleware.js';

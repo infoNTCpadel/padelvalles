@@ -24,6 +24,39 @@
   </div>
 </section>
 
+<% if (typeof advent !== 'undefined' && advent.fase !== 'despres') { %>
+<section class="banda-advent" aria-label="Calendari d'Advent">
+  <div class="contenidor">
+    <div class="banda-advent-text">
+      <h2>🎄 Calendari d'Advent PadelVallès</h2>
+      <% if (advent.fase === 'abans') { %>
+        <% if (user) { %>
+          <p>Ja estàs registrat! El calendari s'obre l'1 de desembre: 24 dies, 24 regals de pàdel i un gran premi final valorat en 180 €.</p>
+        <% } else { %>
+          <p>De l'1 al 24 de desembre, un regal de pàdel cada dia i un gran premi final valorat en 180 €. Registra't gratis i no te'n perdis cap.</p>
+        <% } %>
+      <% } else { %>
+        <p>Casella d'avui: <strong>dia <%= advent.dia %> de 24</strong>. Obre-la i suma una participació per al gran premi final valorat en 180 €.</p>
+        <% if (typeof adventUsuari !== 'undefined' && adventUsuari && adventUsuari.obert) { %>
+          <p class="banda-advent-meta">✅ Ja has obert la casella d'avui · Tens <%= adventUsuari.participacions %> participacions</p>
+        <% } %>
+      <% } %>
+    </div>
+    <div class="banda-advent-accio">
+      <% if (advent.fase === 'abans') { %>
+        <a class="boto boto-or" href="<%= user ? '/calendari' : '/registre' %>"><%= user ? 'Veure el calendari' : "Registra't gratis" %></a>
+      <% } else if (!user) { %>
+        <a class="boto boto-or" href="/entra?next=%2Fcalendari">Entra per obrir-la</a>
+      <% } else if (typeof adventUsuari !== 'undefined' && adventUsuari && adventUsuari.obert) { %>
+        <a class="boto boto-or" href="/calendari">Convida amics i suma +2</a>
+      <% } else { %>
+        <a class="boto boto-or" href="/calendari">Obre la casella d'avui</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+<% } %>
+
 <% const MESOS = ['GEN','FEB','MAR','ABR','MAI','JUN','JUL','AGO','SET','OCT','NOV','DES']; %>
 <div class="seccio-cap">
   <h2>Propers tornejos</h2>
