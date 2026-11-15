@@ -866,21 +866,25 @@ r.get('/club/perfil/:id', nomesGestor, (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
   if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) return res.status(404).render('404', { titol: 'No trobat' });
-  res.render('club-perfil', { titol: 'Fitxa del club', club, error: null, ok: req.query.ok });
+  res.render('club-perfil', { titol: 'Fitxa del club', club, error: null, ok: req.query.ok, esAdmin });
 });
 
 r.post('/club/perfil/:id', nomesGestor, pujada.single('logo'), (req, res) => {
   const esAdmin = req.session.user.role === 'admin';
   const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
   if (!club || !potGestionar(req.session.user.id, club.id, esAdmin)) return res.status(404).render('404', { titol: 'No trobat' });
-  const { adreca = '', web = '', telefon = '', email = '', descripcio = '', pistes = '',
+  const { nom = '', adreca = '', web = '', telefon = '', email = '', descripcio = '', pistes = '',
     instagram = '', facebook = '', x = '', tiktok = '', youtube = '' } = req.body;
+  // El nom del club només el pot canviar l'admin (identitat verificada; les
+  // seeds de tornejos localitzen els clubs pel nom exacte). Un gestor que
+  // enviï el camp igualment l'ignora: el servidor no l'aplica.
+  const nouNom = (esAdmin && nom.trim()) ? nom.trim().slice(0, 120) : club.name;
   let logoPath = club.logo_path;
   if (req.file) logoPath = 'uploads/' + req.file.filename;
   const netejaUrl = u => { u = (u || '').trim().slice(0, 200); return u && !/^https?:\/\//i.test(u) ? 'https://' + u : u; };
-  db.prepare(`UPDATE clubs SET address=?, website=?, phone=?, email=?, description=?, courts=?, logo_path=?,
+  db.prepare(`UPDATE clubs SET name=?, address=?, website=?, phone=?, email=?, description=?, courts=?, logo_path=?,
     instagram=?, facebook=?, x=?, tiktok=?, youtube=? WHERE id=?`)
-    .run(adreca.trim().slice(0, 200), web.trim().slice(0, 200), telefon.trim().slice(0, 40),
+    .run(nouNom, adreca.trim().slice(0, 200), web.trim().slice(0, 200), telefon.trim().slice(0, 40),
       email.trim().slice(0, 120), descripcio.trim().slice(0, 1000),
       pistes ? Number(pistes) : null, logoPath,
       netejaUrl(instagram), netejaUrl(facebook), netejaUrl(x), netejaUrl(tiktok), netejaUrl(youtube), club.id);

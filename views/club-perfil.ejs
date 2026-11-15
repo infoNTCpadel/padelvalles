@@ -3,7 +3,11 @@
 <% if (error) { %><div class="error"><%= error %></div><% } %>
 <p class="meta">El logo que pugis aquí sortirà als cartells oficials dels teus tornejos.</p>
 <form class="formulari" action="/club/perfil/<%= club.id %>" method="post" enctype="multipart/form-data">
+  <% if (typeof esAdmin !== 'undefined' && esAdmin) { %>
+  <div class="camp"><label>Nom</label><input name="nom" maxlength="120" value="<%= club.name %>"></div>
+  <% } else { %>
   <div class="camp"><label>Nom</label><input value="<%= club.name %>" disabled></div>
+  <% } %>
   <div class="camp"><label>Municipi</label><input value="<%= club.town %>" disabled></div>
   <div class="camp"><label>Adreça</label><input name="adreca" maxlength="200" value="<%= club.address || '' %>"></div>
   <div class="fila">
