@@ -8,13 +8,17 @@
   <p class="meta">Comptes que no han verificat l'email. S'esborren sols passats 30 dies. Pots esborrar-los manualment si són emails erronis o spam.</p>
 <% } %>
 <% if (esborrat) { %><div class="avis">Compte esborrat.</div><% } %>
+<% if (typeof reenvit !== 'undefined' && reenvit) { %><div class="avis">Correu de verificació reenviat.</div><% } %>
+<% if (typeof verificat !== 'undefined' && verificat) { %><div class="avis">Compte verificat manualment.</div><% } %>
 <table class="llista">
   <tr><th>Nom</th><th>Email</th><th>Rol</th><th>Verificat</th><th>Alta</th><th></th></tr>
   <% for (const u of usuaris) { %>
     <tr><td><%= u.name %></td><td><%= u.email %></td><td><%= u.role %></td>
     <td><%= u.email_verified ? 'Sí' : 'No' %></td><td><%= u.created_at.slice(0,10) %></td>
     <td>
-      <% if (filtre === 'no-verificats') { %>
+      <% if (!u.email_verified) { %>
+        <form class="enlinia" action="/admin/usuaris/<%= u.id %>/reenvia-verificacio" method="post"><button class="boto secundari menut">Reenvia verificació</button></form>
+        <form class="enlinia" action="/admin/usuaris/<%= u.id %>/verifica" method="post" onsubmit="return confirm('Verificar aquest compte manualment?')"><button class="boto secundari menut">Verifica</button></form>
         <form class="enlinia" action="/admin/usuaris/<%= u.id %>/elimina" method="post" onsubmit="return confirm('Esborrar aquest compte no verificat?')"><button class="boto secundari menut">Esborra</button></form>
       <% } else if (u.role === 'player') { %>
         <form class="enlinia" action="/admin/usuaris/<%= u.id %>/rol" method="post"><input type="hidden" name="rol" value="monitor"><button class="boto secundari menut">Fes monitor</button></form>

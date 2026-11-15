@@ -28,7 +28,6 @@
         <div>
           <h3><%= j.nom %></h3>
           <div><span class="etiqueta rol-<%= j.rolClau %>"><%= j.rol %></span><% if (j.nivell) { %> <span class="meta"><%= j.nivell %></span><% } %></div>
-          <% if (j.clubs && j.clubs.length) { %><div class="meta">🏟️ <%= j.clubs.join(' · ') %></div><% } %>
         </div>
       </div>
     </article>

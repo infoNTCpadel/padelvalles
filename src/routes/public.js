@@ -196,57 +196,45 @@ r.get('/torneig/:id/cartell.svg', (req, res) => {
 r.get('/clubs', (req, res) => {
   const { comarca = '' } = req.query;
   const q = String(req.query.q || '').trim();
-  const reclamat = ['0', '1'].includes(req.query.reclamat) ? req.query.reclamat : '';
+  const verificat = ['0', '1'].includes(req.query.verificat) ? req.query.verificat : '';
   let sql = 'SELECT * FROM clubs WHERE verified = 1';
   const p = [];
   if (comarca) { sql += ' AND comarca = ?'; p.push(comarca); }
-  if (reclamat !== '') { sql += ' AND claimed = ?'; p.push(Number(reclamat)); }
+  if (verificat !== '') { sql += ' AND claimed = ?'; p.push(Number(verificat)); }
   if (q) { sql += ' AND (name LIKE ? OR town LIKE ?)'; p.push(`%${q}%`, `%${q}%`); }
   sql += ' ORDER BY town, name';
   const clubs = db.prepare(sql).all(...p);
   const seguidors = new Map(db.prepare('SELECT club_id, COUNT(*) n FROM follows GROUP BY club_id')
     .all().map(r => [r.club_id, r.n]));
   for (const c of clubs) c.seguidors = seguidors.get(c.id) || 0;
-  res.render('clubs', { titol: 'Clubs', clubs, comarca, q, reclamat, COMARQUES });
+  res.render('clubs', { titol: 'Clubs', clubs, comarca, q, verificat, COMARQUES });
 });
 
 // Directori de la comunitat: nom + rol (+ nivell), sense cap altra dada personal.
-// L'equip de PadelVallès (rol admin) no hi apareix.
-const ROLS_COMUNITAT = { player: 'Jugador', club: 'Club', monitor: 'Monitor' };
+// L'equip de PadelVallès (rol admin) no hi apareix. Els clubs no hi surten:
+// qui busca un club, el troba al directori de clubs.
+const ROLS_COMUNITAT = { player: 'Jugador', monitor: 'Monitor' };
 r.get('/comunitat', (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 60);
-  const rol = ['player', 'club', 'monitor'].includes(req.query.rol) ? req.query.rol : '';
-  let sql = `SELECT id, name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor')`;
+  const rol = ['player', 'monitor'].includes(req.query.rol) ? req.query.rol : '';
+  let sql = `SELECT name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','monitor')`;
   const p = [];
   if (rol) { sql += ' AND role = ?'; p.push(rol); }
   if (q) { sql += ' AND name LIKE ?'; p.push(`%${q}%`); }
   sql += ' ORDER BY name';
-  const usuaris = db.prepare(sql).all(...p);
-  // Clubs que gestiona cada usuari amb rol club: a la pestanya Clubs surt el
-  // nom de la persona que va reclamar el club; mostrem també el club.
-  const clubsPerUsuari = new Map();
-  if (usuaris.some(u => u.role === 'club')) {
-    for (const r of db.prepare(`SELECT cu.user_id, c.name FROM club_users cu
-      JOIN clubs c ON c.id = cu.club_id ORDER BY c.name`).all()) {
-      if (!clubsPerUsuari.has(r.user_id)) clubsPerUsuari.set(r.user_id, []);
-      clubsPerUsuari.get(r.user_id).push(r.name);
-    }
-  }
-  const jugadors = usuaris.map(u => ({
+  const jugadors = db.prepare(sql).all(...p).map(u => ({
     nom: u.name,
     rol: ROLS_COMUNITAT[u.role] || 'Jugador',
     rolClau: u.role,
-    nivell: u.level ? nomNivell(u.level) : '',
-    clubs: clubsPerUsuari.get(u.id) || []
+    nivell: u.level ? nomNivell(u.level) : ''
   }));
-  const recomptes = { tots: 0, player: 0, club: 0, monitor: 0 };
-  for (const r of db.prepare(`SELECT role, COUNT(*) n FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor') GROUP BY role`).all()) {
+  const recomptes = { tots: 0, player: 0, monitor: 0 };
+  for (const r of db.prepare(`SELECT role, COUNT(*) n FROM users WHERE email_verified = 1 AND role IN ('player','monitor') GROUP BY role`).all()) {
     recomptes[r.role] = r.n; recomptes.tots += r.n;
   }
   const pestanyes = [
     { clau: '', nom: 'Tots', n: recomptes.tots },
     { clau: 'player', nom: 'Jugadors', n: recomptes.player },
-    { clau: 'club', nom: 'Clubs', n: recomptes.club },
     { clau: 'monitor', nom: 'Monitors', n: recomptes.monitor },
   ].map(t => {
     const params = new URLSearchParams();
@@ -278,7 +266,10 @@ r.get('/club/:id', (req, res) => {
     segueix = !!db.prepare('SELECT 1 FROM follows WHERE user_id = ? AND club_id = ?').get(req.session.user.id, club.id);
   }
   const numSeguidors = db.prepare('SELECT COUNT(*) AS n FROM follows WHERE club_id = ?').get(club.id).n;
-  res.render('club', { titol: club.name, club, tornejos, segueix, numSeguidors, COMARQUES,
+  // Qui gestiona el club (qui el va sol·licitar/reclamar)
+  const gestors = db.prepare(`SELECT u.name FROM club_users cu JOIN users u ON u.id = cu.user_id
+    WHERE cu.club_id = ? ORDER BY u.name`).all(club.id).map(g => g.name);
+  res.render('club', { titol: club.name, club, tornejos, segueix, numSeguidors, gestors, COMARQUES,
     metaDescription: `${club.name}: club de pàdel a ${club.town} (${COMARQUES[club.comarca] || ''}). Consulta els seus tornejos a PadelVallès.`,
     canonical: `${process.env.APP_URL || 'https://padelvalles.com'}/club/${club.id}` });
 });

@@ -3,10 +3,10 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import db from '../db.js';
 import { requireRole } from '../middleware.js';
-import { sorteigDiari, sorteigFinal } from '../lib/advent.js';
+import { sorteigDiari, sorteigFinal, abonaReferit } from '../lib/advent.js';
 import { COMARQUES } from '../brand.js';
 import { dirPujades } from './club.js';
-import { sendClaimResolta, sendOrganitzadorResolt } from '../mail.js';
+import { sendClaimResolta, sendOrganitzadorResolt, sendVerificationEmail, afegirALlistaBrevo } from '../mail.js';
 
 const r = Router();
 r.use(requireRole('admin'));
@@ -334,7 +334,7 @@ r.get('/usuaris', (req, res) => {
   const filtre = req.query.f === 'no-verificats' ? 'WHERE email_verified = 0' : '';
   const usuaris = db.prepare(`SELECT id, name, email, role, email_verified, created_at FROM users ${filtre} ORDER BY created_at DESC LIMIT 200`).all();
   const totalNoVerificats = db.prepare('SELECT COUNT(*) n FROM users WHERE email_verified = 0').get().n;
-  res.render('admin/usuaris', { titol: 'Usuaris', usuaris, filtre: req.query.f === 'no-verificats' ? 'no-verificats' : 'tots', totalNoVerificats, esborrat: req.query.esborrat || null });
+  res.render('admin/usuaris', { titol: 'Usuaris', usuaris, filtre: req.query.f === 'no-verificats' ? 'no-verificats' : 'tots', totalNoVerificats, esborrat: req.query.esborrat || null, reenvit: req.query.reenvit || null, verificat: req.query.verificat || null });
 });
 
 // Esborrar un compte NO verificat (neteja d'emails erronis o spam; la FK fa cascada)
@@ -356,6 +356,37 @@ r.post('/usuaris/:id/rol', (req, res) => {
     log(req.session.user.id, 'canvi_rol', 'user', req.params.id, `${u.role} -> ${rol}`);
   }
   res.redirect('/admin/usuaris');
+});
+
+// Reenviar l'email de verificació (p. ex. quan Brevo ha fallat per falta de
+// crèdits: els correus perduts no es reenvien sols; cal tornar-los a enviar).
+r.post('/usuaris/:id/reenvia-verificacio', (req, res) => {
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (u && !u.email_verified) {
+    const token = crypto.randomBytes(24).toString('hex');
+    db.prepare('DELETE FROM email_tokens WHERE user_id = ?').run(u.id);
+    db.prepare('INSERT INTO email_tokens (user_id, token) VALUES (?, ?)').run(u.id, token);
+    sendVerificationEmail(u.email, u.name, token);
+    log(req.session.user.id, 'verificacio_reenviada', 'user', u.id, u.email);
+  }
+  res.redirect('/admin/usuaris?f=no-verificats&reenvit=1');
+});
+
+// Verificar manualment un compte: mateixos efectes que clicar l'enllaç
+// (alta a la llista de Brevo si ho va consentir + referit de l'Advent).
+// PENDENT quan es desplegui el Passaport: afegir-hi abonaReferitPassaport,
+// com ja fa /verifica/:token. Si l'usuari està connectat en aquell moment,
+// haurà de tornar a entrar perquè la seva sessió es refresqui.
+r.post('/usuaris/:id/verifica', (req, res) => {
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (u && !u.email_verified) {
+    db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(u.id);
+    db.prepare('DELETE FROM email_tokens WHERE user_id = ?').run(u.id);
+    if (u.newsletter) afegirALlistaBrevo(u.email, u.name);
+    try { abonaReferit(u.id); } catch { /* mai no bloqueja la verificació */ }
+    log(req.session.user.id, 'usuari_verificat_manual', 'user', u.id, u.email);
+  }
+  res.redirect('/admin/usuaris?f=no-verificats&verificat=1');
 });
 
 r.get('/historial', (req, res) => {
