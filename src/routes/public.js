@@ -196,13 +196,18 @@ r.get('/torneig/:id/cartell.svg', (req, res) => {
 r.get('/clubs', (req, res) => {
   const { comarca = '' } = req.query;
   const q = String(req.query.q || '').trim();
+  const reclamat = ['0', '1'].includes(req.query.reclamat) ? req.query.reclamat : '';
   let sql = 'SELECT * FROM clubs WHERE verified = 1';
   const p = [];
   if (comarca) { sql += ' AND comarca = ?'; p.push(comarca); }
+  if (reclamat !== '') { sql += ' AND claimed = ?'; p.push(Number(reclamat)); }
   if (q) { sql += ' AND (name LIKE ? OR town LIKE ?)'; p.push(`%${q}%`, `%${q}%`); }
   sql += ' ORDER BY town, name';
   const clubs = db.prepare(sql).all(...p);
-  res.render('clubs', { titol: 'Clubs', clubs, comarca, q, COMARQUES });
+  const seguidors = new Map(db.prepare('SELECT club_id, COUNT(*) n FROM follows GROUP BY club_id')
+    .all().map(r => [r.club_id, r.n]));
+  for (const c of clubs) c.seguidors = seguidors.get(c.id) || 0;
+  res.render('clubs', { titol: 'Clubs', clubs, comarca, q, reclamat, COMARQUES });
 });
 
 // Directori de la comunitat: nom + rol (+ nivell), sense cap altra dada personal.
@@ -211,16 +216,28 @@ const ROLS_COMUNITAT = { player: 'Jugador', club: 'Club', monitor: 'Monitor' };
 r.get('/comunitat', (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 60);
   const rol = ['player', 'club', 'monitor'].includes(req.query.rol) ? req.query.rol : '';
-  let sql = `SELECT name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor')`;
+  let sql = `SELECT id, name, role, level FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor')`;
   const p = [];
   if (rol) { sql += ' AND role = ?'; p.push(rol); }
   if (q) { sql += ' AND name LIKE ?'; p.push(`%${q}%`); }
   sql += ' ORDER BY name';
-  const jugadors = db.prepare(sql).all(...p).map(u => ({
+  const usuaris = db.prepare(sql).all(...p);
+  // Clubs que gestiona cada usuari amb rol club: a la pestanya Clubs surt el
+  // nom de la persona que va reclamar el club; mostrem també el club.
+  const clubsPerUsuari = new Map();
+  if (usuaris.some(u => u.role === 'club')) {
+    for (const r of db.prepare(`SELECT cu.user_id, c.name FROM club_users cu
+      JOIN clubs c ON c.id = cu.club_id ORDER BY c.name`).all()) {
+      if (!clubsPerUsuari.has(r.user_id)) clubsPerUsuari.set(r.user_id, []);
+      clubsPerUsuari.get(r.user_id).push(r.name);
+    }
+  }
+  const jugadors = usuaris.map(u => ({
     nom: u.name,
     rol: ROLS_COMUNITAT[u.role] || 'Jugador',
     rolClau: u.role,
-    nivell: u.level ? nomNivell(u.level) : ''
+    nivell: u.level ? nomNivell(u.level) : '',
+    clubs: clubsPerUsuari.get(u.id) || []
   }));
   const recomptes = { tots: 0, player: 0, club: 0, monitor: 0 };
   for (const r of db.prepare(`SELECT role, COUNT(*) n FROM users WHERE email_verified = 1 AND role IN ('player','club','monitor') GROUP BY role`).all()) {

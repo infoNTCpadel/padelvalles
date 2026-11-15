@@ -5,7 +5,7 @@
   </div>
 </div>
 
-<form class="filtres" action="/clubs" method="get" role="search" style="grid-template-columns: 2fr 1fr auto">
+<form class="filtres filtres-clubs" action="/clubs" method="get" role="search">
   <div class="camp"><label>Cerca</label><input type="search" name="q" placeholder="Cerca per nom o municipi..." value="<%= q %>"></div>
   <div class="camp"><label>Comarca</label>
     <select name="comarca">
@@ -13,6 +13,13 @@
       <% for (const [k, v] of Object.entries(COMARQUES)) { %>
         <option value="<%= k %>" <%= comarca === k ? 'selected' : '' %>><%= v %></option>
       <% } %>
+    </select>
+  </div>
+  <div class="camp"><label>Reclamat</label>
+    <select name="reclamat">
+      <option value="">Tots</option>
+      <option value="1" <%= reclamat === '1' ? 'selected' : '' %>>Sí</option>
+      <option value="0" <%= reclamat === '0' ? 'selected' : '' %>>No</option>
     </select>
   </div>
   <div class="camp"><label>&nbsp;</label><button class="boto" type="submit">Cerca</button></div>
@@ -31,9 +38,10 @@
           <h3><a href="/club/<%= c.id %>"><%= c.name %></a><%- c.claimed ? ' <span class="verificat" title="Club verificat: gestionat pel propi club">✅</span>' : '' %></h3>
           <div class="meta">📍 <%= c.town %> · <%= COMARQUES[c.comarca] %></div>
           <% if (c.courts) { %><div class="meta"><%= c.courts %> pistes</div><% } %>
+          <% if (c.seguidors) { %><div class="meta">👥 <%= c.seguidors %> <%= c.seguidors === 1 ? 'seguidor' : 'seguidors' %></div><% } %>
         </div>
       </div>
     </article>
   <% } %>
 </div>
-<% if (!clubs.length) { %><p>Encara no hi ha clubs en aquesta comarca.</p><% } %>
+<% if (!clubs.length) { %><p>No hi ha cap club amb aquests criteris.</p><% } %>

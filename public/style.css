@@ -385,6 +385,10 @@ table.llista th { background: var(--bg); color: #fff; }
 .filtres-cerca { grid-template-columns: 2fr auto; }
 @media (max-width: 520px) { .filtres-cerca { grid-template-columns: 1fr; } }
 
+.filtres-clubs { grid-template-columns: 2fr 1fr 1fr auto; }
+@media (max-width: 860px) { .filtres-clubs { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .filtres-clubs { grid-template-columns: 1fr; } }
+
 /* --- Banda de consentiment de cookies --- */
 .banda-cookies { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 90;
   background: #fff; border-radius: var(--radi); box-shadow: 0 8px 30px rgba(43, 43, 41, .25);
