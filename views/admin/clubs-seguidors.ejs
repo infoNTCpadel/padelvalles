@@ -1,0 +1,26 @@
+<h1>Seguidors per club</h1>
+<p><a href="/admin">← Administració</a></p>
+<p class="meta"><%= totalSeguidors %> seguidors en total · <%= nAmbSeguidors %> clubs amb seguidors</p>
+
+<form class="filtres filtres-cerca" action="/admin/clubs/seguidors" method="get" role="search">
+  <div class="camp"><label>Cerca</label><input type="search" name="q" placeholder="Cerca per club o municipi..." value="<%= q %>"></div>
+  <div class="camp"><label>&nbsp;</label><button class="boto" type="submit">Cerca</button></div>
+</form>
+
+<% if (!clubs.length) { %><p>No hi ha cap club amb aquests criteris.</p><% } %>
+<div class="llista-seguidors">
+<% for (const c of clubs) { %>
+  <% if (c.n > 0) { %>
+    <details class="dades">
+      <summary><%= c.name %> <span class="meta">· <%= c.town %> · 👥 <%= c.n %> <%= c.n === 1 ? 'seguidor' : 'seguidors' %></span></summary>
+      <ul>
+        <% for (const s of (seguidors[c.id] || [])) { %>
+          <li><strong><%= s.name %></strong> <span class="meta"><%= s.email %></span></li>
+        <% } %>
+      </ul>
+    </details>
+  <% } else { %>
+    <div class="dades"><span class="meta"><%= c.name %> · <%= c.town %> · 0 seguidors</span></div>
+  <% } %>
+<% } %>
+</div>

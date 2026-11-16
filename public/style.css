@@ -41,6 +41,13 @@ h2.seccio { margin: 2rem 0 .5rem; }
 .dades { background: var(--card); border: 1px solid var(--vora); border-radius: 12px; padding: 1.2rem; }
 .dades dt { font-weight: 700; margin-top: .7rem; }
 .dades dd { margin: .2rem 0 0; }
+
+/* --- Seguidors per club (admin) --- */
+.llista-seguidors .dades { margin-bottom: .8rem; padding: .9rem 1.2rem; }
+.llista-seguidors summary { cursor: pointer; font-weight: 600; }
+.llista-seguidors summary .meta { font-weight: normal; }
+.llista-seguidors ul { margin: .7rem 0 0 1.2rem; }
+.llista-seguidors li { margin-bottom: .3rem; }
 .registre-cta { background: var(--card); border: 2px solid var(--accent); border-radius: 12px; padding: 1.4rem; margin: 1.4rem 0; text-align: center; }
 .registre-cta h2 { margin-top: 0; color: var(--bg); }
 .formulari { max-width: 640px; background: var(--card); border: 1px solid var(--vora); border-radius: 12px; padding: 1.4rem; margin: 1.4rem 0; }

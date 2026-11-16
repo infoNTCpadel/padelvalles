@@ -261,6 +261,27 @@ r.get('/clubs', (req, res) => {
     appUrl: (process.env.APP_URL || 'https://padelvalles.com').replace(/\/$/, '') });
 });
 
+// Seguidors per club: quins usuaris segueixen cada club (desplegable per club)
+r.get('/clubs/seguidors', (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const conds = ['c.verified = 1'], params = [];
+  if (q) { conds.push('(c.name LIKE ? OR c.town LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  const where = 'WHERE ' + conds.join(' AND ');
+  const clubs = db.prepare(`
+    SELECT c.id, c.name, c.town, COUNT(f.user_id) AS n
+    FROM clubs c LEFT JOIN follows f ON f.club_id = c.id
+    ${where} GROUP BY c.id ORDER BY n DESC, c.name`).all(...params);
+  const seguidors = {};
+  for (const s of db.prepare(`
+    SELECT f.club_id, u.name, u.email FROM follows f
+    JOIN users u ON u.id = f.user_id ORDER BY u.name`).all()) {
+    (seguidors[s.club_id] ||= []).push(s);
+  }
+  const totalSeguidors = db.prepare('SELECT COUNT(*) n FROM follows').get().n;
+  const nAmbSeguidors = clubs.filter(c => c.n > 0).length;
+  res.render('admin/clubs-seguidors', { titol: 'Seguidors per club', clubs, seguidors, q, totalSeguidors, nAmbSeguidors });
+});
+
 // Formulari de nou club (l'admin el crea ja verificat)
 r.get('/clubs/nou', (req, res) => {
   res.render('admin/club-nou', { titol: 'Nou club', COMARQUES, error: null, valors: {} });
