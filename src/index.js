@@ -89,8 +89,12 @@ import adminRoutes from './routes/admin.js';
 import inscripcioRoutes from './routes/inscripcions.js';
 import organitzadorRoutes from './routes/organitzador.js';
 import adventRoutes from './routes/advent.js';
+import guiaRoutes from './routes/guia.js';
+import instagramWebhookRoutes from './routes/instagram-webhook.js';
 import { arrencaProgramador } from './lib/programador.js';
 
+app.use('/webhooks/instagram', instagramWebhookRoutes);
+app.use('/', guiaRoutes);
 app.use('/', authRoutes);
 app.use('/', playerRoutes);
 app.use('/', clubRoutes);

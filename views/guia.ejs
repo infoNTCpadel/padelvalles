@@ -1,0 +1,19 @@
+<h1>10 errors que et fan perdre partits</h1>
+<p><strong>Guia gratuïta de PadelVallès.</strong> Els errors que veiem cada setmana a les pistes del Vallès, explicats amb calma i amb la correcció per a cadascun. Per a jugadors de tots els nivells.</p>
+<ul>
+  <li>Per què perds els punts importants (i no és la tècnica)</li>
+  <li>Els 3 errors de posició que regalen el punt al rival</li>
+  <li>Com triar el cop correcte segons on ets a la pista</li>
+  <li>Exercicis senzills per corregir cada error</li>
+</ul>
+<p>Deixa'ns el teu email i la descarregues al moment. També t'avisarem dels tornejos del Vallès: sense spam, només pàdel.</p>
+<% if (error) { %><div class="error"><%= error %></div><% } %>
+<form class="formulari" action="/guia" method="post">
+  <input type="hidden" name="font" value="<%= font %>">
+  <div style="display:none"><input type="text" name="web" tabindex="-1" autocomplete="off"></div>
+  <div class="camp"><label>Nom</label><input name="nom" maxlength="80" value="<%= nom %>" placeholder="El teu nom" required></div>
+  <div class="camp"><label>Email</label><input name="email" type="email" maxlength="120" value="<%= email %>" placeholder="tu@email.com" required></div>
+  <div class="camp"><label><input type="checkbox" name="consent" value="1"> He llegit i accepto la <a href="/privacitat">política de privacitat</a> de PadelVallès.</label></div>
+  <button class="boto" type="submit">Vull la guia gratis</button>
+</form>
+<p class="meta">La guia és un PDF gratuït. Pots donar-te de baixa dels avisos quan vulguis.</p>

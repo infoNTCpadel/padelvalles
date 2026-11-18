@@ -115,6 +115,26 @@ CREATE TABLE IF NOT EXISTS interests (
   PRIMARY KEY (user_id, tournament_id)
 );
 
+-- Leads del lead magnet «10 errors que et fan perdre partits» (/guia):
+-- un per email; font indica d'on ve (ig-dm, ig-bio, web...).
+CREATE TABLE IF NOT EXISTS guia_leads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  nom TEXT DEFAULT '',
+  font TEXT NOT NULL DEFAULT 'web',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- DM privats ja enviats pel webhook d'Instagram (una sola resposta per
+-- comentari; Meta pot reenviar el webhook i no s'ha de duplicar el DM).
+CREATE TABLE IF NOT EXISTS ig_dm_sent (
+  comment_id TEXT PRIMARY KEY,
+  media_id TEXT DEFAULT '',
+  username TEXT DEFAULT '',
+  paraula TEXT NOT NULL DEFAULT 'guia',
+  sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS follows (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   club_id INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
