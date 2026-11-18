@@ -9,6 +9,7 @@ import { sembraDeadlineOha20261021 } from './seed-deadline-oha-20261021.js';
 import { sembraCandidats20261026 } from './seed-candidats-20261026.js';
 import { sembraCandidats20261102 } from './seed-candidats-20261102.js';
 import { actualitzaPremisAdvent20261114 } from './seed-advent-premis-20261114.js';
+import { sembraEmailsClubs20261118 } from './seed-emails-clubs-20261118.js';
 
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -528,6 +529,7 @@ sembraXarxes20261015(db);
 sembraDeadlineOha20261021(db);
 sembraCandidats20261026(db);
 sembraCandidats20261102(db);
+sembraEmailsClubs20261118(db);
 
 // --- Calendari d'Advent (mòdul ocult: només accessible per la ruta directa
 // /calendari; cap enllaç des del web, vegeu src/routes/advent.js) ---
