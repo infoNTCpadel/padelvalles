@@ -13,6 +13,10 @@ services:
       - ADVENT_SIM_DATE=${ADVENT_SIM_DATE:-}
       - BREVO_API_KEY=${BREVO_API_KEY:-}
       - MAIL_FROM=${MAIL_FROM:-hola@padelvalles.com}
+      - IG_USER_ID=${IG_USER_ID:-}
+      - IG_ACCESS_TOKEN=${IG_ACCESS_TOKEN:-}
+      - WEBHOOK_VERIFY_TOKEN=${WEBHOOK_VERIFY_TOKEN:-}
+      - META_APP_SECRET=${META_APP_SECRET:-}
     volumes:
       - ./data:/app/data
     labels:
